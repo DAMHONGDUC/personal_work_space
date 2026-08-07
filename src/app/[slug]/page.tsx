@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { apps, getApp } from "@/lib/apps";
+import { getApps, getApp } from "@/lib/apps";
 
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return apps.map((app) => ({ slug: app.slug }));
+  return getApps().map((app) => ({ slug: app.slug }));
 }
 
 /**

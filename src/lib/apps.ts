@@ -1,4 +1,6 @@
-import data from "@/data/apps.json";
+import fs from "node:fs";
+import path from "node:path";
+import config from "@/data/site.json";
 
 export type Section = {
   id: string;
@@ -27,8 +29,8 @@ export type ThirdParty = {
   url: string;
 };
 
-export type App = {
-  slug: string;
+/** The shape of one file in src/data/apps. The slug comes from the filename. */
+export type AppData = {
   name: string;
   tagline: string;
   icon: string;
@@ -48,6 +50,8 @@ export type App = {
   sections?: Section[];
 };
 
+export type App = AppData & { slug: string };
+
 export type Site = {
   publisher: string;
   url: string;
@@ -55,19 +59,43 @@ export type Site = {
   description: string;
 };
 
-type PrivacyData = {
+type Config = {
   site: Site;
   defaults: { sections: Section[] };
-  apps: App[];
 };
 
-const privacy = data as PrivacyData;
+const { site: siteConfig, defaults } = config as Config;
 
-export const site = privacy.site;
-export const apps = privacy.apps;
+export const site = siteConfig;
+
+const appsDir = path.join(process.cwd(), "src/data/apps");
+
+/**
+ * Every .json file in src/data/apps, read fresh so adding a file is picked up by
+ * a refresh in dev. This only ever runs at build time — every route is
+ * prerendered — so there is nothing to cache.
+ */
+export function getApps(): App[] {
+  return fs
+    .readdirSync(appsDir)
+    .filter((file) => file.endsWith(".json"))
+    .map((file) => {
+      const slug = path.basename(file, ".json");
+      const raw = fs.readFileSync(path.join(appsDir, file), "utf8");
+
+      try {
+        return { slug, ...(JSON.parse(raw) as AppData) };
+      } catch (error) {
+        throw new Error(
+          `src/data/apps/${file} is not valid JSON: ${(error as Error).message}`,
+        );
+      }
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
 
 export function getApp(slug: string): App | undefined {
-  return privacy.apps.find((app) => app.slug === slug);
+  return getApps().find((app) => app.slug === slug);
 }
 
 /** Fills the {{app}}, {{publisher}} and {{email}} placeholders used in the shared sections. */
@@ -86,7 +114,7 @@ export function getSections(app: App): Section[] {
   const overrides = new Map((app.sections ?? []).map((s) => [s.id, s]));
   const merged: Section[] = [];
 
-  for (const section of privacy.defaults.sections) {
+  for (const section of defaults.sections) {
     const override = overrides.get(section.id);
     if (override) overrides.delete(section.id);
     merged.push(override ?? section);

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SiteHeader } from "@/components/SiteHeader";
 import { site } from "@/lib/apps";
 import "./globals.css";
 
@@ -30,28 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col font-sans">
-        <header className="sticky top-0 z-20 border-b border-border-soft bg-background/80 backdrop-blur">
-          <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-6">
-            <Link
-              href="/"
-              className="flex items-center gap-2.5 text-sm font-semibold tracking-tight"
-            >
-              <span
-                aria-hidden
-                className="flex size-7 items-center justify-center rounded-lg bg-foreground text-xs font-bold text-background"
-              >
-                P
-              </span>
-              {site.publisher}
-            </Link>
-            <a
-              href={`mailto:${site.contactEmail}`}
-              className="text-sm text-muted transition-colors hover:text-foreground"
-            >
-              Contact
-            </a>
-          </div>
-        </header>
+        <SiteHeader publisher={site.publisher} contactEmail={site.contactEmail} />
 
         <div className="flex-1">{children}</div>
 
