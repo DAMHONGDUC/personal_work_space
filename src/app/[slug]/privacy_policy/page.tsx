@@ -3,10 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppIcon } from "@/components/AppIcon";
 import {
-  apps,
   contactEmail,
   formatDate,
   getApp,
+  getApps,
   getOverview,
   getSections,
   site,
@@ -14,7 +14,7 @@ import {
 } from "@/lib/apps";
 
 export function generateStaticParams() {
-  return apps.map((app) => ({ slug: app.slug }));
+  return getApps().map((app) => ({ slug: app.slug }));
 }
 
 export async function generateMetadata(

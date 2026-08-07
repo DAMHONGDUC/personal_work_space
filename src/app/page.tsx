@@ -1,8 +1,8 @@
 import { AppDirectory, type DirectoryEntry } from "@/components/AppDirectory";
-import { apps, site } from "@/lib/apps";
+import { getApps, site } from "@/lib/apps";
 
 export default function Home() {
-  const entries: DirectoryEntry[] = apps.map((app) => ({
+  const entries: DirectoryEntry[] = getApps().map((app) => ({
     slug: app.slug,
     name: app.name,
     tagline: app.tagline,

@@ -1,8 +1,14 @@
 # App Privacy Policies
 
-Static site hosting one privacy policy per app, at `/<app-slug>/privacy_policy/`.
-All content lives in a single hardcoded JSON file — adding an app never requires
-touching the UI code.
+Static site hosting one privacy policy per app at `/<slug>/privacy_policy/`.
+All content lives in JSON — adding an app never touches UI code.
+
+```
+src/data/
+├── site.json              publisher, url, email + shared legal sections
+└── apps/
+    └── sample-app.json    one file per app
+```
 
 ## Commands
 
@@ -11,55 +17,91 @@ npm run dev
 ```
 
 ```bash
-npm run dev:open
-```
-
-`dev:open` waits for the server, then opens the browser (macOS only — `next dev`
-has no built-in browser auto-open).
-
-```bash
 npm run lint && npm run typecheck && npm run build
 ```
 
-`build` produces a static export in `out/`, the same thing CI deploys.
-
 ## Adding an app
 
-Add one object to `apps` in [`src/data/apps.json`](src/data/apps.json). Copy the
-`sample-app` entry — it shows every supported field. The slug becomes the URL:
+Create one JSON file in `src/data/apps/`. That's it — the loader reads the
+directory, so there is no index to register the app in.
 
+**The filename is the URL:** `focus-timer.json` → `/focus-timer/privacy_policy/`
+
+```bash
+cp src/data/apps/sample-app.json src/data/apps/focus-timer.json
 ```
-/<slug>/privacy_policy/
+
+### Sample JSON
+
+```json
+{
+  "name": "Focus Timer",
+  "tagline": "A distraction-free Pomodoro timer for deep work.",
+  "icon": "⏳",
+  "accent": "#6366f1",
+  "platforms": ["iOS", "Android"],
+  "effectiveDate": "2026-01-10",
+  "lastUpdated": "2026-06-02",
+  "contactEmail": "support@example.com",
+  "storeLinks": {
+    "appStore": "https://apps.apple.com/app/id0000000000",
+    "playStore": "https://play.google.com/store/apps/details?id=com.example.focustimer"
+  },
+  "overview": [
+    "This Privacy Policy describes how {{app}} handles information when you use the app."
+  ],
+  "summary": [
+    "Your timer sessions never leave your device.",
+    "No account, no sign-in required."
+  ],
+  "collects": [
+    {
+      "category": "Diagnostics",
+      "items": ["Crash logs", "Device model"],
+      "purpose": "Identify and fix crashes.",
+      "linked": false
+    }
+  ],
+  "notCollected": ["Precise location", "Contacts", "Photos or media"],
+  "permissions": [
+    {
+      "name": "Notifications",
+      "required": false,
+      "reason": "Alert you when a session ends."
+    }
+  ],
+  "thirdParties": [
+    {
+      "name": "Firebase Crashlytics",
+      "purpose": "Crash reporting.",
+      "url": "https://firebase.google.com/support/privacy"
+    }
+  ]
+}
 ```
 
-`/<slug>/` also works and forwards to the policy.
+Optional, safe to omit: `contactEmail`, `storeLinks`, `overview`, `sections`.
+Everything else is required — but `collects` / `permissions` / `thirdParties`
+may be `[]`.
 
-### Shared vs per-app text
+### Things worth knowing
 
-`defaults.sections` holds the eight boilerplate legal sections rendered on every
-app's page. Inside them, `{{app}}`, `{{publisher}}` and `{{email}}` are replaced
-automatically.
+- `linked: true` means the data can be tied to a person (App Store
+  nutrition-label wording); it renders an amber badge.
+- `collects: []` renders a "does not collect any data" note instead of an
+  empty table.
+- An empty array hides its section, and its table-of-contents entry.
+- `{{app}}`, `{{publisher}}` and `{{email}}` are substituted inside `overview`
+  and `sections`.
+- A `sections` entry reusing an id from `site.json` (e.g. `security`)
+  **replaces** that shared section for this app only; a new id **appends** one.
 
-An app's own `sections` array is optional and merges with the defaults:
+## Deploy
 
-- reuse an id from `defaults.sections` (e.g. `security`) to **replace** that
-  section for that app only
-- use a new id to **append** an extra section
-
-### Before going live
-
-Set `site.url` in `apps.json` to the real deployed URL — the sitemap and the
-canonical tags are built from it.
-
-## Deployment
-
-Pushing to `main` runs two workflows:
-
-- [`ci.yml`](.github/workflows/ci.yml) — lint, typecheck, build (also on PRs)
-- [`deploy.yml`](.github/workflows/deploy.yml) — static export to GitHub Pages
-
-The base path is injected at build time from `actions/configure-pages`, so a
-project site (`user.github.io/<repo>`) and a custom domain both work without any
-code change.
+Push to `main` — GitHub Actions builds the static export and publishes it to
+Pages.
 
 One-time setup: **Settings → Pages → Source → GitHub Actions**.
+
+Set `site.url` in `site.json` to the real deployed URL before going live; the
+sitemap and canonical tags are built from it.
