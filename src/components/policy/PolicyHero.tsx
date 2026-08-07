@@ -1,0 +1,96 @@
+import Link from "next/link";
+import { AppIcon } from "@/components/AppIcon";
+import { formatDate, site, type App } from "@/lib/apps";
+
+export function PolicyHero({ app }: { app: App }) {
+  const links = [
+    { label: "App Store", href: app.storeLinks?.appStore },
+    { label: "Google Play", href: app.storeLinks?.playStore },
+  ].filter((link): link is { label: string; href: string } => Boolean(link.href));
+
+  const meta = [
+    { label: "Effective", value: formatDate(app.effectiveDate) },
+    { label: "Last updated", value: formatDate(app.lastUpdated) },
+    { label: "Publisher", value: site.publisher },
+  ];
+
+  return (
+    <header className="relative border-b border-border-soft">
+      {/* Stops at the header rather than running behind it: the glass bar blurs
+          and dims whatever sits behind it, which would make the tint step up at
+          the header's edge instead of fading evenly. Stops decrease all the way
+          down — any rise, however slight, reads as a bright band. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: `linear-gradient(to bottom,
+            color-mix(in oklab, ${app.accent} 20%, transparent) 0%,
+            color-mix(in oklab, ${app.accent} 14%, transparent) 25%,
+            color-mix(in oklab, ${app.accent} 8%, transparent) 50%,
+            color-mix(in oklab, ${app.accent} 3%, transparent) 75%,
+            transparent 100%)`,
+        }}
+      />
+
+      <div className="relative mx-auto w-full max-w-5xl px-6 pb-12 pt-10">
+        <nav className="pb-9 text-sm text-muted">
+          <Link href="/" className="transition-colors hover:text-foreground">
+            All apps
+          </Link>
+          <span className="px-2 opacity-50">/</span>
+          <span className="text-foreground">{app.name}</span>
+        </nav>
+
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
+          <AppIcon icon={app.icon} accent={app.accent} size="lg" />
+          <div className="flex min-w-0 flex-col gap-2.5">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {app.platforms.map((platform) => (
+                <span
+                  key={platform}
+                  className="rounded-md border border-border-soft px-2 py-0.5 text-xs text-muted"
+                >
+                  {platform}
+                </span>
+              ))}
+            </div>
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-[2.5rem] sm:leading-[1.15]">
+              {app.name} Privacy Policy
+            </h1>
+            <p className="max-w-[60ch] text-base leading-7 text-muted">{app.tagline}</p>
+          </div>
+        </div>
+
+        <div className="mt-9 flex flex-wrap items-end justify-between gap-6">
+          <dl className="flex flex-wrap gap-x-10 gap-y-3 text-sm">
+            {meta.map((item) => (
+              <div key={item.label}>
+                <dt className="text-xs uppercase tracking-wider text-muted">
+                  {item.label}
+                </dt>
+                <dd className="mt-1 font-medium">{item.value}</dd>
+              </div>
+            ))}
+          </dl>
+
+          {links.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {links.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="rounded-lg border border-border-soft bg-surface px-3.5 py-2 text-sm transition-colors hover:border-foreground/25"
+                >
+                  {link.label} ↗
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
