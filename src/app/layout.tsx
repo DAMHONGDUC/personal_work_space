@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { site } from "@/lib/apps";
 import "./globals.css";
@@ -28,23 +28,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
-      <body className="flex min-h-full flex-col font-sans">
+      {/* min-h-screen (not h-full on <html>) keeps the sticky footer without
+          pinning <html> to the viewport height, which would break the document
+          scroll the sticky header and reading progress depend on. */}
+      <body className="flex min-h-screen flex-col font-sans">
         <SiteHeader publisher={site.publisher} contactEmail={site.contactEmail} />
 
         <div className="flex-1">{children}</div>
 
-        <footer className="border-t border-border-soft">
-          <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-6 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
-            <p>
-              © {new Date().getFullYear()} {site.publisher}. All rights reserved.
-            </p>
-            <Link href="/" className="transition-colors hover:text-foreground">
-              All privacy policies
-            </Link>
-          </div>
-        </footer>
+        <SiteFooter publisher={site.publisher} />
       </body>
     </html>
   );

@@ -41,3 +41,36 @@ html {
   /* Keep anchored sections clear of the sticky header. */
   scroll-padding-top: 6rem;
 }
+
+/*
+ * Site header: solid by default, so it is opaque no matter what — no
+ * JavaScript, no hydration, no transition that can stall.
+ *
+ * Where scroll-driven animations are supported, it starts transparent at the
+ * very top of the page (letting a hero gradient run through it as one block)
+ * and is fully solid by the time you have scrolled past the bar. Browsers
+ * without support simply keep the solid background.
+ */
+.site-header {
+  background-color: var(--background);
+  border-bottom-color: var(--border);
+}
+
+@supports (animation-timeline: scroll()) {
+  @keyframes site-header-solidify {
+    from {
+      background-color: transparent;
+      border-bottom-color: transparent;
+    }
+    to {
+      background-color: var(--background);
+      border-bottom-color: var(--border);
+    }
+  }
+
+  .site-header {
+    animation: site-header-solidify linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0 4rem;
+  }
+}

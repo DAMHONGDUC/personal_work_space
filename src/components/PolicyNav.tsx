@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useActiveSection } from "@/hooks/useActiveSection";
 
 export type NavItem = { id: string; title: string };
 
@@ -15,31 +15,7 @@ export function PolicyNav({
   items: NavItem[];
   accent: string;
 }) {
-  const [active, setActive] = useState(items[0]?.id ?? "");
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort(
-            (a, b) => a.boundingClientRect.top - b.boundingClientRect.top,
-          );
-
-        if (visible[0]) setActive(visible[0].target.id);
-      },
-      // Ignore the band under the sticky header, and only count a section once
-      // it has reached the upper third of the viewport.
-      { rootMargin: "-88px 0px -65% 0px" },
-    );
-
-    for (const item of items) {
-      const element = document.getElementById(item.id);
-      if (element) observer.observe(element);
-    }
-
-    return () => observer.disconnect();
-  }, [items]);
+  const active = useActiveSection(items.map((item) => item.id));
 
   return (
     <ul className="flex flex-col gap-0.5">
