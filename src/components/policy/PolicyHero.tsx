@@ -16,19 +16,19 @@ export function PolicyHero({ app }: { app: App }) {
 
   return (
     <header className="relative border-b border-border-soft">
-      {/* Stops at the header rather than running behind it: the glass bar blurs
-          and dims whatever sits behind it, which would make the tint step up at
-          the header's edge instead of fading evenly. Stops decrease all the way
-          down — any rise, however slight, reads as a bright band. */}
+      {/* Runs up behind the transparent site header (h-16 = 4rem) so header and
+          hero read as one gradient block at the top of the page. Once scrolled,
+          the header turns solid and covers this. Stops decrease all the way down
+          — any rise, however slight, reads as a bright band. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-x-0 -top-16 bottom-0"
         style={{
           background: `linear-gradient(to bottom,
             color-mix(in oklab, ${app.accent} 20%, transparent) 0%,
-            color-mix(in oklab, ${app.accent} 14%, transparent) 25%,
-            color-mix(in oklab, ${app.accent} 8%, transparent) 50%,
-            color-mix(in oklab, ${app.accent} 3%, transparent) 75%,
+            color-mix(in oklab, ${app.accent} 15%, transparent) 30%,
+            color-mix(in oklab, ${app.accent} 9%, transparent) 55%,
+            color-mix(in oklab, ${app.accent} 3%, transparent) 78%,
             transparent 100%)`,
         }}
       />

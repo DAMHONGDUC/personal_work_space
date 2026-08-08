@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { PolicyNav, type NavItem } from "@/components/PolicyNav";
+import type { NavItem } from "@/components/PolicyNav";
 import { ReadingProgress } from "@/components/ReadingProgress";
-import {
-  CollectedSection,
-  ContactCard,
-  NotCollectedSection,
-  PermissionsSection,
-  SummarySection,
-  ThirdPartiesSection,
-} from "@/components/policy/DataSections";
+import { Bullets } from "@/components/policy/Bullets";
 import { PolicyHero } from "@/components/policy/PolicyHero";
-import { Bullets, Prose, Section } from "@/components/policy/Section";
+import { MobileToc, SidebarToc } from "@/components/policy/PolicyToc";
+import { Prose } from "@/components/policy/Prose";
+import { Section } from "@/components/policy/Section";
+import { CollectedSection } from "@/components/policy/sections/CollectedSection";
+import { ContactCard } from "@/components/policy/sections/ContactCard";
+import { NotCollectedSection } from "@/components/policy/sections/NotCollectedSection";
+import { PermissionsSection } from "@/components/policy/sections/PermissionsSection";
+import { SummarySection } from "@/components/policy/sections/SummarySection";
+import { ThirdPartiesSection } from "@/components/policy/sections/ThirdPartiesSection";
 import {
   contactEmail,
   formatDate,
@@ -77,15 +78,7 @@ export default async function PrivacyPolicyPage(
       <PolicyHero app={app} />
 
       <main className="mx-auto w-full max-w-5xl px-6 pb-20 pt-14">
-        <details className="mb-10 rounded-xl border border-border-soft bg-surface lg:hidden">
-          <summary className="cursor-pointer list-none px-5 py-3.5 text-sm font-medium marker:content-none">
-            On this page
-            <span className="float-right text-muted">{toc.length} sections</span>
-          </summary>
-          <div className="border-t border-border-soft px-5 py-3">
-            <PolicyNav items={toc} accent={app.accent} />
-          </div>
-        </details>
+        <MobileToc items={toc} accent={app.accent} />
 
         <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_13rem] lg:gap-14">
           <div className="flex min-w-0 flex-col gap-14">
@@ -117,17 +110,7 @@ export default async function PrivacyPolicyPage(
             <ContactCard app={app} email={email} />
           </div>
 
-          <aside className="hidden lg:block">
-            <nav
-              aria-label="On this page"
-              className="sticky top-24 flex flex-col gap-3 border-l border-border-soft"
-            >
-              <p className="pl-4 text-xs font-medium uppercase tracking-wider text-muted">
-                On this page
-              </p>
-              <PolicyNav items={toc} accent={app.accent} />
-            </nav>
-          </aside>
+          <SidebarToc items={toc} accent={app.accent} />
         </div>
       </main>
     </>
