@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import data from "@/data/cv.json";
+import data from "@/data/cv_2.json";
 import type { Cv } from "@/lib/cv-types";
 
 export type { Cv } from "@/lib/cv-types";

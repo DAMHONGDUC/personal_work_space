@@ -11,10 +11,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import { renderCvLatex } from "../src/lib/cv-latex.mts";
+import { CV_DATA_FILE } from "../src/lib/cv-source.mts";
 import type { Cv } from "../src/lib/cv-types";
 
 const root = path.join(import.meta.dirname, "..");
-const dataFile = path.join(root, "src/data/cv.json");
+const dataFile = path.join(root, CV_DATA_FILE);
 const templateDir = path.join(root, "cv/template");
 const assetsDir = path.join(root, "cv/assets");
 const outDir = path.join(root, "cv/build");
@@ -31,7 +32,7 @@ fs.writeFileSync(path.join(outDir, "main.tex"), renderCvLatex(cv, template));
 const photo = path.join(assetsDir, cv.header.photo);
 if (!fs.existsSync(photo)) {
   throw new Error(
-    `cv.json points at header.photo "${cv.header.photo}", which is not in cv/assets.`,
+    `${CV_DATA_FILE} points at header.photo "${cv.header.photo}", which is not in cv/assets.`,
   );
 }
 fs.copyFileSync(photo, path.join(outDir, cv.header.photo));

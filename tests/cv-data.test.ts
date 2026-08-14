@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { renderCvLatex } from "@/lib/cv-latex.mts";
+import { CV_DATA_FILE } from "@/lib/cv-source.mts";
 import { cv } from "@/lib/cv";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -11,7 +12,18 @@ const template = fs.readFileSync(
   "utf8",
 );
 
-describe("cv.json", () => {
+describe("the CV data file", () => {
+  it("is the same file the PDF is generated from", () => {
+    // The site imports the JSON statically and the generator reads it from
+    // disk. If those ever name different files, the page and the downloadable
+    // PDF quietly show different CVs.
+    const fromGenerator = JSON.parse(
+      fs.readFileSync(path.join(process.cwd(), CV_DATA_FILE), "utf8"),
+    );
+
+    expect(fromGenerator).toEqual(cv);
+  });
+
   it("has an ISO lastUpdated date that is not in the future", () => {
     expect(cv.lastUpdated).toMatch(ISO_DATE);
     expect(Number.isNaN(Date.parse(cv.lastUpdated))).toBe(false);

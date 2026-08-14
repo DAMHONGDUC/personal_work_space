@@ -1,0 +1,181 @@
+{
+  "lastUpdated": "2026-08-14",
+  "header": {
+    "name": "DAM HONG DUC",
+    "photo": "avt.jpg",
+    "contacts": [
+      { "kind": "email", "value": "hongduc.dam2001@gmail.com" },
+      { "kind": "phone", "value": "+84 355 211 735", "href": "tel:+84355211735" },
+      {
+        "kind": "link",
+        "value": "linkedin.com/in/dam-hong-duc",
+        "href": "https://linkedin.com/in/dam-hong-duc"
+      },
+      {
+        "kind": "link",
+        "value": "github.com/DAMHONGDUC",
+        "href": "https://github.com/DAMHONGDUC"
+      }
+    ]
+  },
+  "aboutMe": [
+    "Mobile engineer, 4+ years across native iOS and Android, Flutter and React Native — from a 20-developer product team to sole ownership of apps built from scratch.",
+    "Performance and architecture ownership: cut an app from 200MB to 90MB, lifted key screens from 30–40 to a steady 60 FPS, migrated state management from Stream to BLoC.",
+    "Based in Ho Chi Minh City, with three years of remote delivery for a client in Japan."
+  ],
+  "education": [
+    {
+      "institution": "University of Science - VNUHCM",
+      "location": "HCM City, VietNam",
+      "period": "Sept 2019 – Aug 2023",
+      "degree": "Bachelor of Science in Information Systems"
+    }
+  ],
+  "skills": [
+    {
+      "name": "Native iOS",
+      "items": "Swift, SwiftUI, MVVM"
+    },
+    {
+      "name": "Native Android",
+      "items": "Kotlin, Jetpack Compose, MVVM, Clean Architecture, Hilt, Dagger, Room, Retrofit"
+    },
+    {
+      "name": "Flutter",
+      "items": "Clean Architecture, BLoC, Provider, Riverpod, Stream, Hive, Dio, get_it, Mockito, unit testing, SSL pinning, Unity integration"
+    },
+    {
+      "name": "React Native",
+      "items": "Redux, Redux Toolkit, SQLite, Axios, Jest"
+    },
+    {
+      "name": "Backend & Integration",
+      "items": "REST API, Firebase (FCM, Crashlytics), VNPAY, RevenueCat, push notifications, offline-first storage, camera, permissions, hardware barcode scanners"
+    },
+    {
+      "name": "Web",
+      "items": "React.js, Next.js, Three.js"
+    },
+    {
+      "name": "AI-Assisted Development",
+      "items": "Claude Code, Codex, Cursor – code generation, refactoring, testing, code review"
+    },
+    {
+      "name": "CI/CD & Release",
+      "items": "Fastlane, GitLab Runner, GitHub Actions, Google Play Console, Apple App Store"
+    }
+  ],
+  "experience": [
+    {
+      "company": "Oivan",
+      "role": "Mobile Developer",
+      "arrangement": "Hybrid",
+      "location": "HCM City, Vietnam",
+      "period": "Oct 2024 – now (1 yr 11 mos)",
+      "groups": [
+        {
+          "title": "Real Estate Product – Flutter",
+          "meta": "Flutter, Clean Architecture, Scrum, Kanban · Team size: 20 mobile devs",
+          "bullets": [
+            "Deliver features on a real estate product for a Saudi Arabian government client, inside a 20-developer mobile team.",
+            "Integrated third-party SDKs and embedded Unity into Flutter for an in-app metaverse where users explore buildings and events."
+          ]
+        },
+        {
+          "title": "Performance Team",
+          "meta": "Profiling, state management, network security",
+          "bullets": [
+            "Reduced app size from 200MB to 90MB.",
+            "Raised key screens from 30–40 FPS to a steady 60 by eliminating unnecessary re-renders.",
+            "Implemented SSL pinning, optimised data-layer caching, and migrated state management from Stream to BLoC."
+          ]
+        }
+      ]
+    },
+    {
+      "company": "P&A Inc.",
+      "role": "Mobile Developer",
+      "arrangement": "Freelance, remote (19:00–23:00 ICT)",
+      "location": "Japan",
+      "period": "2023 – now",
+      "groups": [
+        {
+          "title": "Cocototo – virtual pet game",
+          "meta": "Flutter · Sole developer, from scratch",
+          "bullets": [
+            "A virtual pet game where players raise and care for a companion, taken from an empty repository to a released product.",
+            "Owned every layer: architecture, gameplay state, UI and release, reporting straight to the client across a time-zone gap."
+          ]
+        },
+        {
+          "title": "Pet Management App",
+          "meta": "SwiftUI, Jetpack Compose · Sole developer, both platforms",
+          "bullets": [
+            "Built both native clients: iOS in SwiftUI, Android in Jetpack Compose — the same product built natively on each platform rather than through one cross-platform codebase.",
+            "Kept the domain model and screen flows consistent across two native stacks."
+          ]
+        }
+      ]
+    },
+    {
+      "company": "TGL Solutions",
+      "role": "Mobile Developer",
+      "arrangement": "Onsite",
+      "location": "HCM City, Vietnam",
+      "period": "Nov 2022 – Oct 2024 (2 yrs)",
+      "groups": [
+        {
+          "title": "Warehouse App for POS / Handheld Devices – sole developer",
+          "meta": "Kotlin, Jetpack Compose, MVVM, Clean Architecture · Team size: 1 mobile dev",
+          "bullets": [
+            "Sole developer, end to end, of a warehouse management app for Unitech HT300/HT330 barcode devices.",
+            "Integrated the hardware scanner for real-time barcode capture; handled goods receipt, dispatch and inventory updates over REST API.",
+            "Built an offline-first data layer that periodically fetched and persisted to an on-device database, so the floor kept working without a network.",
+            "Drove cross-team agreement on barcode formats; implemented auto-launch on reboot and published the app privately on Google Play."
+          ]
+        },
+        {
+          "title": "Cross-Platform Apps – Flutter & React Native",
+          "meta": "Flutter, React Native · Team size: 4–6 mobile devs",
+          "bullets": [
+            "Built apps from scratch and maintained existing ones across booking, e-learning, file management and apartment equipment domains.",
+            "Led a sub-project with 3 members: planned sprints, estimated tasks and reviewed delivery.",
+            "Integrated VNPAY, FCM and Firebase Crashlytics."
+          ]
+        }
+      ],
+      "note": {
+        "label": "Also:",
+        "text": "Maintained admin dashboards and academy websites in React.js and Next.js, including 3D UI components with Three.js. Agile throughout – system design, API contracts with backend, and QA triage."
+      }
+    },
+    {
+      "company": "Flynk",
+      "role": "Fresher Mobile Developer",
+      "arrangement": "Onsite",
+      "location": "HCM City, Vietnam",
+      "period": "Jul 2022 – Nov 2022 (5 mos)",
+      "groups": [
+        {
+          "title": "Trading & Finance App – React Native",
+          "meta": "React Native · Team size: 3 mobile devs",
+          "bullets": [
+            "Maintained and improved the app UI, and implemented chart features for trading and financial data visualisation."
+          ]
+        }
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "Dutuku E-Commerce",
+      "description": "A Flutter application built with Clean Architecture",
+      "links": [
+        {
+          "label": "github.com/DAMHONGDUC/dutuku_e_commerce",
+          "href": "https://github.com/DAMHONGDUC/dutuku_e_commerce"
+        }
+      ]
+    }
+  ]
+}
