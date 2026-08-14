@@ -8,15 +8,18 @@ Static site with two top-level sections:
 | `/apps/<slug>/privacy_policy/`   | One app's privacy policy         |
 | `/personal/cv/`                  | CV, served from `public/cv.pdf`  |
 
-All policy content lives in JSON — adding an app never touches UI code.
+All content lives in JSON — neither adding an app nor updating the CV touches UI
+code.
 
 ```
 src/data/
 ├── site.json              publisher, url, email + shared legal sections
+├── cv.json                the CV content
 └── apps/
     └── sample-app.json    one file per app
-public/
-└── cv.pdf                 the CV (optional; the page says so when missing)
+cv/
+├── template/main.tex      CV layout (see cv/README.md)
+└── assets/avt.png         CV photo
 ```
 
 Every URL is defined in `src/lib/routes.ts`; use `routes.*` rather than writing
@@ -28,13 +31,34 @@ the app stores keep working.
 
 ## Commands
 
+One command does everything — clean, install dependencies, rebuild the CV PDF,
+start the dev server. It works from a fresh clone:
+
 ```bash
-npm run dev
+npm run dev        # or dev:open, which also opens the browser
+```
+
+The prep is `npm run setup`, wired in through npm's `predev` / `predev:open`
+hooks. It needs a LaTeX engine to build the CV PDF (`brew install tectonic`);
+without one it prints how to get one and carries on, so the server always
+starts.
+
+```bash
+npm run preview   # production build, served at http://localhost:3000
 ```
 
 ```bash
-npm run lint && npm run typecheck && npm run build
+npm run lint && npm run typecheck && npm test && npm run build
 ```
+
+There is no `npm start`: the site is a static export, which `next start` refuses
+to serve. Use `npm run preview`.
+
+## Updating the CV
+
+Edit `src/data/cv.json` — `npm run dev` picks it up. The deployed PDF is compiled
+from LaTeX in CI; `npm run cv:pdf` builds it locally if you have LaTeX. See
+[cv/README.md](cv/README.md) for how to preview it without installing anything.
 
 ## Adding an app
 
