@@ -29,6 +29,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Verification runs here rather than in a parallel workflow, so a failure
+      # stops the deploy instead of racing it. This is also the only check a
+      # push straight to main gets, since CI now only runs on pull requests.
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
       - name: Configure Pages
         id: pages
         uses: actions/configure-pages@v5

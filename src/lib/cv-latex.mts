@@ -158,7 +158,11 @@ function renderGroup(group: ExperienceGroup): string {
 ${inner}`;
 }
 
-/** `position` is 1-based: jobs are numbered down the page, newest first. */
+/**
+ * `position` counts from the earliest job, so the oldest is 1. Entries are
+ * still listed newest first, which means the numbers run downwards — they read
+ * as "this was my Nth role" rather than as a ranking of the list.
+ */
 function renderExperience(entry: Experience, position: number): string {
   const heading = [entry.role, entry.arrangement, entry.location]
     .map(tex)
@@ -185,10 +189,13 @@ ${blocks.join("\n\n        \\vspace{2mm}\n\n")}
 \\end{onecolentry}`;
 }
 
-/** Jobs are numbered from the top and separated by a full-width rule. */
+/**
+ * Jobs are listed newest first but numbered from the oldest, so the count runs
+ * down the page. Separated by a full-width rule.
+ */
 function renderExperiences(entries: Experience[]): string {
   return entries
-    .map((entry, index) => renderExperience(entry, index + 1))
+    .map((entry, index) => renderExperience(entry, entries.length - index))
     .join("\n\n\\noindent\\rule{\\linewidth}{0.5pt}\\par\n\\vspace{3mm}\n\n");
 }
 
