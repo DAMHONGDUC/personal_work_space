@@ -50,6 +50,24 @@
 
 \usepackage{charter}
 
+% ============================================================
+% Typographic scale — the single place any CV size is decided.
+%
+%   25pt  name              the header
+%   13pt  section heading   Experience, Skills, ...
+%   12pt  company           1. Oivan
+%   11pt  role              Real Estate Product
+%   10pt  body              every bullet and every line of prose
+%
+% \bfseries goes before \selectfont so the weight is part of the
+% font actually selected, not applied to an already-chosen one.
+% ============================================================
+\newcommand{\cvName}[1]{{\fontsize{25pt}{25pt}\selectfont #1\par}}
+\newcommand{\cvSectionFont}{\bfseries\fontsize{13pt}{15pt}\selectfont}
+\newcommand{\cvCompany}[1]{{\bfseries\fontsize{12pt}{14pt}\selectfont #1}}
+\newcommand{\cvRole}[1]{{\bfseries\fontsize{11pt}{13pt}\selectfont #1}}
+\newcommand{\cvDate}[1]{{\footnotesize\bfseries\itshape #1}}
+
 \raggedright
 \AtBeginEnvironment{adjustwidth}{\partopsep0pt}
 \pagestyle{empty}
@@ -59,7 +77,7 @@
 \setlength{\columnsep}{0.15cm}
 \pagenumbering{gobble}
 
-\titleformat{\section}{\needspace{4\baselineskip}\bfseries\large}{}{0pt}{}[\vspace{1pt}\titlerule]
+\titleformat{\section}{\needspace{4\baselineskip}\cvSectionFont}{}{0pt}{}[\vspace{1pt}\titlerule]
 
 \titlespacing{\section}{
     -1pt
@@ -165,23 +183,23 @@
 \vspace{7pt - 0.3cm}
 
 % ============ About Me ============
-\section{\fontsize{13pt}{15pt}\selectfont About Me}
+\section{About Me}
 %%ABOUT_ME%%
 
 % ============ Education ============
-\section{\fontsize{13pt}{15pt}\selectfont Education}
+\section{Education}
 %%EDUCATION%%
 
 % ============ Skills ============
-\section{\fontsize{13pt}{15pt}\selectfont Skills}
+\section{Skills}
 %%SKILLS%%
 
 % ============ Experience ============
-\section{\fontsize{13pt}{15pt}\selectfont Experience}
+\section{Experience}
 %%EXPERIENCE%%
     
 % ============ Project ============
-\section{\fontsize{13pt}{15pt}\selectfont Personal Projects}
+\section{Personal Projects}
 %%PROJECTS%%
 
 \end{document}

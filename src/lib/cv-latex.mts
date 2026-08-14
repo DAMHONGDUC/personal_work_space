@@ -93,7 +93,7 @@ function renderHeader(cv: Cv): string {
 
   return `\\begin{header}
     \\begin{minipage}[c]{0.75\\textwidth}
-        {\\fontsize{25pt}{25pt}\\selectfont ${tex(name)}\\par}
+        \\cvName{${tex(name)}}
         \\normalsize
         \\vspace{2pt}
         \\begin{minipage}[t]{0.5\\linewidth}
@@ -130,8 +130,8 @@ ${highlights(cv.aboutMe.map(tex), "    ")}
 }
 
 function renderEducation(entry: Education): string {
-  return `\\begin{twocolentry}{${tex(entry.period)}}
-    \\textbf{${tex(entry.institution)}} - ${tex(entry.location)}
+  return `\\begin{twocolentry}{\\cvDate{${tex(entry.period)}}}
+    \\cvRole{${tex(entry.institution)}} -- ${tex(entry.location)}
 \\end{twocolentry}
 \\vspace{1.5mm}
 ${tex(entry.degree)}
@@ -154,11 +154,12 @@ function renderGroup(group: ExperienceGroup): string {
     "        ",
   );
 
-  return `        \\item {\\fontsize{10pt}{12pt}\\selectfont \\textbf{${tex(group.title)}}}
+  return `        \\item \\cvRole{${tex(group.title)}}
 ${inner}`;
 }
 
-function renderExperience(entry: Experience): string {
+/** `position` is 1-based: jobs are numbered down the page, newest first. */
+function renderExperience(entry: Experience, position: number): string {
   const heading = [entry.role, entry.arrangement, entry.location]
     .map(tex)
     .join(" -- ");
@@ -166,13 +167,15 @@ function renderExperience(entry: Experience): string {
   const blocks = entry.groups.map(renderGroup);
 
   if (entry.note) {
+    // Body size, so the only thing setting it apart from a bullet is the weight
+    // of its lead-in — every line of content reads at one size.
     blocks.push(
-      `        \\item {\\fontsize{10pt}{12pt}\\selectfont \\textbf{${tex(entry.note.label)}}} ${tex(entry.note.text)}`,
+      `        \\item \\textbf{${tex(entry.note.label)}} ${tex(entry.note.text)}`,
     );
   }
 
-  return `\\begin{twocolentry}{\\textbf{\\footnotesize ${tex(entry.period)}}}
-    {\\fontsize{12pt}{14pt}\\selectfont \\textbf{${tex(entry.company)}}} -- ${heading}
+  return `\\begin{twocolentry}{\\cvDate{${tex(entry.period)}}}
+    \\cvCompany{${position}. ${tex(entry.company)}} -- ${heading}
 \\end{twocolentry}
 \\vspace{3mm}
 \\begin{onecolentry}
@@ -182,15 +185,17 @@ ${blocks.join("\n\n        \\vspace{2mm}\n\n")}
 \\end{onecolentry}`;
 }
 
-/** Jobs are separated by a full-width rule. */
+/** Jobs are numbered from the top and separated by a full-width rule. */
 function renderExperiences(entries: Experience[]): string {
   return entries
-    .map(renderExperience)
+    .map((entry, index) => renderExperience(entry, index + 1))
     .join("\n\n\\noindent\\rule{\\linewidth}{0.5pt}\\par\n\\vspace{3mm}\n\n");
 }
 
 function renderProject(project: Project): string {
-  const heading = `    \\item {\\fontsize{10pt}{12pt}\\selectfont \\textbf{${tex(project.name)}}: ${tex(project.description)}}`;
+  // A project name sits at the same level as a role inside a job, and its
+  // description is content, so only the name takes the heading size.
+  const heading = `    \\item \\cvRole{${tex(project.name)}}: ${tex(project.description)}`;
 
   if (project.links.length === 0) {
     return heading;

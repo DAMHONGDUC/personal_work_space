@@ -160,6 +160,28 @@ describe("renderCvLatex", () => {
     expect(out.match(/\\noindent\\rule/g)).toHaveLength(1);
   });
 
+  it("numbers the jobs from the top", () => {
+    const job = makeCv().experience[0];
+    const out = renderCvLatex(
+      makeCv({ experience: [job, { ...job, company: "Beta" }] }),
+      TEMPLATE,
+    );
+
+    expect(out).toContain("\\cvCompany{1. Acme}");
+    expect(out).toContain("\\cvCompany{2. Beta}");
+  });
+
+  it("marks up dates, roles and companies by meaning, not by size", () => {
+    // Every size the CV uses is declared once in cv/template/main.tex. An
+    // inline \fontsize here would be a second place to change it, and is how
+    // headings drifted out of step with each other before.
+    const out = renderCvLatex(makeCv(), TEMPLATE);
+
+    expect(out).toContain("\\cvDate{2024 -- now}");
+    expect(out).toContain("\\cvRole{Mobile App}");
+    expect(out).not.toContain("\\fontsize");
+  });
+
   it("omits the note bullet when the job has none", () => {
     expect(renderCvLatex(makeCv(), TEMPLATE)).not.toContain("\\textbf{Process:}");
   });
@@ -173,7 +195,7 @@ describe("renderCvLatex", () => {
       TEMPLATE,
     );
 
-    expect(out).toContain("\\textbf{Process:}} Agile -- and so on.");
+    expect(out).toContain("\\textbf{Process:} Agile -- and so on.");
     expect(out.indexOf("Process:")).toBeGreaterThan(out.indexOf("Did a thing."));
   });
 
