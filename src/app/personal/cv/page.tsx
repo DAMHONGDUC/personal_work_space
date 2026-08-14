@@ -48,17 +48,25 @@ export default function CvPage() {
           </div>
 
           {/* Inline preview where the browser has a PDF viewer. Mobile browsers
-              mostly do not, so the buttons above stay the reliable path. */}
-          <object
-            data={file}
-            type="application/pdf"
-            aria-label={`${cv.header.name} CV`}
-            className="hidden h-[80vh] w-full rounded-2xl border border-border-soft bg-muted-surface md:block"
-          >
-            <p className="p-6 text-sm text-muted">
-              This browser cannot display the PDF inline — use the buttons above.
-            </p>
-          </object>
+              mostly do not, so the buttons above stay the reliable path.
+
+              The #toolbar=0 fragment asks the viewer to drop its own chrome —
+              the download, print and zoom bar — so the page reads as a document
+              rather than an editor. Chromium and Acrobat honour it; Firefox and
+              Safari ignore it and keep their toolbar, which is why the buttons
+              above exist rather than relying on the viewer's. */}
+          <div className="hidden overflow-hidden rounded-2xl border border-border-soft bg-[#25262b] md:block">
+            <object
+              data={`${file}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+              type="application/pdf"
+              aria-label={`${cv.header.name} CV`}
+              className="block h-[88vh] w-full"
+            >
+              <p className="p-6 text-sm text-muted">
+                This browser cannot display the PDF inline — use the buttons above.
+              </p>
+            </object>
+          </div>
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-border-soft px-6 py-16 text-center">
