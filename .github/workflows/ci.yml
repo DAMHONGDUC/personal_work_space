@@ -45,6 +45,12 @@ jobs:
           working_directory: cv/build
           root_file: main.tex
 
+      - name: Render the CV pages
+        # Same step the deploy runs, so a failure here is caught before merge.
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+          node scripts/build-cv-images.mts
+
       - name: Upload the CV for review
         uses: actions/upload-artifact@v4
         with:

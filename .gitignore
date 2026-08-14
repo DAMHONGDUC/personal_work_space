@@ -23,6 +23,7 @@
 # cv (generated from src/data/cv.json by `npm run cv:tex`, compiled in CI)
 /cv/build/
 /public/cv.pdf
+/public/cv/
 
 # misc
 .DS_Store

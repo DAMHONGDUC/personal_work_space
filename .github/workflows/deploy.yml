@@ -43,9 +43,13 @@ jobs:
           root_file: main.tex
 
       - name: Publish the CV
-        # public/ is copied into the export, so the PDF has to land before the
-        # site build runs.
-        run: cp cv/build/main.pdf public/cv.pdf
+        # public/ is copied into the export, so the PDF and the page images have
+        # to land before the site build runs. The images are what /personal/cv
+        # renders inline; the PDF is the download.
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+          cp cv/build/main.pdf public/cv.pdf
+          node scripts/build-cv-images.mts
 
       - name: Build static export
         # A project site is served from /<repo>, so the app needs that prefix.
