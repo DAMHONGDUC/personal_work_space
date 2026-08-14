@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AppIcon } from "@/components/AppIcon";
+import { routes } from "@/lib/routes";
 
 export type DirectoryEntry = {
   slug: string;
@@ -14,7 +15,7 @@ export type DirectoryEntry = {
 export function AppCard({ entry }: { entry: DirectoryEntry }) {
   return (
     <Link
-      href={`/${entry.slug}/privacy_policy`}
+      href={routes.privacyPolicy(entry.slug)}
       className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border-soft bg-surface p-6 transition-colors hover:border-foreground/25"
     >
       {/* Even top-down tint on hover; a radial glow reads as an off-centre blob. */}

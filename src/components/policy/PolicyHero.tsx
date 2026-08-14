@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AppIcon } from "@/components/AppIcon";
 import { formatDate, site, type App } from "@/lib/apps";
+import { routes } from "@/lib/routes";
 
 export function PolicyHero({ app }: { app: App }) {
   const links = [
@@ -35,7 +36,10 @@ export function PolicyHero({ app }: { app: App }) {
 
       <div className="relative mx-auto w-full max-w-5xl px-6 pb-12 pt-10">
         <nav className="pb-9 text-sm text-muted">
-          <Link href="/" className="transition-colors hover:text-foreground">
+          <Link
+            href={routes.apps}
+            className="transition-colors hover:text-foreground"
+          >
             All apps
           </Link>
           <span className="px-2 opacity-50">/</span>

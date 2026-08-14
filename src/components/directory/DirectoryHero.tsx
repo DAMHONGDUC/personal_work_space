@@ -1,4 +1,4 @@
-export function HomeHero({
+export function DirectoryHero({
   publisher,
   appCount,
 }: {

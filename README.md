@@ -1,14 +1,30 @@
-# App Privacy Policies
+# Personal work space
 
-Static site hosting one privacy policy per app at `/<slug>/privacy_policy/`.
-All content lives in JSON — adding an app never touches UI code.
+Static site with two top-level sections:
+
+| Path                             | What it is                       |
+| -------------------------------- | -------------------------------- |
+| `/apps/`                         | Directory of every published app |
+| `/apps/<slug>/privacy_policy/`   | One app's privacy policy         |
+| `/personal/cv/`                  | CV, served from `public/cv.pdf`  |
+
+All policy content lives in JSON — adding an app never touches UI code.
 
 ```
 src/data/
 ├── site.json              publisher, url, email + shared legal sections
 └── apps/
     └── sample-app.json    one file per app
+public/
+└── cv.pdf                 the CV (optional; the page says so when missing)
 ```
+
+Every URL is defined in `src/lib/routes.ts`; use `routes.*` rather than writing
+paths by hand.
+
+The old addresses `/<slug>/` and `/<slug>/privacy_policy/` still resolve — they
+render a `noindex` meta-refresh to the new path, so links already submitted to
+the app stores keep working.
 
 ## Commands
 
@@ -25,7 +41,8 @@ npm run lint && npm run typecheck && npm run build
 Create one JSON file in `src/data/apps/`. That's it — the loader reads the
 directory, so there is no index to register the app in.
 
-**The filename is the URL:** `focus-timer.json` → `/focus-timer/privacy_policy/`
+**The filename is the URL:** `focus-timer.json` →
+`/apps/focus-timer/privacy_policy/`
 
 ```bash
 cp src/data/apps/sample-app.json src/data/apps/focus-timer.json
