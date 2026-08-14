@@ -14,7 +14,8 @@ code.
 ```
 src/data/
 ├── site.json              publisher, url, email + shared legal sections
-├── cv.json                the CV content
+├── cv/
+│   └── cv_2.json          the CV content
 └── apps/
     └── sample-app.json    one file per app
 cv/
@@ -56,7 +57,7 @@ to serve. Use `npm run preview`.
 
 ## Updating the CV
 
-Edit `src/data/cv.json` — `npm run dev` picks it up. The deployed PDF is compiled
+Edit `src/data/cv/cv_2.json` — `npm run dev` picks it up. The deployed PDF is compiled
 from LaTeX in CI; `npm run cv:pdf` builds it locally if you have LaTeX. See
 [cv/README.md](cv/README.md) for how to preview it without installing anything.
 

@@ -18,9 +18,12 @@
 
 - **Apps**: one file per app in `src/data/apps/`. The filename is the URL slug.
   The loader reads the directory, so there is no index to register an app in.
-- **CV**: `src/data/cv.json`. The LaTeX in `cv/build/` is **generated** — never
-  edit it, and never edit `cv/template/main.tex` to change wording.
-- Every text field in `cv.json` is **plain text**. The renderer escapes LaTeX
+- **CV**: `src/data/cv/`. Which file in there is live is decided by
+  `src/lib/cv-source.mts` — check it before editing, because the others are
+  valid CVs too and editing the wrong one changes nothing. The LaTeX in
+  `cv/build/` is **generated** — never edit it, and never edit
+  `cv/template/main.tex` to change wording.
+- Every text field in the CV JSON is **plain text**. The renderer escapes LaTeX
   and converts typography, so write `Backend & Integration`, `get_it` and
   `2019 – 2023` (real en dash), never `\&`, `get\_it` or `--`. A backslash in
   the data ends up printed literally. See [cv/README.md](cv/README.md).

@@ -1,16 +1,23 @@
 # CV
 
-The CV is generated, not hand-written. **Edit `src/data/cv.json`** — never the
-LaTeX.
+The CV is generated, not hand-written. **Edit `src/data/cv/cv_2.json`** — never
+the LaTeX.
 
 ```
-src/data/cv.json        the content (the only file you edit)
+src/data/cv/            the content
+├── cv_2.json           the live CV (the only file you edit)
+└── cv.json             the earlier version, kept for reference
 cv/template/main.tex    the layout: preamble + %%PLACEHOLDER%% per section
 cv/assets/avt.jpg       the photo
 cv/build/               generated, git-ignored
 public/cv.pdf           compiled in CI — the download, git-ignored
 public/cv/page-N.png    rasterised pages — what the site renders, git-ignored
 ```
+
+**Which file is live is decided in one place**, `src/lib/cv-source.mts`. Both
+files are valid CVs, so editing the wrong one fails silently — check that
+constant before you start. Switching between them means changing it *and* the
+static import in `src/lib/cv.ts`; a test fails if only one of the two moves.
 
 The photo prints at 3.2cm, so ~800px is already more than any printer resolves.
 It was a 1.26MB PNG once; as an 800px JPEG the whole PDF is 150KB rather than

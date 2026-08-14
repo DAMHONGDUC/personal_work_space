@@ -7,4 +7,4 @@
  * driven by this constant — instead a test asserts the two resolve to the same
  * content, which is what stops the page and the PDF drifting apart.
  */
-export const CV_DATA_FILE = "src/data/cv_2.json";
+export const CV_DATA_FILE = "src/data/cv/cv_2.json";

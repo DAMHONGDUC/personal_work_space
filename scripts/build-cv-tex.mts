@@ -1,5 +1,5 @@
 /**
- * Generates cv/build/ from src/data/cv.json.
+ * Generates cv/build/ from the CV data file (see cv-source.mts).
  *
  * Run with `npm run cv:tex`. The output is a single self-contained main.tex
  * plus the image, which is all Overleaf needs — drag the folder in to preview.

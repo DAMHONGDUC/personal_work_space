@@ -1,5 +1,5 @@
 /**
- * The shape of src/data/cv.json — the single source of truth for the CV.
+ * The shape of the CV data file — the single source of truth for the CV.
  *
  * Text fields hold plain text, never LaTeX: the renderer escapes the special
  * characters and converts typography itself. Write "&" and "get_it", not "\&"

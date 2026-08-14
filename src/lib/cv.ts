@@ -1,11 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
-import data from "@/data/cv_2.json";
+import data from "@/data/cv/cv_2.json";
 import type { Cv } from "@/lib/cv-types";
 
 export type { Cv } from "@/lib/cv-types";
 
-/** The CV content. Edit src/data/cv.json — never the generated LaTeX. */
+/**
+ * The CV content. Edit the file named by CV_DATA_FILE — never the generated
+ * LaTeX. This import must stay a literal path for bundling, which is why the
+ * two are kept honest by a test rather than by sharing the constant.
+ */
 export const cv = data as Cv;
 
 /**
