@@ -64,7 +64,11 @@ export type Cv = {
   lastUpdated: string;
   header: {
     name: string;
-    /** Filename inside cv/assets. */
+    /**
+     * Filename inside cv/assets. The CV prints it at 3.2cm, so a JPEG around
+     * 800px wide is already past what any printer resolves — anything larger
+     * just inflates the PDF.
+     */
     photo: string;
     contacts: Contact[];
   };
