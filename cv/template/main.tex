@@ -39,6 +39,13 @@
     \usepackage[T1]{fontenc}
     \usepackage[utf8]{inputenc}
     \usepackage{lmodern}
+\else
+    % XeTeX and LuaTeX default to the TU (Unicode) encoding, but the PSNFSS
+    % charter package below only ships T1/OT1 font definitions. Without asking
+    % for T1 here there is no TUbch.fd, and the whole document silently falls
+    % back to Latin Modern — which is why a local Tectonic build used to look
+    % nothing like the Overleaf/pdfLaTeX one.
+    \usepackage[T1]{fontenc}
 \fi
 
 \usepackage{charter}
