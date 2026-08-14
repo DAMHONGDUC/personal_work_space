@@ -45,10 +45,12 @@ jobs:
           working_directory: cv/build
           root_file: main.tex
 
-      - name: Render the CV pages
-        # Same step the deploy runs, so a failure here is caught before merge.
+      - name: Publish the CV
+        # Mirrors the deploy exactly, so the build below sees the same public/
+        # it will see on main and a failure is caught before merge.
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+          cp cv/build/main.pdf public/cv.pdf
           node scripts/build-cv-images.mts
 
       - name: Upload the CV for review

@@ -45,8 +45,13 @@
   `output: "export"` build. Use `npm run preview`.
 - Before saying work is done: `npm run lint && npm run typecheck && npm test`.
 
-## Known state
+## The CV
 
-- `src/data/apps/baro-ease.json` still has a placeholder App Store link, so one
-  test in `tests/app-data.test.ts` fails. This is pre-existing — do not report
-  it as caused by a change, and do not "fix" it by weakening the test.
+- `src/lib/cv-source.mts` names the data file. The site imports it statically
+  and the LaTeX generator reads it from disk; a test asserts both resolve to the
+  same content, because otherwise the page and the downloadable PDF drift apart.
+- Every font size lives in the `\cv*` macros in `cv/template/main.tex`. The
+  renderer marks up meaning, never size — a test fails if the generated LaTeX
+  contains `\fontsize`.
+- Only CI typesets the PDF. Locally `npm run cv:pdf` needs a LaTeX engine and
+  poppler; without them the CV page degrades to a message and nothing breaks.
