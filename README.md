@@ -39,7 +39,7 @@ npm run dev        # or dev:open, which also opens the browser
 ```
 
 The prep is `npm run setup`, wired in through npm's `predev` / `predev:open`
-hooks. It needs a LaTeX engine to build the CV PDF (`brew install tectonic`);
+hooks. It needs a LaTeX engine to build the CV PDF (`brew install tectonic`) and poppler (`brew install poppler`);
 without one it prints how to get one and carries on, so the server always
 starts.
 

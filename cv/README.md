@@ -6,10 +6,15 @@ LaTeX.
 ```
 src/data/cv.json        the content (the only file you edit)
 cv/template/main.tex    the layout: preamble + %%PLACEHOLDER%% per section
-cv/assets/avt.png       the photo
+cv/assets/avt.jpg       the photo
 cv/build/               generated, git-ignored
-public/cv.pdf           compiled in CI, git-ignored
+public/cv.pdf           compiled in CI — the download, git-ignored
+public/cv/page-N.png    rasterised pages — what the site renders, git-ignored
 ```
+
+The photo prints at 3.2cm, so ~800px is already more than any printer resolves.
+It was a 1.26MB PNG once; as an 800px JPEG the whole PDF is 150KB rather than
+991KB.
 
 ## Editing
 
@@ -35,6 +40,12 @@ brew install tectonic
 `scripts/build-cv-pdf.mts` picks the first of `latexmk`, `pdflatex`, `tectonic`
 that exists, in that order: the first two are what CI and Overleaf use, so they
 reproduce the deployed PDF exactly.
+
+`scripts/build-cv-images.mts` then rasterises the PDF to `public/cv/` with
+`pdftoppm` (`brew install poppler`). The site stacks those images in the
+document flow so the whole CV renders at once under the normal page scroll —
+an embedded `<object>` cannot do that, because the browser's PDF plugin always
+builds its own fixed-height scroll box with its own toolbar.
 
 Without any of them the CV page just says the PDF has not been built — nothing
 else breaks. The other two ways to see it:
