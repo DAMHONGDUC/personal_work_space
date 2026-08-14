@@ -1,32 +1,33 @@
 import type { Metadata } from "next";
 import { formatDate, site } from "@/lib/apps";
-import { getCv } from "@/lib/cv";
+import { cv, getCvPdf } from "@/lib/cv";
 import { routes, withBasePath } from "@/lib/routes";
 
 export const metadata: Metadata = {
   title: "CV",
-  description: `Curriculum vitae for ${site.publisher}.`,
+  description: `Curriculum vitae for ${cv.header.name}.`,
   alternates: { canonical: `${routes.cv}/` },
 };
 
 export default function CvPage() {
-  const cv = getCv();
+  const pdf = getCvPdf();
   // Plain <a>/<object> markup does not get the base path the way next/link does.
-  const file = cv ? withBasePath(cv.url) : null;
+  const file = pdf ? withBasePath(pdf.url) : null;
 
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-20">
       <div className="flex max-w-2xl flex-col gap-5 pb-12">
         <span className="w-fit rounded-full border border-border-soft px-3 py-1 text-xs text-muted">
-          {cv ? `Updated ${formatDate(cv.updated)}` : "Not uploaded yet"}
+          Updated {formatDate(cv.lastUpdated)}
         </span>
         <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">CV</h1>
         <p className="text-lg leading-8 text-muted">
-          The current curriculum vitae for {site.publisher}.
+          The current curriculum vitae for {site.publisher}, typeset with LaTeX from{" "}
+          <code className="font-mono text-base text-foreground">src/data/cv.json</code>.
         </p>
       </div>
 
-      {cv && file ? (
+      {pdf && file ? (
         <div className="flex flex-col gap-6">
           <div className="flex flex-wrap items-center gap-2">
             <a
@@ -42,7 +43,7 @@ export default function CvPage() {
               download
               className="rounded-lg border border-border-soft bg-surface px-3.5 py-2 text-sm transition-colors hover:border-foreground/25"
             >
-              Download ({cv.sizeKb} KB)
+              Download ({pdf.sizeKb} KB)
             </a>
           </div>
 
@@ -51,7 +52,7 @@ export default function CvPage() {
           <object
             data={file}
             type="application/pdf"
-            aria-label={`${site.publisher} CV`}
+            aria-label={`${cv.header.name} CV`}
             className="hidden h-[80vh] w-full rounded-2xl border border-border-soft bg-muted-surface md:block"
           >
             <p className="p-6 text-sm text-muted">
@@ -62,9 +63,10 @@ export default function CvPage() {
       ) : (
         <div className="rounded-2xl border border-dashed border-border-soft px-6 py-16 text-center">
           <p className="text-sm text-muted">
-            No CV has been uploaded yet. Add the file at{" "}
-            <code className="font-mono text-foreground">public/cv.pdf</code> and it
-            appears here on the next build.
+            The PDF has not been built yet. CI compiles it on every push; to build
+            it here, run{" "}
+            <code className="font-mono text-foreground">npm run cv:pdf</code> (needs
+            a local LaTeX installation).
           </p>
         </div>
       )}

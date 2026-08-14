@@ -1,35 +1,40 @@
 import fs from "node:fs";
 import path from "node:path";
+import data from "@/data/cv.json";
+import type { Cv } from "@/lib/cv-types";
 
-/** Drop the CV here — `public/cv.pdf` is served at `/cv.pdf`. */
-const CV_FILE = "cv.pdf";
+export type { Cv } from "@/lib/cv-types";
 
-export type Cv = {
+/** The CV content. Edit src/data/cv.json — never the generated LaTeX. */
+export const cv = data as Cv;
+
+/**
+ * Where the compiled CV lands. `npm run cv:pdf` (or CI) writes it; it is a
+ * build artifact, so it is not in git.
+ */
+const PDF_FILE = "cv.pdf";
+
+export type CvPdf = {
   /** Site-relative URL, without the base path. */
   url: string;
-  /** File mtime as YYYY-MM-DD, used as the "last updated" date. */
-  updated: string;
   sizeKb: number;
 };
 
 /**
- * The uploaded CV, or null while there is none.
+ * The compiled PDF, or null when it has not been built yet.
  *
  * Read at build time — every route is prerendered and the export has no server,
- * so a file added later is picked up by the next build (or a dev refresh).
+ * so a PDF produced later is picked up by the next build.
  */
-export function getCv(): Cv | null {
-  const file = path.join(process.cwd(), "public", CV_FILE);
+export function getCvPdf(): CvPdf | null {
+  const file = path.join(process.cwd(), "public", PDF_FILE);
 
   if (!fs.existsSync(file)) {
     return null;
   }
 
-  const stat = fs.statSync(file);
-
   return {
-    url: `/${CV_FILE}`,
-    updated: stat.mtime.toISOString().slice(0, 10),
-    sizeKb: Math.max(1, Math.round(stat.size / 1024)),
+    url: `/${PDF_FILE}`,
+    sizeKb: Math.max(1, Math.round(fs.statSync(file).size / 1024)),
   };
 }

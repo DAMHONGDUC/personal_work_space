@@ -1,11 +1,10 @@
 import { HubCard } from "@/components/home/HubCard";
 import { formatDate, getApps, site } from "@/lib/apps";
-import { getCv } from "@/lib/cv";
+import { cv } from "@/lib/cv";
 import { routes } from "@/lib/routes";
 
 export default function Home() {
   const apps = getApps();
-  const cv = getCv();
 
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-20">
@@ -36,7 +35,7 @@ export default function Home() {
           accent="#0ea5e9"
           title="CV"
           description="Background, experience and contact details, available to read online or download."
-          meta={cv ? `Updated ${formatDate(cv.updated)}` : "Coming soon"}
+          meta={`Updated ${formatDate(cv.lastUpdated)}`}
         />
       </div>
     </main>

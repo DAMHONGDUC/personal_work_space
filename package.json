@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "cv:tex": "node scripts/build-cv-tex.mts",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run"
   },
