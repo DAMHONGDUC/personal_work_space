@@ -33,6 +33,20 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
 
+      - name: Generate the CV LaTeX
+        run: npm run cv:tex
+
+      - name: Compile the CV
+        uses: xu-cheng/latex-action@v3
+        with:
+          working_directory: cv/build
+          root_file: main.tex
+
+      - name: Publish the CV
+        # public/ is copied into the export, so the PDF has to land before the
+        # site build runs.
+        run: cp cv/build/main.pdf public/cv.pdf
+
       - name: Build static export
         # A project site is served from /<repo>, so the app needs that prefix.
         # A custom domain serves from the root, so leave it empty there.

@@ -34,5 +34,22 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Generate the CV LaTeX
+        run: npm run cv:tex
+
+      - name: Compile the CV
+        # The only place the CV is actually typeset — nothing local has TeX, so
+        # a broken cv.json has to fail here rather than at deploy time.
+        uses: xu-cheng/latex-action@v3
+        with:
+          working_directory: cv/build
+          root_file: main.tex
+
+      - name: Upload the CV for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: cv-pdf
+          path: cv/build/main.pdf
+
       - name: Build
         run: npm run build
