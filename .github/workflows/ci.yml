@@ -1,8 +1,9 @@
 name: CI
 
+# Pull requests only. A push to main is covered by the deploy workflow, which
+# runs the same checks before it publishes — running them here too would just
+# compile the CV a second time, in parallel, without gating anything.
 on:
-  push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -38,8 +39,9 @@ jobs:
         run: npm run cv:tex
 
       - name: Compile the CV
-        # The only place the CV is actually typeset — nothing local has TeX, so
-        # a broken cv.json has to fail here rather than at deploy time.
+        # The only place the CV is typeset with pdfLaTeX, the same engine
+        # Overleaf uses. Broken CV data has to fail here, before the merge,
+        # rather than at deploy time.
         uses: xu-cheng/latex-action@v3
         with:
           working_directory: cv/build
@@ -54,10 +56,15 @@ jobs:
           node scripts/build-cv-images.mts
 
       - name: Upload the CV for review
+        # always(), so a failure in a later step still hands over a PDF that
+        # compiled — that is usually the artefact you want to look at to work
+        # out what went wrong. Nothing to upload if the compile itself failed.
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cv-pdf
           path: cv/build/main.pdf
+          if-no-files-found: ignore
 
       - name: Build
         run: npm run build
