@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { getApps, site } from "@/lib/apps";
+import { RESERVED_SLUGS } from "@/lib/routes";
 
 const appsDir = path.join(process.cwd(), "src/data/apps");
 
@@ -72,6 +73,12 @@ describe.each(apps.map((app) => [app.slug, app] as const))("%s", (slug, app) => 
 
   it("has a url-safe slug", () => {
     expect(slug).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+  });
+
+  it("does not use a slug reserved by a top-level section", () => {
+    // The legacy /<slug>/ redirect lives at the site root, where a static
+    // segment of the same name wins — the app would become unreachable there.
+    expect([...RESERVED_SLUGS] as string[]).not.toContain(slug);
   });
 
   it("has non-empty text fields", () => {

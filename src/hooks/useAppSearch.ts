@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { DirectoryEntry } from "@/components/home/AppCard";
+import type { DirectoryEntry } from "@/components/directory/AppCard";
 
 /** Filters the app list by name, slug or tagline. */
 export function useAppSearch(entries: DirectoryEntry[]) {

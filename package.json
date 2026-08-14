@@ -1,13 +1,23 @@
 {
-  "name": "apps_privacy_policy",
+  "name": "personal_work_space",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "comment": "The build scripts are .mts run by node directly, which needs the type stripping that became unflagged in 22.18.",
+    "node": ">=22.18"
+  },
   "scripts": {
+    "clean": "rm -rf .next out cv/build public/cv.pdf public/cv",
+    "setup": "npm run clean && npm install && npm run cv:tex && node scripts/build-cv-pdf.mts --optional && node scripts/build-cv-images.mts --optional",
+    "predev": "npm run setup",
     "dev": "next dev",
+    "predev:open": "npm run setup",
     "dev:open": "(until curl -sf -o /dev/null http://localhost:3000; do sleep 0.5; done; open http://localhost:3000) & next dev",
     "build": "next build",
-    "start": "next start",
+    "preview": "npm run build && npx --yes serve@latest out",
     "lint": "eslint",
+    "cv:tex": "node scripts/build-cv-tex.mts",
+    "cv:pdf": "npm run cv:tex && node scripts/build-cv-pdf.mts && node scripts/build-cv-images.mts",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run"
   },

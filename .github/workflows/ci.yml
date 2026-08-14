@@ -34,5 +34,30 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Generate the CV LaTeX
+        run: npm run cv:tex
+
+      - name: Compile the CV
+        # The only place the CV is actually typeset — nothing local has TeX, so
+        # a broken cv.json has to fail here rather than at deploy time.
+        uses: xu-cheng/latex-action@v3
+        with:
+          working_directory: cv/build
+          root_file: main.tex
+
+      - name: Publish the CV
+        # Mirrors the deploy exactly, so the build below sees the same public/
+        # it will see on main and a failure is caught before merge.
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
+          cp cv/build/main.pdf public/cv.pdf
+          node scripts/build-cv-images.mts
+
+      - name: Upload the CV for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: cv-pdf
+          path: cv/build/main.pdf
+
       - name: Build
         run: npm run build

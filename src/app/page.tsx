@@ -1,25 +1,43 @@
-import { AppDirectory } from "@/components/AppDirectory";
-import type { DirectoryEntry } from "@/components/home/AppCard";
-import { HomeHero } from "@/components/home/HomeHero";
+import { HubCard } from "@/components/home/HubCard";
 import { formatDate, getApps, site } from "@/lib/apps";
+import { cv } from "@/lib/cv";
+import { routes } from "@/lib/routes";
 
 export default function Home() {
   const apps = getApps();
 
-  const entries: DirectoryEntry[] = apps.map((app) => ({
-    slug: app.slug,
-    name: app.name,
-    tagline: app.tagline,
-    icon: app.icon,
-    accent: app.accent,
-    platforms: app.platforms,
-    updated: formatDate(app.lastUpdated),
-  }));
-
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-20">
-      <HomeHero publisher={site.publisher} appCount={apps.length} />
-      <AppDirectory entries={entries} />
+      <div className="flex max-w-2xl flex-col gap-5 pb-14">
+        <span className="w-fit rounded-full border border-border-soft px-3 py-1 text-xs text-muted">
+          {site.publisher}
+        </span>
+        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
+          Apps and CV
+        </h1>
+        <p className="text-lg leading-8 text-muted">
+          {site.description}
+        </p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <HubCard
+          href={routes.apps}
+          icon="🛡️"
+          accent="#6366f1"
+          title="App privacy policies"
+          description="One permanent page per published app, describing exactly what it collects and why."
+          meta={`${apps.length} ${apps.length === 1 ? "app" : "apps"}`}
+        />
+        <HubCard
+          href={routes.cv}
+          icon="📄"
+          accent="#0ea5e9"
+          title="CV"
+          description="Background, experience and contact details, available to read online or download."
+          meta={`Updated ${formatDate(cv.lastUpdated)}`}
+        />
+      </div>
     </main>
   );
 }

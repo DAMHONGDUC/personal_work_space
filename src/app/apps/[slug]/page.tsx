@@ -6,15 +6,16 @@ import { routes } from "@/lib/routes";
 
 export const dynamicParams = false;
 
-// Kept so links published before the policies moved under /apps still land
-// somewhere useful. Not indexed — the new address is canonical.
+// `/apps/<app>` is a convenience entry point: the policy is the only page an
+// app has, so trimming the URL lands there rather than on a 404. Not indexed,
+// so only the policy itself is listed.
 export const metadata: Metadata = { robots: { index: false } };
 
 export function generateStaticParams() {
   return getApps().map((app) => ({ slug: app.slug }));
 }
 
-export default async function AppIndexPage({ params }: PageProps<"/[slug]">) {
+export default async function AppIndexPage({ params }: PageProps<"/apps/[slug]">) {
   const { slug } = await params;
   const app = getApp(slug);
 

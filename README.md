@@ -1,31 +1,73 @@
-# App Privacy Policies
+# Personal work space
 
-Static site hosting one privacy policy per app at `/<slug>/privacy_policy/`.
-All content lives in JSON — adding an app never touches UI code.
+Static site with two top-level sections:
+
+| Path                             | What it is                       |
+| -------------------------------- | -------------------------------- |
+| `/apps/`                         | Directory of every published app |
+| `/apps/<slug>/privacy_policy/`   | One app's privacy policy         |
+| `/personal/cv/`                  | CV, served from `public/cv.pdf`  |
+
+All content lives in JSON — neither adding an app nor updating the CV touches UI
+code.
 
 ```
 src/data/
 ├── site.json              publisher, url, email + shared legal sections
+├── cv/
+│   └── cv_2.json          the CV content
 └── apps/
     └── sample-app.json    one file per app
+cv/
+├── template/main.tex      CV layout (see cv/README.md)
+└── assets/avt.png         CV photo
 ```
+
+Every URL is defined in `src/lib/routes.ts`; use `routes.*` rather than writing
+paths by hand.
+
+The old addresses `/<slug>/` and `/<slug>/privacy_policy/` still resolve — they
+render a `noindex` meta-refresh to the new path, so links already submitted to
+the app stores keep working.
 
 ## Commands
 
+One command does everything — clean, install dependencies, rebuild the CV PDF,
+start the dev server. It works from a fresh clone:
+
 ```bash
-npm run dev
+npm run dev        # or dev:open, which also opens the browser
+```
+
+The prep is `npm run setup`, wired in through npm's `predev` / `predev:open`
+hooks. It needs a LaTeX engine to build the CV PDF (`brew install tectonic`) and poppler (`brew install poppler`);
+without one it prints how to get one and carries on, so the server always
+starts.
+
+```bash
+npm run preview   # production build, served at http://localhost:3000
 ```
 
 ```bash
-npm run lint && npm run typecheck && npm run build
+npm run lint && npm run typecheck && npm test && npm run build
 ```
+
+There is no `npm start`: the site is a static export, which `next start` refuses
+to serve. Use `npm run preview`.
+
+## Updating the CV
+
+Edit `src/data/cv/cv_2.json` — `npm run dev` picks it up. The deployed PDF is compiled
+from LaTeX in CI; `npm run cv:pdf` builds it locally if you have LaTeX. See
+[cv/README.md](cv/README.md) for how to preview it without installing anything.
 
 ## Adding an app
 
 Create one JSON file in `src/data/apps/`. That's it — the loader reads the
 directory, so there is no index to register the app in.
 
-**The filename is the URL:** `focus-timer.json` → `/focus-timer/privacy_policy/`
+**The filename is the URL:** `focus-timer.json` →
+`/apps/focus-timer/privacy_policy/`
 
 ```bash
 cp src/data/apps/sample-app.json src/data/apps/focus-timer.json

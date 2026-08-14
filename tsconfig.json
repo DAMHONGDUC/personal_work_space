@@ -10,6 +10,9 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
+    // scripts/build-cv-tex.mts runs under bare Node, which strips types but
+    // does no extension resolution, so its imports must name the .mts file.
+    "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,

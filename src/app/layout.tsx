@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: `Privacy Policies — ${site.publisher}`,
+    default: site.publisher,
     template: `%s — ${site.publisher}`,
   },
   description: site.description,
@@ -29,6 +29,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      // globals.css sets scroll-behavior: smooth for the in-page policy anchors.
+      // This tells Next that is deliberate, so it does not also animate route
+      // changes — and stops it warning about the one it cannot tell apart.
+      data-scroll-behavior="smooth"
+      // Extensions routinely rewrite <html> (theme switchers, font tweakers)
+      // before React hydrates, which reports as an attribute mismatch nothing
+      // in this codebase can fix: it never occurs in a clean browser profile.
+      // This suppresses the warning for this element's own attributes only —
+      // one level deep — so a genuine mismatch inside the app still surfaces.
+      suppressHydrationWarning
     >
       {/* min-h-screen (not h-full on <html>) keeps the sticky footer without
           pinning <html> to the viewport height, which would break the document

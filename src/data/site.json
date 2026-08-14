@@ -1,9 +1,9 @@
 {
   "site": {
     "publisher": "Dam Hong Duc",
-    "url": "https://damhongduc.github.io/apps_privacy_policy",
+    "url": "https://damhongduc.github.io/personal_work_space",
     "contactEmail": "ducdam.dev@gmail.com",
-    "description": "Privacy policies for all apps published by Dam Hong Duc."
+    "description": "Privacy policies for every app published by Dam Hong Duc, plus a CV."
   },
   "defaults": {
     "sections": [
