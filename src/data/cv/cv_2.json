@@ -4,8 +4,15 @@
     "name": "DAM HONG DUC",
     "photo": "avt.jpg",
     "contacts": [
-      { "kind": "email", "value": "hongduc.dam2001@gmail.com" },
-      { "kind": "phone", "value": "+84 355 211 735", "href": "tel:+84355211735" },
+      {
+        "kind": "email",
+        "value": "hongduc.dam2001@gmail.com"
+      },
+      {
+        "kind": "phone",
+        "value": "+84 355 211 735",
+        "href": "tel:+84355211735"
+      },
       {
         "kind": "link",
         "value": "linkedin.com/in/dam-hong-duc",
@@ -19,9 +26,8 @@
     ]
   },
   "aboutMe": [
-    "Mobile engineer, 4+ years across native iOS and Android, Flutter and React Native — from a 20-developer product team to sole ownership of apps built from scratch.",
-    "Performance and architecture ownership: cut an app from 200MB to 90MB, lifted key screens from 30–40 to a steady 60 FPS, migrated state management from Stream to BLoC.",
-    "Based in Ho Chi Minh City, with three years of remote delivery for a client in Japan."
+    "Mobile engineer, 4+ years across native iOS and Android, Flutter and React Native, on team products and on apps built from scratch.",
+    "Based in Ho Chi Minh City."
   ],
   "education": [
     {
@@ -42,7 +48,7 @@
     },
     {
       "name": "Flutter",
-      "items": "Clean Architecture, BLoC, Provider, Riverpod, Stream, Hive, Dio, get_it, Mockito, unit testing, SSL pinning, Unity integration"
+      "items": "Clean Architecture, BLoC, Provider, Riverpod, Stream, Hive, Dio, get_it, Mockito, unit testing, SSL pinning, Flame, Unity integration"
     },
     {
       "name": "React Native",
@@ -82,12 +88,12 @@
           ]
         },
         {
-          "title": "Performance Team",
-          "meta": "Profiling, state management, network security",
+          "title": "Joined the Performance Team",
+          "meta": "Profiling, state management, network security (SSL pinning)",
           "bullets": [
             "Reduced app size from 200MB to 90MB.",
             "Raised key screens from 30–40 FPS to a steady 60 by eliminating unnecessary re-renders.",
-            "Implemented SSL pinning, optimised data-layer caching, and migrated state management from Stream to BLoC."
+            "Optimised data-layer caching and migrated state management from Stream to BLoC."
           ]
         }
       ]
@@ -95,21 +101,21 @@
     {
       "company": "P&A Inc.",
       "role": "Mobile Developer",
-      "arrangement": "Freelance, remote (19:00–23:00 ICT)",
+      "arrangement": "Freelance, remote",
       "location": "Japan",
-      "period": "Aug 2023 – now (3 yrs)",
+      "period": "Aug 2023 – Jul 2026 (3 yrs)",
       "groups": [
         {
           "title": "Cocototo – virtual pet game",
-          "meta": "Flutter · Sole developer, from scratch",
+          "meta": "Flutter, Flame, Firebase · Team size: 2 mobile devs",
           "bullets": [
-            "A virtual pet game where players raise and care for a companion, taken from an empty repository to a released product.",
-            "Owned every layer: architecture, gameplay state, UI and release, reporting straight to the client across a time-zone gap."
+            "A virtual pet game where players raise and care for a companion, built in Flutter with the Flame game engine and Firebase, taken from an empty repository to a released product.",
+            "Worked across every layer: architecture, the Flame game loop and gameplay state, the Firebase backend, UI and release, reporting straight to the client across a time-zone gap."
           ]
         },
         {
           "title": "Pet Management App",
-          "meta": "SwiftUI, Jetpack Compose · Sole developer, both platforms",
+          "meta": "SwiftUI, Jetpack Compose · Team size: 3 mobile devs",
           "bullets": [
             "Built both native clients: iOS in SwiftUI, Android in Jetpack Compose — the same product built natively on each platform rather than through one cross-platform codebase.",
             "Kept the domain model and screen flows consistent across two native stacks."
