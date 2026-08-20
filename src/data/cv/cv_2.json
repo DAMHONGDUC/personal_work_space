@@ -113,7 +113,7 @@
           "title": "Pet Management App",
           "meta": "Jetpack Compose · Team size: 3 mobile devs",
           "bullets": [
-            "Built the native Android client in Jetpack Compose — the product built natively on the platform rather than through a cross-platform codebase."
+            "Built the native Android client in Jetpack Compose."
           ]
         }
       ]
