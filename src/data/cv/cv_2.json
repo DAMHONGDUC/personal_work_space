@@ -26,7 +26,7 @@
     ]
   },
   "aboutMe": [
-    "Mobile engineer, 4+ years across native Android, Flutter and React Native, on team products and on apps built from scratch.",
+    "Mobile engineer with 4+ years in native Android, Flutter and React Native, on team products and on apps built from scratch.",
     "Based in Ho Chi Minh City."
   ],
   "education": [
@@ -52,7 +52,7 @@
     },
     {
       "name": "Backend & Integration",
-      "items": "REST API, Firebase, VNPAY, RevenueCat, push notifications, SSL pinning, SSL pinning, offline-first storage, camera, permissions, hardware barcode scanners"
+      "items": "REST API, Firebase, VNPAY, RevenueCat, push notifications, SSL pinning, offline-first storage, camera, permissions, hardware barcode scanners"
     },
     {
       "name": "Web",
@@ -79,8 +79,8 @@
           "title": "Real Estate Product – Flutter",
           "meta": "Flutter, Clean Architecture, Scrum, Kanban · Team size: 20 mobile devs",
           "bullets": [
-            "Deliver features on a real estate product for a Saudi Arabian government client, inside a 20-developer mobile team.",
-            "Integrated third-party SDKs and embedded Unity into Flutter for an in-app metaverse where users explore buildings and events."
+            "Deliver features on a real estate product for a Saudi Arabian government client, within a 20-developer mobile team.",
+            "Integrated third-party SDKs and embedded Unity into Flutter for an in-app metaverse of buildings and events."
           ]
         },
         {
@@ -88,7 +88,7 @@
           "meta": "Profiling, state management, network security (SSL pinning)",
           "bullets": [
             "Reduced app size from 200MB to 90MB.",
-            "Raised key screens from 30–40 FPS to a steady 60 by eliminating unnecessary re-renders.",
+            "Raised key screens from 30–40 FPS to a steady 60 by removing unnecessary re-renders.",
             "Optimised data-layer caching and migrated state management from Stream to BLoC."
           ]
         }
@@ -105,8 +105,8 @@
           "title": "Cocototo – virtual pet game",
           "meta": "Flutter, Flame, Firebase · Team size: 2 mobile devs",
           "bullets": [
-            "A virtual pet game where players raise and care for a companion, built in Flutter with the Flame game engine and Firebase, taken from an empty repository to a released product.",
-            "Worked across every layer: architecture, the Flame game loop and gameplay state, the Firebase backend, UI and release, reporting straight to the client across a time-zone gap."
+            "A virtual pet game where players raise and care for a companion, taken from an empty repository to release.",
+            "Worked across every layer: architecture, the Flame game loop, gameplay state, the Firebase backend, UI and release, reporting directly to the client in another time zone."
           ]
         },
         {
@@ -131,7 +131,7 @@
           "bullets": [
             "Built a warehouse management app for Unitech HT300/HT330 barcode devices, end to end.",
             "Integrated the hardware scanner for real-time barcode capture; handled goods receipt, dispatch and inventory updates over REST API.",
-            "Built an offline-first data layer that periodically fetched and persisted to an on-device database, so the floor kept working without a network.",
+            "Built an offline-first data layer with periodic sync to an on-device database, so the floor kept working without a network.",
             "Drove cross-team agreement on barcode formats; implemented auto-launch on reboot and published the app privately on Google Play."
           ]
         },
@@ -139,7 +139,7 @@
           "title": "Cross-Platform Apps – Flutter & React Native",
           "meta": "Flutter, React Native · Team size: 4–6 mobile devs",
           "bullets": [
-            "Built apps from scratch and maintained existing ones across booking, e-learning, file management and apartment equipment domains.",
+            "Built new apps and maintained existing ones across booking, e-learning, file management and apartment equipment.",
             "Led a sub-project with 3 members: planned sprints, estimated tasks and reviewed delivery.",
             "Integrated VNPAY, FCM and Firebase Crashlytics."
           ]
@@ -147,7 +147,7 @@
       ],
       "note": {
         "label": "Also:",
-        "text": "Maintained admin dashboards and academy websites in React.js and Next.js, including 3D UI components with Three.js. Agile throughout – system design, API contracts with backend, and QA triage."
+        "text": "Maintained admin dashboards and academy websites in React.js and Next.js, with 3D UI components in Three.js. Agile throughout – system design, API contracts with backend, and QA triage."
       }
     },
     {
@@ -161,7 +161,7 @@
           "title": "Trading & Finance App – React Native",
           "meta": "React Native · Team size: 3 mobile devs",
           "bullets": [
-            "Maintained and improved the app UI, and implemented chart features for trading and financial data visualisation."
+            "Maintained and improved the app UI; implemented charts for trading and financial data."
           ]
         }
       ]
