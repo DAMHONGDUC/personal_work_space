@@ -26,7 +26,7 @@
     ]
   },
   "aboutMe": [
-    "Mobile engineer, 4+ years across native iOS and Android, Flutter and React Native, on team products and on apps built from scratch.",
+    "Mobile engineer, 4+ years across native Android, Flutter and React Native, on team products and on apps built from scratch.",
     "Based in Ho Chi Minh City."
   ],
   "education": [
@@ -39,16 +39,12 @@
   ],
   "skills": [
     {
-      "name": "Native iOS",
-      "items": "Swift, SwiftUI, MVVM"
-    },
-    {
       "name": "Native Android",
       "items": "Kotlin, Jetpack Compose, MVVM, Clean Architecture, Hilt, Dagger, Room, Retrofit"
     },
     {
       "name": "Flutter",
-      "items": "Clean Architecture, BLoC, Provider, Riverpod, Stream, Hive, Dio, get_it, Mockito, unit testing, SSL pinning, Flame, Unity integration"
+      "items": "Clean Architecture, BLoC, Provider, Riverpod, Stream, Hive, Dio, get_it, Mockito, unit testing, Flame, Unity integration"
     },
     {
       "name": "React Native",
@@ -56,7 +52,7 @@
     },
     {
       "name": "Backend & Integration",
-      "items": "REST API, Firebase (FCM, Crashlytics), VNPAY, RevenueCat, push notifications, offline-first storage, camera, permissions, hardware barcode scanners"
+      "items": "REST API, Firebase (FCM, Crashlytics), VNPAY, RevenueCat, push notifications, SSL pinning, offline-first storage, camera, permissions, hardware barcode scanners"
     },
     {
       "name": "Web",
@@ -115,10 +111,9 @@
         },
         {
           "title": "Pet Management App",
-          "meta": "SwiftUI, Jetpack Compose · Team size: 3 mobile devs",
+          "meta": "Jetpack Compose · Team size: 3 mobile devs",
           "bullets": [
-            "Built both native clients: iOS in SwiftUI, Android in Jetpack Compose — the same product built natively on each platform rather than through one cross-platform codebase.",
-            "Kept the domain model and screen flows consistent across two native stacks."
+            "Built the native Android client in Jetpack Compose — the product built natively on the platform rather than through a cross-platform codebase."
           ]
         }
       ]
