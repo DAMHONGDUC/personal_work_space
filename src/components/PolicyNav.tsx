@@ -30,14 +30,14 @@ export function PolicyNav({
             <a
               href={`#${item.id}`}
               aria-current={isActive ? "location" : undefined}
-              className={`-ml-px flex border-l py-1 pl-4 text-sm leading-6 transition-colors ${
+              className={`-ml-px flex gap-1 border-l py-1 pl-4 text-sm leading-6 transition-colors ${
                 isActive
                   ? "font-medium text-foreground"
                   : "border-transparent text-muted hover:border-foreground/25 hover:text-foreground"
               }`}
               style={isActive ? { borderColor: accent } : undefined}
             >
-              <span aria-hidden className="w-4 shrink-0 tabular-nums opacity-60">
+              <span aria-hidden className="w-5 shrink-0 tabular-nums opacity-60">
                 {index + 1}
               </span>
               {item.title}
