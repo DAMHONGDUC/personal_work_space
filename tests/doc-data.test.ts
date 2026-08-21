@@ -143,6 +143,20 @@ describe.each(docs.map((doc) => [doc.slug, doc] as const))("%s", (slug, doc) => 
     expect(blocks.filter((block) => block.type === "flow").length).toBeGreaterThan(0);
   });
 
+  it("is written in points, not paragraphs", () => {
+    // A guide is read standing at a machine, so the content belongs in lists,
+    // steps and tables. One block of prose per section is the ceiling; a second
+    // one means the point wants breaking up.
+    const wordy = doc.sections
+      .filter(
+        (section) =>
+          section.blocks.filter((block) => block.type === "text").length > 1,
+      )
+      .map((section) => section.id);
+
+    expect(wordy).toEqual([]);
+  });
+
   it("has non-empty plain fields and a hex accent", () => {
     expect(doc.icon.trim()).not.toBe("");
     expect(doc.accent).toMatch(HEX_COLOR);

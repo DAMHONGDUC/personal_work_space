@@ -512,11 +512,19 @@
           }
         },
         {
-          "type": "text",
-          "body": [
+          "type": "list",
+          "items": [
             {
-              "en": "In the target's Signing & Capabilities tab, tick Automatically manage signing and pick your team. Xcode then creates the certificate, the App ID and the profile for you. Use this unless something forces you not to.",
-              "vi": "Trong tab Signing & Capabilities của target, tick Automatically manage signing rồi chọn team. Xcode sẽ tự tạo certificate, App ID và profile. Cứ dùng cách này trừ khi bị buộc phải làm khác."
+              "en": "Target → Signing & Capabilities → tick Automatically manage signing.",
+              "vi": "Target → Signing & Capabilities → tick Automatically manage signing."
+            },
+            {
+              "en": "Pick your team; Xcode creates the certificate, the App ID and the profile.",
+              "vi": "Chọn team; Xcode tự tạo certificate, App ID và profile."
+            },
+            {
+              "en": "Use this unless something forces you not to.",
+              "vi": "Cứ dùng cách này trừ khi bị buộc phải làm khác."
             }
           ]
         },
@@ -559,11 +567,19 @@
           ]
         },
         {
-          "type": "text",
-          "body": [
+          "type": "list",
+          "items": [
             {
-              "en": "On a team, fastlane match does all of that once and keeps the results encrypted in a git repo, so the next machine only needs read access and the passphrase.",
-              "vi": "Nếu làm team, fastlane match làm hết những việc trên một lần và giữ kết quả đã mã hoá trong một git repo, máy sau chỉ cần quyền đọc repo và passphrase."
+              "en": "fastlane match does all of the above once, for the whole team.",
+              "vi": "fastlane match làm hết những việc trên một lần, cho cả team."
+            },
+            {
+              "en": "It keeps the certificates and profiles encrypted in a git repo.",
+              "vi": "Nó giữ certificate và profile đã mã hoá trong một git repo."
+            },
+            {
+              "en": "The next machine needs only read access and the passphrase.",
+              "vi": "Máy sau chỉ cần quyền đọc repo và passphrase."
             }
           ]
         },
@@ -589,11 +605,19 @@
       },
       "blocks": [
         {
-          "type": "text",
-          "body": [
+          "type": "steps",
+          "items": [
             {
-              "en": "My Apps → New App needs the platform, the name, the primary language, an existing bundle id and an SKU of your choosing.",
-              "vi": "My Apps → New App cần platform, tên app, ngôn ngữ chính, một bundle id đã tạo sẵn và một SKU do bạn tự đặt."
+              "en": "My Apps → New App.",
+              "vi": "My Apps → New App."
+            },
+            {
+              "en": "Fill in platform, app name and primary language.",
+              "vi": "Điền platform, tên app và ngôn ngữ chính."
+            },
+            {
+              "en": "Pick a bundle id created in the portal beforehand, and an SKU of your own.",
+              "vi": "Chọn bundle id đã tạo sẵn ở portal, và một SKU do bạn tự đặt."
             }
           ]
         },
@@ -695,11 +719,15 @@
           ]
         },
         {
-          "type": "text",
-          "body": [
+          "type": "list",
+          "items": [
             {
-              "en": "Push notifications use a second key from the same page: one APNs .p8 covers development, production and every app in the team.",
-              "vi": "Push notification dùng một key khác ở cùng trang đó: một file APNs .p8 dùng chung cho development, production và mọi app trong team."
+              "en": "Push notifications need a second key from the same page: APNs.",
+              "vi": "Push notification cần key thứ hai ở cùng trang đó: APNs."
+            },
+            {
+              "en": "One APNs .p8 covers development, production and every app in the team.",
+              "vi": "Một file APNs .p8 dùng chung cho development, production và mọi app trong team."
             }
           ]
         }

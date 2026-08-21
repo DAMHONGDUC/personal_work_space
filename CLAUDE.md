@@ -27,6 +27,9 @@
     is a blank on the page, not a fallback to the other language.
   - **Short.** No string over 280 characters. If a point needs more, it wants a
     list, a table or two shorter entries — not a longer paragraph.
+  - **Points, not paragraphs.** Lists, steps, tables and notes carry the
+    content; at most one `text` block per section. Prose is the exception, and
+    a second one in the same section means the point wants breaking up.
   - **Illustrated.** At least one `flow` diagram. Diagrams are data — stages of
     labelled boxes, drawn by `FlowDiagram` — never SVG or markup in the JSON.
   - Section `id`s are language-independent slugs. Switching language re-renders
