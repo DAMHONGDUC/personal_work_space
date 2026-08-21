@@ -43,6 +43,17 @@
   `2019 – 2023` (real en dash), never `\&`, `get\_it` or `--`. A backslash in
   the data ends up printed literally. See [cv/README.md](cv/README.md).
 
+## Every section is numbered
+
+- Guides, privacy policies and the CV all print `1.`, `2.` … in front of the
+  section heading, and the table of contents repeats the same numbers. A reader
+  should always be able to say which section they are in.
+- On the site the number is a prop on `Section`, never a CSS counter, and it is
+  derived from the same list the contents is built from — on a policy page some
+  sections only render for some apps, so counting them twice would drift.
+- In the CV it comes from `\thesection` in the `\titleformat` macro in
+  `cv/template/main.tex`. That is formatting, not wording, so it belongs there.
+
 ## Routes
 
 - Every URL is defined in `src/lib/routes.ts`. Use `routes.*`; never hand-write
