@@ -55,6 +55,24 @@
   Experience keep their own count, which runs from the oldest role so the
   numbers descend the page. Do not "make it consistent" with the guides.
 
+## shadcn/ui
+
+- Components come from the shadcn registry on Radix (`components.json`, style
+  `radix-nova`) and live in `src/components/ui`. They are ours once generated —
+  edit them in place.
+- **One palette.** `src/app/globals.css` defines the site's colours, and the
+  names shadcn expects (`--primary`, `--muted-foreground`, `--card` …) are
+  aliases of those same values. Never let `shadcn init` write a second palette:
+  it overwrites the file with its own greys, and `--muted` collides — the site
+  means muted *text* by it, shadcn means a muted *surface*.
+- **Dark mode has no class and no JavaScript.** `@custom-variant dark (@media
+  (prefers-color-scheme: dark))` points the `dark:` utilities inside shadcn
+  components at the OS setting, so a statically exported page is correct in its
+  first paint. Do not replace this with a `.dark` class and a toggle.
+- Add a component only where it earns its place. Buttons, badges, inputs,
+  tables and alerts are shadcn; the heroes, cards, diagrams and the table of
+  contents are hand-written because their design is specific to this site.
+
 ## Routes
 
 - Every URL is defined in `src/lib/routes.ts`. Use `routes.*`; never hand-write
