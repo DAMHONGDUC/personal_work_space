@@ -3,11 +3,12 @@ import { routes } from "@/lib/routes";
 
 const NAV = [
   { href: routes.apps, label: "Privacy policies" },
+  { href: routes.docs, label: "Guides" },
   { href: routes.cv, label: "CV" },
 ];
 
 /**
- * Sticky top bar with the publisher name, the two top-level sections and a
+ * Sticky top bar with the publisher name, the top-level sections and a
  * contact link.
  *
  * The background is driven entirely by CSS (see `.site-header` in globals.css):

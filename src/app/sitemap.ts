@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getApps, site } from "@/lib/apps";
 import { cv } from "@/lib/cv";
+import { getDocs } from "@/lib/docs";
 import { routes } from "@/lib/routes";
 
 // Required so the sitemap is emitted as a file by `output: "export"`.
@@ -22,6 +23,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${site.url}${routes.privacyPolicy(app.slug)}/`,
       lastModified: new Date(`${app.lastUpdated}T00:00:00Z`),
       changeFrequency: "yearly" as const,
+    })),
+    {
+      url: `${site.url}${routes.docs}/`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+    },
+    ...getDocs().map((doc) => ({
+      url: `${site.url}${routes.doc(doc.slug)}/`,
+      lastModified: new Date(`${doc.lastUpdated}T00:00:00Z`),
+      changeFrequency: "monthly" as const,
     })),
     {
       url: `${site.url}${routes.cv}/`,

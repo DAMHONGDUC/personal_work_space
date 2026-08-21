@@ -1,10 +1,12 @@
 import { HubCard } from "@/components/home/HubCard";
 import { formatDate, getApps, site } from "@/lib/apps";
 import { cv } from "@/lib/cv";
+import { getDocs } from "@/lib/docs";
 import { routes } from "@/lib/routes";
 
 export default function Home() {
   const apps = getApps();
+  const docs = getDocs();
 
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-20">
@@ -20,7 +22,7 @@ export default function Home() {
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <HubCard
           href={routes.apps}
           icon="🛡️"
@@ -28,6 +30,14 @@ export default function Home() {
           title="App privacy policies"
           description="One permanent page per published app, describing exactly what it collects and why."
           meta={`${apps.length} ${apps.length === 1 ? "app" : "apps"}`}
+        />
+        <HubCard
+          href={routes.docs}
+          icon="🛠️"
+          accent="#a855f7"
+          title="Guides"
+          description="Setup notes written down once, with every section linked so you can start where you are stuck."
+          meta={`${docs.length} ${docs.length === 1 ? "guide" : "guides"}`}
         />
         <HubCard
           href={routes.cv}
