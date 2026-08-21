@@ -159,9 +159,10 @@ ${inner}`;
 }
 
 /**
- * `position` counts from the earliest job, so the oldest is 1. Entries are
- * still listed newest first, which means the numbers run downwards — they read
- * as "this was my Nth role" rather than as a ranking of the list.
+ * `position` is the job's place under the Experience heading, counting down the
+ * page from the newest. It prints as a sub-number of the section — `\thesection`
+ * rather than a literal 4 — so reordering or adding a section renumbers the jobs
+ * with it.
  */
 function renderExperience(entry: Experience, position: number): string {
   const heading = [entry.role, entry.arrangement, entry.location]
@@ -179,7 +180,7 @@ function renderExperience(entry: Experience, position: number): string {
   }
 
   return `\\begin{twocolentry}{\\cvDate{${tex(entry.period)}}}
-    \\cvCompany{${position}. ${tex(entry.company)}} -- ${heading}
+    \\cvCompany{\\thesection.${position}\\hspace{0.35em}${tex(entry.company)}} -- ${heading}
 \\end{twocolentry}
 \\vspace{3mm}
 \\begin{onecolentry}
@@ -190,12 +191,12 @@ ${blocks.join("\n\n        \\vspace{2mm}\n\n")}
 }
 
 /**
- * Jobs are listed newest first but numbered from the oldest, so the count runs
- * down the page. Separated by a full-width rule.
+ * Jobs are listed newest first and numbered in that order, so the newest is
+ * `4.1`. Separated by a full-width rule.
  */
 function renderExperiences(entries: Experience[]): string {
   return entries
-    .map((entry, index) => renderExperience(entry, entries.length - index))
+    .map((entry, index) => renderExperience(entry, index + 1))
     .join("\n\n\\noindent\\rule{\\linewidth}{0.5pt}\\par\n\\vspace{3mm}\n\n");
 }
 

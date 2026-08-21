@@ -71,13 +71,15 @@
 \raggedright
 \AtBeginEnvironment{adjustwidth}{\partopsep0pt}
 \pagestyle{empty}
-\setcounter{secnumdepth}{0}
+% Sections are numbered: the CV, like the guides, tells the reader where in
+% the document they are. 1 lets \thesection expand; the label below prints it.
+\setcounter{secnumdepth}{1}
 \setlength{\parindent}{0pt}
 \setlength{\topskip}{0pt}
 \setlength{\columnsep}{0.15cm}
 \pagenumbering{gobble}
 
-\titleformat{\section}{\needspace{4\baselineskip}\cvSectionFont}{}{0pt}{}[\vspace{1pt}\titlerule]
+\titleformat{\section}{\needspace{4\baselineskip}\cvSectionFont}{\thesection.}{0.35em}{}[\vspace{1pt}\titlerule]
 
 \titlespacing{\section}{
     -1pt

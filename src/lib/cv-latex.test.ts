@@ -160,18 +160,18 @@ describe("renderCvLatex", () => {
     expect(out.match(/\\noindent\\rule/g)).toHaveLength(1);
   });
 
-  it("numbers the jobs from the oldest, listing the newest first", () => {
-    // Entries are given newest first, so the newest carries the highest number
-    // and the count runs down the page to 1.
+  it("numbers the jobs as sub-sections of the Experience heading", () => {
+    // \thesection rather than a literal 4, so the jobs follow the section if
+    // one is ever added above Experience.
     const job = makeCv().experience[0];
     const out = renderCvLatex(
       makeCv({ experience: [job, { ...job, company: "Older" }] }),
       TEMPLATE,
     );
 
-    expect(out).toContain("\\cvCompany{2. Acme}");
-    expect(out).toContain("\\cvCompany{1. Older}");
-    expect(out.indexOf("2. Acme")).toBeLessThan(out.indexOf("1. Older"));
+    expect(out).toContain("\\cvCompany{\\thesection.1\\hspace{0.35em}Acme}");
+    expect(out).toContain("\\cvCompany{\\thesection.2\\hspace{0.35em}Older}");
+    expect(out).not.toContain("\\cvCompany{1. ");
   });
 
   it("marks up dates, roles and companies by meaning, not by size", () => {
