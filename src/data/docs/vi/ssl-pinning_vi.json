@@ -199,6 +199,78 @@
       ]
     },
     {
+      "id": "how-the-check-works",
+      "title": "App so key thế nào",
+      "summary": "Pin từ đâu ra, và cái được đem so thực chất là gì.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Hai nguồn, rút gọn cùng một cách, rồi so như hai chuỗi.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Lúc build",
+                  "detail": "Bạn đọc key từ server của chính mình"
+                },
+                {
+                  "label": "Lúc chạy",
+                  "detail": "Certificate mà đầu bên kia vừa gửi"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "SPKI → SHA-256 → base64",
+                  "detail": "Cùng một phép rút gọn cho cả hai bên"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Bằng nhau",
+                  "detail": "Đầu kia đang giữ key bạn đã ghim"
+                },
+                {
+                  "label": "Khác nhau",
+                  "detail": "Cắt kết nối"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Lấy certificate server vừa gửi, ở dạng DER.",
+            "Cắt ra phần SubjectPublicKeyInfo: public key kèm mã thuật toán, không phải cả certificate.",
+            "Băm SHA-256 đúng chỗ byte đó.",
+            "Base64 kết quả — đó chính là chuỗi sha256/… trong danh sách pin.",
+            "So với các pin đã biên dịch vào app. Trùng một cái là qua; không trùng cái nào thì cắt kết nối."
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "App không tự tìm ra key — bạn đặt nó vào, đọc một lần từ server của chính bạn.",
+            "Đó là toàn bộ gốc tin cậy: pin được tin vì nó đi cùng app, không phải vì mạng nói vậy.",
+            "TLS lo nửa còn lại: server phải ký handshake bằng private key tương ứng, nên đưa ra certificate thôi là chưa đủ.",
+            "Vì thế kẻ tấn công có bản sao certificate của bạn cũng vô dụng. Private key không bao giờ rời server.",
+            "Phần lớn thư viện so với mọi certificate trong chain, nên pin có thể là key của leaf hoặc của đơn vị cấp."
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "Băm cả certificate thay vì băm SubjectPublicKeyInfo là lỗi kinh điển: khi đó mỗi lần gia hạn là digest đổi, dù key không hề đổi."
+          ]
+        }
+      ]
+    },
+    {
       "id": "rotation",
       "title": "Luôn ship pin dự phòng",
       "summary": "Đây là phần quyết định pinning có làm chết app hay không.",

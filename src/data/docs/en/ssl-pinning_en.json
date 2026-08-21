@@ -199,6 +199,78 @@
       ]
     },
     {
+      "id": "how-the-check-works",
+      "title": "How the app compares the key",
+      "summary": "Where the pin comes from, and what is actually compared.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Two sources, reduced the same way, compared as strings.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Build time",
+                  "detail": "You read the key off the server you control"
+                },
+                {
+                  "label": "Runtime",
+                  "detail": "The certificate the peer just sent"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "SPKI → SHA-256 → base64",
+                  "detail": "The same reduction on both sides"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Equal",
+                  "detail": "The peer holds the key you pinned"
+                },
+                {
+                  "label": "Different",
+                  "detail": "Connection aborted"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Take the certificate the server presented, in DER form.",
+            "Cut out the SubjectPublicKeyInfo: the public key plus its algorithm id, not the whole certificate.",
+            "SHA-256 over exactly those bytes.",
+            "Base64 the digest — that is the sha256/… string in your pin list.",
+            "Compare against the pins compiled into the app. Any match passes; no match drops the connection."
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "The app never discovers the key — you put it there, read once from the server you control.",
+            "That is the whole trust anchor: the pin is believed because it shipped with the app, not because the network said so.",
+            "TLS does the other half: the server must sign the handshake with the matching private key, so presenting a certificate is not enough.",
+            "A copy of your certificate is therefore useless to an attacker. The private key never leaves the server.",
+            "Most libraries test every certificate in the chain, so a pin may name the leaf key or its issuer."
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "Hashing the whole certificate instead of the SubjectPublicKeyInfo is the classic mistake: the digest then changes at every renewal, even when the key did not."
+          ]
+        }
+      ]
+    },
+    {
       "id": "rotation",
       "title": "Always ship a backup pin",
       "summary": "This is the section that decides whether pinning ever bricks your app.",
