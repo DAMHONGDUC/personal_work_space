@@ -43,6 +43,18 @@
   `2019 – 2023` (real en dash), never `\&`, `get\_it` or `--`. A backslash in
   the data ends up printed literally. See [cv/README.md](cv/README.md).
 
+## Sections are numbered — except in the CV
+
+- Guides and privacy policies print `1.`, `2.` … in front of the section
+  heading, and the table of contents repeats the same numbers, so a reader can
+  always say which section they are in.
+- The number is a prop on `Section`, never a CSS counter, and it is derived from
+  the same list the contents is built from — on a policy page some sections only
+  render for some apps, so counting them twice would drift.
+- **The CV is never numbered.** No numbered sections, and the jobs under
+  Experience keep their own count, which runs from the oldest role so the
+  numbers descend the page. Do not "make it consistent" with the guides.
+
 ## Routes
 
 - Every URL is defined in `src/lib/routes.ts`. Use `routes.*`; never hand-write
