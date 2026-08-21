@@ -1,9 +1,14 @@
 import { Section } from "@/components/policy/Section";
 import type { App } from "@/lib/apps";
 
-export function ThirdPartiesSection({ app }: { app: App }) {
+export function ThirdPartiesSection({ app, number }: { app: App; number: number }) {
   return (
-    <Section id="third-parties" title="Third-party services" accent={app.accent}>
+    <Section
+      id="third-parties"
+      number={number}
+      title="Third-party services"
+      accent={app.accent}
+    >
       <p className="max-w-[68ch] text-base leading-7 text-muted">
         {app.name} relies on the services below. Each one handles data under its own
         privacy policy.

@@ -1,22 +1,30 @@
+/**
+ * One numbered section of a policy or a guide.
+ *
+ * The number is passed in rather than counted here: on the policy pages some
+ * sections only render for some apps, so the page works it out from the same
+ * list it builds the table of contents from, and the two can never disagree.
+ */
 export function Section({
   id,
+  number,
   title,
   accent,
   children,
 }: {
   id: string;
+  /** Position in the document, starting at 1. */
+  number: number;
   title: string;
   accent: string;
   children: React.ReactNode;
 }) {
   return (
     <section id={id} className="scroll-mt-24">
-      <h2 className="flex items-center gap-2.5 pb-5 text-xl font-semibold tracking-tight">
-        <span
-          aria-hidden
-          className="h-4 w-1 rounded-full"
-          style={{ backgroundColor: accent }}
-        />
+      <h2 className="flex items-baseline gap-2.5 pb-5 text-xl font-semibold tracking-tight">
+        <span className="tabular-nums" style={{ color: accent }}>
+          {number}.
+        </span>
         {title}
       </h2>
       {children}

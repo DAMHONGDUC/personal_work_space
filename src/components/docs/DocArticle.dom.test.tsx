@@ -87,6 +87,13 @@ describe("DocArticle", () => {
     expect(before).toBe("signing");
   });
 
+  it("numbers the section and its contents entry the same way", () => {
+    const page = render();
+
+    expect(page.querySelector("h2")?.textContent).toBe("1.English signing");
+    expect(page.querySelector("ol a")?.textContent).toBe("1English signing");
+  });
+
   it("marks the body with the language it is written in", () => {
     const page = render();
 

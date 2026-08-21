@@ -7,6 +7,9 @@ export type NavItem = { id: string; title: string };
 /**
  * Table of contents that tracks the section currently in view. Rendered in the
  * sidebar on desktop and inside a collapsed <details> on smaller screens.
+ *
+ * The numbers come from the position in this list, which is the same list the
+ * page numbers its headings from.
  */
 export function PolicyNav({
   items,
@@ -18,8 +21,8 @@ export function PolicyNav({
   const active = useActiveSection(items.map((item) => item.id));
 
   return (
-    <ul className="flex flex-col gap-0.5">
-      {items.map((item) => {
+    <ol className="flex flex-col gap-0.5">
+      {items.map((item, index) => {
         const isActive = item.id === active;
 
         return (
@@ -34,11 +37,14 @@ export function PolicyNav({
               }`}
               style={isActive ? { borderColor: accent } : undefined}
             >
+              <span aria-hidden className="w-4 shrink-0 tabular-nums opacity-60">
+                {index + 1}
+              </span>
               {item.title}
             </a>
           </li>
         );
       })}
-    </ul>
+    </ol>
   );
 }

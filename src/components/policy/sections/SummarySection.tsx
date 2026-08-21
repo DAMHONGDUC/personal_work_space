@@ -1,9 +1,14 @@
 import { Section } from "@/components/policy/Section";
 import type { App } from "@/lib/apps";
 
-export function SummarySection({ app }: { app: App }) {
+export function SummarySection({ app, number }: { app: App; number: number }) {
   return (
-    <Section id="at-a-glance" title="At a glance" accent={app.accent}>
+    <Section
+      id="at-a-glance"
+      number={number}
+      title="At a glance"
+      accent={app.accent}
+    >
       <ul
         className="flex flex-col gap-3.5 rounded-2xl border p-6"
         style={{

@@ -1,9 +1,14 @@
 import { Section } from "@/components/policy/Section";
 import type { App } from "@/lib/apps";
 
-export function NotCollectedSection({ app }: { app: App }) {
+export function NotCollectedSection({ app, number }: { app: App; number: number }) {
   return (
-    <Section id="data-not-collected" title="Data we do not collect" accent={app.accent}>
+    <Section
+      id="data-not-collected"
+      number={number}
+      title="Data we do not collect"
+      accent={app.accent}
+    >
       <p className="max-w-[68ch] text-base leading-7 text-muted">
         {app.name} never asks for, receives, or stores any of the following:
       </p>

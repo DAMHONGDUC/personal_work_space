@@ -2,9 +2,14 @@ import { Badge } from "@/components/policy/Badge";
 import { Section } from "@/components/policy/Section";
 import type { App } from "@/lib/apps";
 
-export function PermissionsSection({ app }: { app: App }) {
+export function PermissionsSection({ app, number }: { app: App; number: number }) {
   return (
-    <Section id="permissions" title="Device permissions" accent={app.accent}>
+    <Section
+      id="permissions"
+      number={number}
+      title="Device permissions"
+      accent={app.accent}
+    >
       <div className="flex flex-col gap-3">
         {app.permissions.map((permission) => (
           <article

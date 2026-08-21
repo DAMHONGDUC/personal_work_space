@@ -2,9 +2,14 @@ import { Badge } from "@/components/policy/Badge";
 import { Section } from "@/components/policy/Section";
 import type { App } from "@/lib/apps";
 
-export function CollectedSection({ app }: { app: App }) {
+export function CollectedSection({ app, number }: { app: App; number: number }) {
   return (
-    <Section id="data-collected" title="Data we collect" accent={app.accent}>
+    <Section
+      id="data-collected"
+      number={number}
+      title="Data we collect"
+      accent={app.accent}
+    >
       {app.collects.length === 0 ? (
         <p className="rounded-2xl border border-border-soft bg-muted-surface p-6 text-base leading-7">
           {app.name} does not collect any data. Nothing is sent off your device.

@@ -72,6 +72,11 @@ export default async function PrivacyPolicyPage(
     ...sections.map((section) => ({ id: section.id, title: section.title })),
   ];
 
+  // Both the headings and the contents number themselves from this one list,
+  // so a section that only renders for some apps cannot shift one and not the
+  // other.
+  const numberOf = (id: string) => toc.findIndex((item) => item.id === id) + 1;
+
   return (
     <>
       <ReadingProgress accent={app.accent} />
@@ -84,22 +89,28 @@ export default async function PrivacyPolicyPage(
         <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_13rem] lg:gap-14">
           <div className="flex min-w-0 flex-col gap-14">
             {overview.length > 0 && (
-              <Section id="overview" title="Overview" accent={app.accent}>
+              <Section
+                id="overview"
+                number={numberOf("overview")}
+                title="Overview"
+                accent={app.accent}
+              >
                 <Prose paragraphs={overview} />
               </Section>
             )}
 
-            <SummarySection app={app} />
-            <CollectedSection app={app} />
-            <NotCollectedSection app={app} />
+            <SummarySection app={app} number={numberOf("at-a-glance")} />
+            <CollectedSection app={app} number={numberOf("data-collected")} />
+            <NotCollectedSection app={app} number={numberOf("data-not-collected")} />
 
-            {app.permissions.length > 0 && <PermissionsSection app={app} />}
-            {app.thirdParties.length > 0 && <ThirdPartiesSection app={app} />}
+            {app.permissions.length > 0 && <PermissionsSection app={app} number={numberOf("permissions")} />}
+            {app.thirdParties.length > 0 && <ThirdPartiesSection app={app} number={numberOf("third-parties")} />}
 
             {sections.map((section) => (
               <Section
                 key={section.id}
                 id={section.id}
+                number={numberOf(section.id)}
                 title={section.title}
                 accent={app.accent}
               >

@@ -44,10 +44,11 @@ export function DocArticle({ versions }: { versions: Record<Lang, ResolvedDoc> }
           <div className="flex min-w-0 flex-col gap-14">
             <Prose paragraphs={doc.intro} />
 
-            {doc.sections.map((section) => (
+            {doc.sections.map((section, index) => (
               <Section
                 key={section.id}
                 id={section.id}
+                number={index + 1}
                 title={section.title}
                 accent={doc.accent}
               >
