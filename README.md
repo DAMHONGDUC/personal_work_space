@@ -17,7 +17,7 @@ src/data/
 ├── cv/
 │   └── cv_2.json          the CV content
 └── apps/
-    └── sample-app.json    one file per app
+    └── baro-ease.json     one file per app
 cv/
 ├── template/main.tex      CV layout (see cv/README.md)
 └── assets/avt.png         CV photo
@@ -69,8 +69,10 @@ directory, so there is no index to register the app in.
 **The filename is the URL:** `focus-timer.json` →
 `/apps/focus-timer/privacy_policy/`
 
+Start from the JSON below, or copy an existing app and edit it:
+
 ```bash
-cp src/data/apps/sample-app.json src/data/apps/focus-timer.json
+cp src/data/apps/baro-ease.json src/data/apps/focus-timer.json
 ```
 
 ### Sample JSON

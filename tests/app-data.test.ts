@@ -142,10 +142,7 @@ describe.each(apps.map((app) => [app.slug, app] as const))("%s", (slug, app) => 
   });
 
   it("has no placeholder store links left from the template", () => {
-    // sample-app is the documented template, so its placeholders are the point.
-    if (slug === "sample-app") return;
-
-    // Anywhere else a template id ships a policy whose store button points at
+    // A template id left in place ships a policy whose store button points at
     // an app that does not exist.
     for (const url of Object.values(app.storeLinks ?? {})) {
       expect(url).not.toMatch(/id0+$/);

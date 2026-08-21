@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   contactEmail,
@@ -54,17 +56,23 @@ describe("getApps", () => {
 
   it("picks up a new file without any registration", () => {
     // Guards the whole point of the directory loader: getApps reads the folder
-    // rather than a hardcoded list, so this count tracks the files on disk.
-    const before = getApps().length;
+    // rather than a hardcoded list, so the slugs it returns are exactly the
+    // filenames on disk — add a file and it appears, with nothing to register.
+    const onDisk = fs
+      .readdirSync(path.join(process.cwd(), "src/data/apps"))
+      .filter((file) => file.endsWith(".json"))
+      .map((file) => path.basename(file, ".json"))
+      .sort();
 
-    expect(before).toBe(getApps().length);
-    expect(getApps().map((app) => app.slug)).toContain("sample-app");
+    expect(getApps().map((app) => app.slug).sort()).toEqual(onDisk);
   });
 });
 
 describe("getApp", () => {
   it("finds an app by slug", () => {
-    expect(getApp("sample-app")?.slug).toBe("sample-app");
+    const [first] = getApps();
+
+    expect(getApp(first.slug)?.slug).toBe(first.slug);
   });
 
   it("returns undefined for an unknown slug", () => {
