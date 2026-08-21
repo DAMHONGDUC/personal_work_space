@@ -2,6 +2,9 @@ import fs from "node:fs";
 import path from "node:path";
 import config from "@/data/site.json";
 
+// Re-exported so the policy pages keep importing it from here.
+export { formatDate } from "@/lib/format";
+
 export type Section = {
   id: string;
   title: string;
@@ -140,13 +143,4 @@ export function getOverview(app: App): string[] {
 
 export function contactEmail(app: App): string {
   return app.contactEmail ?? site.contactEmail;
-}
-
-export function formatDate(value: string): string {
-  return new Date(`${value}T00:00:00Z`).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  });
 }
