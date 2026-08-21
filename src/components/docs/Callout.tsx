@@ -1,33 +1,37 @@
+import { Info, TriangleAlert } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { NoteBlock } from "@/lib/doc-model";
 
 const TONES = {
-  info: { icon: "ℹ️", color: "#0ea5e9", label: "Lưu ý" },
-  warning: { icon: "⚠️", color: "#f59e0b", label: "Cảnh báo" },
+  info: { Icon: Info, color: "#0ea5e9", label: "Note" },
+  warning: { Icon: TriangleAlert, color: "#f59e0b", label: "Warning" },
 } as const;
 
-/** A note pulled out of the flow of the text, tinted by how loud it needs to be. */
+/**
+ * A note pulled out of the flow of the text. shadcn's Alert has one neutral and
+ * one destructive look, so the two tones this site uses are tinted here — the
+ * component supplies the layout and the icon slot, the tone supplies the colour.
+ */
 export function Callout({ block }: { block: NoteBlock<string> }) {
   const tone = TONES[block.tone];
 
   return (
-    <aside
-      className="mt-5 flex max-w-[68ch] gap-3.5 rounded-xl border px-4 py-3.5"
+    <Alert
+      className="mt-5 max-w-[68ch] rounded-xl px-4 py-3.5"
       style={{
         borderColor: `color-mix(in oklab, ${tone.color} 32%, transparent)`,
         backgroundColor: `color-mix(in oklab, ${tone.color} 8%, transparent)`,
       }}
     >
-      <span aria-hidden className="text-base leading-7">
-        {tone.icon}
-      </span>
-      <div className="flex flex-col gap-2">
-        <span className="sr-only">{tone.label}: </span>
+      <tone.Icon aria-hidden style={{ color: tone.color }} />
+      <span className="sr-only">{tone.label}: </span>
+      <AlertDescription className="text-foreground">
         {block.body.map((paragraph, index) => (
           <p key={index} className="text-sm leading-6">
             {paragraph}
           </p>
         ))}
-      </div>
-    </aside>
+      </AlertDescription>
+    </Alert>
   );
 }

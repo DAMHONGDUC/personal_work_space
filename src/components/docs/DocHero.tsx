@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AppIcon } from "@/components/AppIcon";
+import { Badge } from "@/components/ui/badge";
 import type { Lang, ResolvedDoc } from "@/lib/doc-model";
 import { formatDate } from "@/lib/format";
 import { routes } from "@/lib/routes";
@@ -54,12 +55,9 @@ export function DocHero({
           <div className="flex min-w-0 flex-col gap-2.5">
             <div className="flex flex-wrap items-center gap-1.5">
               {doc.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-md border border-border-soft px-2 py-0.5 text-xs text-muted"
-                >
+                <Badge key={tag} variant="outline" className="rounded-md">
                   {tag}
-                </span>
+                </Badge>
               ))}
             </div>
             <h1

@@ -114,15 +114,29 @@ describe("DocArticle", () => {
 
   it("shows the reader which language is active", () => {
     const page = render();
-    const pressed = () =>
-      [...page.querySelectorAll("button")]
-        .filter((button) => button.getAttribute("aria-pressed") === "true")
-        .map((button) => button.textContent);
+    const checked = () =>
+      [...page.querySelectorAll('[role="radio"]')]
+        .filter((option) => option.getAttribute("aria-checked") === "true")
+        .map((option) => option.textContent);
 
-    expect(pressed()).toEqual(["en"]);
+    expect(checked()).toEqual(["en"]);
 
     switchTo("vi");
 
-    expect(pressed()).toEqual(["vi"]);
+    expect(checked()).toEqual(["vi"]);
+  });
+
+  it("exposes the switch as one radio group with a single tab stop", () => {
+    // What the Radix toggle group buys over two buttons: the group is one stop
+    // in the tab order and the arrow keys move between the languages.
+    const group = render().querySelector('[role="radiogroup"]');
+
+    expect(group?.getAttribute("aria-label")).toBe("Language");
+    expect(group?.getAttribute("tabindex")).toBe("0");
+    expect(
+      [...group!.querySelectorAll('[role="radio"]')].map((option) =>
+        option.getAttribute("tabindex"),
+      ),
+    ).toEqual(["-1", "-1"]);
   });
 });

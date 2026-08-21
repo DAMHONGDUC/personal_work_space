@@ -1,11 +1,16 @@
 "use client";
 
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { LANGUAGES, LANGUAGE_LABELS, type Lang } from "@/lib/doc-model";
 
 /**
  * Segmented control for the language a guide is read in. Both versions are
  * already on the page, so switching is a re-render — no navigation, and the
  * section you were reading stays under the cursor.
+ *
+ * Built on the Radix toggle group rather than two buttons: it gives the group a
+ * single tab stop and moves between the options with the arrow keys, which is
+ * what a segmented control is expected to do and is easy to get wrong by hand.
  */
 export function LanguageSwitch({
   lang,
@@ -17,37 +22,34 @@ export function LanguageSwitch({
   accent: string;
 }) {
   return (
-    <div
-      role="group"
+    <ToggleGroup
+      type="single"
+      value={lang}
+      // Radix reports "" when the pressed item is toggled off. A language is
+      // always selected here, so that is a no-op rather than a third state.
+      onValueChange={(next) => next && onChange(next as Lang)}
+      variant="outline"
       aria-label="Language"
-      className="flex w-fit items-center gap-1 rounded-xl border border-border-soft bg-surface p-1"
+      className="rounded-xl border border-border-soft bg-surface p-1"
     >
-      {LANGUAGES.map((option) => {
-        const isActive = option === lang;
-
-        return (
-          <button
-            key={option}
-            type="button"
-            onClick={() => onChange(option)}
-            aria-pressed={isActive}
-            title={LANGUAGE_LABELS[option]}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium uppercase transition-colors ${
-              isActive ? "" : "text-muted hover:text-foreground"
-            }`}
-            style={
-              isActive
-                ? {
-                    backgroundColor: `color-mix(in oklab, ${accent} 16%, transparent)`,
-                    color: accent,
-                  }
-                : undefined
-            }
-          >
-            {option}
-          </button>
-        );
-      })}
-    </div>
+      {LANGUAGES.map((option) => (
+        <ToggleGroupItem
+          key={option}
+          value={option}
+          title={LANGUAGE_LABELS[option]}
+          className="border-0 px-3 text-sm font-medium uppercase data-[state=off]:text-muted"
+          style={
+            option === lang
+              ? {
+                  backgroundColor: `color-mix(in oklab, ${accent} 16%, transparent)`,
+                  color: accent,
+                }
+              : undefined
+          }
+        >
+          {option}
+        </ToggleGroupItem>
+      ))}
+    </ToggleGroup>
   );
 }

@@ -1,5 +1,17 @@
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import type { TableBlock } from "@/lib/doc-model";
 
+/**
+ * A table in a guide. The shadcn table already scrolls inside its own container,
+ * so a wide table never makes the page scroll sideways.
+ */
 export function DocTable({
   block,
   accent,
@@ -8,42 +20,42 @@ export function DocTable({
   accent: string;
 }) {
   return (
-    // Scrolls inside its own box, so a wide table never makes the page scroll.
-    <div className="mt-5 max-w-[68ch] overflow-x-auto rounded-xl border border-border-soft">
-      <table className="w-full min-w-[34rem] border-collapse text-left text-sm">
-        <thead>
-          <tr className="bg-muted-surface">
+    <div className="mt-5 max-w-[68ch] overflow-hidden rounded-xl border border-border-soft">
+      <Table className="min-w-[34rem]">
+        <TableHeader>
+          <TableRow className="bg-muted-surface">
             {block.columns.map((column) => (
-              <th
+              <TableHead
                 key={column}
-                scope="col"
-                className="border-b border-border-soft px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-muted"
+                className="text-xs font-medium uppercase tracking-wider"
               >
                 {column}
-              </th>
+              </TableHead>
             ))}
-          </tr>
-        </thead>
-        <tbody>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {block.rows.map((row) => (
-            <tr key={row[0]} className="border-b border-border-soft last:border-0">
+            <TableRow key={row[0]}>
               {row.map((cell, index) => (
-                <td
+                <TableCell
                   key={index}
                   className={
                     index === 0
-                      ? "px-4 py-3 align-top font-medium"
-                      : "px-4 py-3 align-top leading-6 text-muted"
+                      ? "align-top font-medium"
+                      : "align-top leading-6 text-muted whitespace-normal"
                   }
+                  // The first column carries the guide's accent, the same way
+                  // the section numbers and diagram boxes do.
                   style={index === 0 ? { color: accent } : undefined}
                 >
                   {cell}
-                </td>
+                </TableCell>
               ))}
-            </tr>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }

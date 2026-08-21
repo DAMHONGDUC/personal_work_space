@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/apps";
 import { cv, getCvPages, getCvPdf } from "@/lib/cv";
 import { routes, withBasePath } from "@/lib/routes";
@@ -30,21 +31,27 @@ export default function CvPage() {
 
       {pdf && (
         <div className="flex flex-wrap items-center gap-3 pb-10">
-          <a
-            href={withBasePath(pdf.url)}
-            download
-            className="rounded-xl bg-foreground px-5 py-3 text-sm font-semibold text-background shadow-sm transition-opacity hover:opacity-90"
+          {/* asChild keeps these anchors — a download and an external link are
+              navigation, not buttons, whatever they look like. */}
+          <Button asChild size="lg" className="h-11 rounded-xl px-5 font-semibold">
+            <a href={withBasePath(pdf.url)} download>
+              Download CV
+            </a>
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            size="lg"
+            className="h-11 rounded-xl px-5 font-semibold"
           >
-            Download CV
-          </a>
-          <a
-            href={withBasePath(pdf.url)}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="rounded-xl border border-foreground/20 bg-surface px-5 py-3 text-sm font-semibold transition-colors hover:border-foreground/45 hover:bg-muted-surface"
-          >
-            Open CV ↗
-          </a>
+            <a
+              href={withBasePath(pdf.url)}
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              Open CV ↗
+            </a>
+          </Button>
           <span className="text-xs text-muted">PDF · {pdf.sizeKb} KB</span>
         </div>
       )}

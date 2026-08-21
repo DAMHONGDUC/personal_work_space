@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AppIcon } from "@/components/AppIcon";
+import { Badge } from "@/components/ui/badge";
 import { routes } from "@/lib/routes";
 
 export type DirectoryEntry = {
@@ -47,9 +48,9 @@ export function AppCard({ entry }: { entry: DirectoryEntry }) {
 
       <span className="relative mt-5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
         {entry.platforms.map((platform) => (
-          <span key={platform} className="rounded-md border border-border-soft px-1.5 py-0.5">
+          <Badge key={platform} variant="outline" className="rounded-md">
             {platform}
-          </span>
+          </Badge>
         ))}
         <span className="ml-auto">Updated {entry.updated}</span>
       </span>

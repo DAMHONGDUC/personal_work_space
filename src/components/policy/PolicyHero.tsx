@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AppIcon } from "@/components/AppIcon";
+import { Badge } from "@/components/ui/badge";
 import { formatDate, site, type App } from "@/lib/apps";
 import { routes } from "@/lib/routes";
 
@@ -51,12 +52,9 @@ export function PolicyHero({ app }: { app: App }) {
           <div className="flex min-w-0 flex-col gap-2.5">
             <div className="flex flex-wrap items-center gap-1.5">
               {app.platforms.map((platform) => (
-                <span
-                  key={platform}
-                  className="rounded-md border border-border-soft px-2 py-0.5 text-xs text-muted"
-                >
+                <Badge key={platform} variant="outline" className="rounded-md">
                   {platform}
-                </span>
+                </Badge>
               ))}
             </div>
             <h1 className="text-3xl font-semibold tracking-tight sm:text-[2.5rem] sm:leading-[1.15]">
