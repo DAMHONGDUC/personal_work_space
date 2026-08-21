@@ -2,13 +2,13 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { renderCvLatex } from "@/lib/cv-latex.mts";
-import { CV_DATA_FILE } from "@/lib/cv-source.mts";
+import { ResourceConstant } from "@/lib/resource-constant.mts";
 import { cv } from "@/lib/cv";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 const template = fs.readFileSync(
-  path.join(process.cwd(), "cv/template/main.tex"),
+  path.join(process.cwd(), ResourceConstant.CV_TEMPLATE_DIR, "main.tex"),
   "utf8",
 );
 
@@ -18,7 +18,7 @@ describe("the CV data file", () => {
     // disk. If those ever name different files, the page and the downloadable
     // PDF quietly show different CVs.
     const fromGenerator = JSON.parse(
-      fs.readFileSync(path.join(process.cwd(), CV_DATA_FILE), "utf8"),
+      fs.readFileSync(path.join(process.cwd(), ResourceConstant.CV_DATA_FILE), "utf8"),
     );
 
     expect(fromGenerator).toEqual(cv);
@@ -30,7 +30,7 @@ describe("the CV data file", () => {
   });
 
   it("names a photo that is actually in cv/assets", () => {
-    const photo = path.join(process.cwd(), "cv/assets", cv.header.photo);
+    const photo = path.join(process.cwd(), ResourceConstant.CV_ASSETS_DIR, cv.header.photo);
 
     expect(fs.existsSync(photo)).toBe(true);
   });

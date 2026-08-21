@@ -34,9 +34,9 @@
   - Commands in a `code` block stay the same in both languages. Anything that
     needs explaining goes in the localized `caption`, not a comment in the code.
 - **CV**: `src/data/cv/`. Which file in there is live is decided by
-  `src/lib/cv-source.mts` — check it before editing, because the others are
-  valid CVs too and editing the wrong one changes nothing. The LaTeX in
-  `cv/build/` is **generated** — never edit it, and never edit
+  `ResourceConstant.CV_DATA_FILE` — check it before editing, because any other
+  file beside it is a valid CV too and editing the wrong one changes nothing.
+  The LaTeX in `cv/build/` is **generated** — never edit it, and never edit
   `cv/template/main.tex` to change wording.
 - Every text field in the CV JSON is **plain text**. The renderer escapes LaTeX
   and converts typography, so write `Backend & Integration`, `get_it` and
@@ -73,6 +73,19 @@
   tables and alerts are shadcn; the heroes, cards, diagrams and the table of
   contents are hand-written because their design is specific to this site.
 
+## Paths live in ResourceConstant
+
+- `src/lib/resource-constant.mts` holds every path the project reads content
+  from or writes build output to — the data directories, the live CV, the CV
+  template, assets and build output. Loaders, build scripts and tests all take
+  their paths from it, so a file that moves is renamed once.
+- It is `.mts` and imports nothing: the CV scripts are plain Node with no `@/`
+  alias, and a `node:path` import here would stop the file being usable from
+  anything bundled for the browser. Callers join with `process.cwd()`.
+- The one path that cannot come from it is the static `import` of the CV JSON in
+  `src/lib/cv.ts` — bundling needs a literal — which is why a test asserts the
+  two agree.
+
 ## Routes
 
 - Every URL is defined in `src/lib/routes.ts`. Use `routes.*`; never hand-write
@@ -95,9 +108,10 @@
 
 ## The CV
 
-- `src/lib/cv-source.mts` names the data file. The site imports it statically
-  and the LaTeX generator reads it from disk; a test asserts both resolve to the
-  same content, because otherwise the page and the downloadable PDF drift apart.
+- `ResourceConstant.CV_DATA_FILE` names the data file. The site imports it
+  statically and the LaTeX generator reads it from disk; a test asserts both
+  resolve to the same content, because otherwise the page and the downloadable
+  PDF drift apart.
 - Every font size lives in the `\cv*` macros in `cv/template/main.tex`. The
   renderer marks up meaning, never size — a test fails if the generated LaTeX
   contains `\fontsize`.

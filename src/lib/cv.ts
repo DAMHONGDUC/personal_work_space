@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import data from "@/data/cv/cv_2.json";
 import type { Cv } from "@/lib/cv-types";
+import { ResourceConstant } from "@/lib/resource-constant.mts";
 
 export type { Cv } from "@/lib/cv-types";
 
@@ -13,10 +14,16 @@ export type { Cv } from "@/lib/cv-types";
 export const cv = data as Cv;
 
 /**
- * Where the compiled CV lands. `npm run cv:pdf` (or CI) writes it; it is a
- * build artifact, so it is not in git.
+ * Site-relative URLs of the compiled CV. `npm run cv:pdf` (or CI) writes the
+ * files; they are build artifacts, so they are not in git.
+ *
+ * Anything under public/ is served from the site root, so the URL is the path
+ * with that prefix taken off — derived here rather than written out twice.
  */
-const PDF_FILE = "cv.pdf";
+const PDF_URL = `/${path.relative(
+  ResourceConstant.PUBLIC_DIR,
+  ResourceConstant.CV_PDF_FILE,
+)}`;
 
 export type CvPdf = {
   /** Site-relative URL, without the base path. */
@@ -31,14 +38,14 @@ export type CvPdf = {
  * so a PDF produced later is picked up by the next build.
  */
 export function getCvPdf(): CvPdf | null {
-  const file = path.join(process.cwd(), "public", PDF_FILE);
+  const file = path.join(process.cwd(), ResourceConstant.CV_PDF_FILE);
 
   if (!fs.existsSync(file)) {
     return null;
   }
 
   return {
-    url: `/${PDF_FILE}`,
+    url: PDF_URL,
     sizeKb: Math.max(1, Math.round(fs.statSync(file).size / 1024)),
   };
 }
@@ -50,7 +57,10 @@ export type CvPage = {
   height: number;
 };
 
-const PAGES_DIR = "cv";
+const PAGES_URL = `/${path.relative(
+  ResourceConstant.PUBLIC_DIR,
+  ResourceConstant.CV_PAGES_DIR,
+)}`;
 const PAGE_FILE = /^page-(\d+)\.png$/;
 
 /**
@@ -76,7 +86,7 @@ function pngSize(file: string): { width: number; height: number } {
  * built. Read at build time, like the rest of the content.
  */
 export function getCvPages(): CvPage[] {
-  const dir = path.join(process.cwd(), "public", PAGES_DIR);
+  const dir = path.join(process.cwd(), ResourceConstant.CV_PAGES_DIR);
 
   if (!fs.existsSync(dir)) {
     return [];
@@ -91,7 +101,7 @@ export function getCvPages(): CvPage[] {
     // Numeric, not lexicographic: page-10 must not sort between page-1 and 2.
     .sort((a, b) => Number(a.match[1]) - Number(b.match[1]))
     .map(({ file }) => ({
-      url: `/${PAGES_DIR}/${file}`,
+      url: `${PAGES_URL}/${file}`,
       ...pngSize(path.join(dir, file)),
     }));
 }

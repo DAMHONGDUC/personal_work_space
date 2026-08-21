@@ -11,6 +11,7 @@
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { ResourceConstant } from "../src/lib/resource-constant.mts";
 
 /** 160dpi on US Letter is 1360x1760 — sharp on a HiDPI screen at ~800px wide. */
 const DPI = 160;
@@ -18,8 +19,8 @@ const DPI = 160;
 const optional = process.argv.includes("--optional");
 
 const root = path.join(import.meta.dirname, "..");
-const pdf = path.join(root, "cv/build/main.pdf");
-const outDir = path.join(root, "public/cv");
+const pdf = path.join(root, ResourceConstant.CV_BUILD_DIR, "main.pdf");
+const outDir = path.join(root, ResourceConstant.CV_PAGES_DIR);
 
 function has(command: string): boolean {
   try {

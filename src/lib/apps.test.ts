@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { ResourceConstant } from "@/lib/resource-constant.mts";
 import {
   contactEmail,
   formatDate,
@@ -59,7 +60,7 @@ describe("getApps", () => {
     // rather than a hardcoded list, so the slugs it returns are exactly the
     // filenames on disk — add a file and it appears, with nothing to register.
     const onDisk = fs
-      .readdirSync(path.join(process.cwd(), "src/data/apps"))
+      .readdirSync(path.join(process.cwd(), ResourceConstant.APPS_DIR))
       .filter((file) => file.endsWith(".json"))
       .map((file) => path.basename(file, ".json"))
       .sort();

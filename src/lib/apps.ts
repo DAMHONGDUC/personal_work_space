@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import config from "@/data/site.json";
+import { ResourceConstant } from "@/lib/resource-constant.mts";
 
 // Re-exported so the policy pages keep importing it from here.
 export { formatDate } from "@/lib/format";
@@ -71,7 +72,7 @@ const { site: siteConfig, defaults } = config as Config;
 
 export const site = siteConfig;
 
-const appsDir = path.join(process.cwd(), "src/data/apps");
+const appsDir = path.join(process.cwd(), ResourceConstant.APPS_DIR);
 
 /**
  * Every .json file in src/data/apps, read fresh so adding a file is picked up by

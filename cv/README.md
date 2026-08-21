@@ -13,10 +13,11 @@ public/cv.pdf           compiled in CI — the download, git-ignored
 public/cv/page-N.png    rasterised pages — what the site renders, git-ignored
 ```
 
-**Which file is live is decided in one place**, `src/lib/cv-source.mts`. Any file
-you add beside it is a valid CV too, so editing the wrong one fails silently —
-check that constant before you start. Switching between them means changing it *and* the
-static import in `src/lib/cv.ts`; a test fails if only one of the two moves.
+**Which file is live is decided in one place**, `ResourceConstant.CV_DATA_FILE`
+in `src/lib/resource-constant.mts`. Any file you add beside it is a valid CV
+too, so editing the wrong one fails silently — check that constant before you
+start. Switching between them means changing it *and* the static import in
+`src/lib/cv.ts`; a test fails if only one of the two moves.
 
 The photo prints at 3.2cm, so ~800px is already more than any printer resolves.
 It was a 1.26MB PNG once; as an 800px JPEG the whole PDF is 150KB rather than

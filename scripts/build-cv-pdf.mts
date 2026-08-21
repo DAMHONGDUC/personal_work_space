@@ -13,13 +13,14 @@
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { ResourceConstant } from "../src/lib/resource-constant.mts";
 
 const optional = process.argv.includes("--optional");
 
 const root = path.join(import.meta.dirname, "..");
-const buildDir = path.join(root, "cv/build");
+const buildDir = path.join(root, ResourceConstant.CV_BUILD_DIR);
 const pdf = path.join(buildDir, "main.pdf");
-const published = path.join(root, "public/cv.pdf");
+const published = path.join(root, ResourceConstant.CV_PDF_FILE);
 
 function has(command: string): boolean {
   try {

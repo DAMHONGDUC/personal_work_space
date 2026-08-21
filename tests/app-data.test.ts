@@ -3,8 +3,9 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { getApps, site } from "@/lib/apps";
 import { RESERVED_SLUGS } from "@/lib/routes";
+import { ResourceConstant } from "@/lib/resource-constant.mts";
 
-const appsDir = path.join(process.cwd(), "src/data/apps");
+const appsDir = path.join(process.cwd(), ResourceConstant.APPS_DIR);
 
 const ALLOWED_KEYS = new Set([
   "name",

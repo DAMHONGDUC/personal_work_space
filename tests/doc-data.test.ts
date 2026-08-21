@@ -8,9 +8,10 @@ import {
   type Localized,
 } from "@/lib/doc-model";
 import { getDocs } from "@/lib/docs";
+import { ResourceConstant } from "@/lib/resource-constant.mts";
 import { RESERVED_SLUGS } from "@/lib/routes";
 
-const docsDir = path.join(process.cwd(), "src/data/docs");
+const docsDir = path.join(process.cwd(), ResourceConstant.DOCS_DIR);
 
 const ALLOWED_KEYS = new Set([
   "title",

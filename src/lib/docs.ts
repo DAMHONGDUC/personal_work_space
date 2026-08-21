@@ -6,8 +6,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { Doc, DocData } from "@/lib/doc-model";
+import { ResourceConstant } from "@/lib/resource-constant.mts";
 
-const docsDir = path.join(process.cwd(), "src/data/docs");
+const docsDir = path.join(process.cwd(), ResourceConstant.DOCS_DIR);
 
 /**
  * Every .json file in src/data/docs, most recently updated first, read fresh so
@@ -26,7 +27,7 @@ export function getDocs(): Doc[] {
         return { slug, ...(JSON.parse(raw) as DocData) };
       } catch (error) {
         throw new Error(
-          `src/data/docs/${file} is not valid JSON: ${(error as Error).message}`,
+          `${ResourceConstant.DOCS_DIR}/${file} is not valid JSON: ${(error as Error).message}`,
         );
       }
     })
