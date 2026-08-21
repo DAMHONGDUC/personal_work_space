@@ -22,8 +22,8 @@
   "lastUpdated": "2026-08-21",
   "intro": [
     {
-      "en": "You have paid the 99 USD and you are holding a new Mac. This is the short path to a setup that builds and ships.",
-      "vi": "Bạn đã đóng 99 USD và đang cầm một máy Mac mới. Đây là đường ngắn nhất tới một môi trường build và ship được."
+      "en": "You have paid the 99 USD and you are holding a Mac with nothing on it. This is the short path to a setup that builds and ships.",
+      "vi": "Bạn đã đóng 99 USD và đang cầm một máy Mac chưa có gì. Đây là đường ngắn nhất tới một môi trường build và ship được."
     },
     {
       "en": "Work through the sections in order — each one assumes the one above it is done.",
@@ -145,8 +145,8 @@
               "vi": "Thêm Apple ID vào Xcode → Settings → Accounts"
             },
             {
-              "en": "Get a certificate onto the machine, new or imported",
-              "vi": "Đưa certificate về máy, tạo mới hoặc import"
+              "en": "Let Xcode issue a Development certificate",
+              "vi": "Để Xcode cấp Development certificate"
             },
             {
               "en": "Register test device UDIDs if you sign manually",
@@ -368,8 +368,8 @@
         "vi": "Ký ứng dụng"
       },
       "summary": {
-        "en": "The part that goes wrong. A certificate does not follow your Apple ID to a new machine.",
-        "vi": "Phần hay hỏng nhất. Certificate không tự theo Apple ID sang máy mới."
+        "en": "The part that goes wrong. Nothing carries over with your Apple ID — this machine needs its own certificate.",
+        "vi": "Phần hay hỏng nhất. Apple ID không mang gì sang cả, máy này cần certificate của riêng nó."
       },
       "blocks": [
         {
@@ -527,40 +527,6 @@
             {
               "en": "You get 2 Development and 3 Distribution certificates per account. When Xcode says the limit is reached, revoke an old one in the portal — do not create a second account.",
               "vi": "Mỗi tài khoản chỉ được 2 Development và 3 Distribution certificate. Khi Xcode báo hết quota thì vào portal revoke bớt cái cũ, đừng lập tài khoản thứ hai."
-            }
-          ]
-        },
-        {
-          "type": "heading",
-          "text": {
-            "en": "Bringing a certificate from the old Mac",
-            "vi": "Mang certificate từ máy cũ sang"
-          }
-        },
-        {
-          "type": "steps",
-          "items": [
-            {
-              "en": "Old Mac: Keychain Access → My Certificates, pick the entry that expands to a private key, right-click → Export as .p12.",
-              "vi": "Máy cũ: Keychain Access → My Certificates, chọn dòng mở ra được private key, chuột phải → Export ra .p12."
-            },
-            {
-              "en": "New Mac: double-click the .p12 and enter the password.",
-              "vi": "Máy mới: double-click file .p12 và nhập mật khẩu."
-            },
-            {
-              "en": "Xcode → Settings → Accounts → Download Manual Profiles.",
-              "vi": "Vào Xcode → Settings → Accounts → Download Manual Profiles."
-            }
-          ]
-        },
-        {
-          "type": "note",
-          "tone": "warning",
-          "body": [
-            {
-              "en": "No old Mac and no .p12 means the private key is gone: revoke the certificate and issue a new one. Revoking a Distribution certificate does not pull your app from the store, but it invalidates every profile using it, so regenerate those.",
-              "vi": "Không còn máy cũ và cũng không có .p12 nghĩa là private key mất hẳn: revoke certificate rồi tạo lại. Revoke Distribution certificate không làm app bị gỡ khỏi store, nhưng mọi profile đang dùng nó sẽ hỏng, phải sinh lại."
             }
           ]
         },
@@ -812,8 +778,8 @@
                 "vi": "No signing certificate found"
               },
               {
-                "en": "The machine has no private key. Xcode → Settings → Accounts → Manage Certificates → add one, or import the .p12.",
-                "vi": "Máy chưa có private key. Xcode → Settings → Accounts → Manage Certificates → thêm mới, hoặc import file .p12."
+                "en": "The machine has no private key yet. Xcode → Settings → Accounts → Manage Certificates → add one.",
+                "vi": "Máy chưa có private key. Vào Xcode → Settings → Accounts → Manage Certificates → thêm mới."
               }
             ],
             [
@@ -878,8 +844,8 @@
           "type": "list",
           "items": [
             {
-              "en": "The .p12 files for both certificates, with their passwords",
-              "vi": "File .p12 của cả hai certificate, kèm mật khẩu"
+              "en": "Both certificates exported as .p12, with their passwords",
+              "vi": "Cả hai certificate export ra .p12, kèm mật khẩu"
             },
             {
               "en": "The App Store Connect .p8 and the APNs .p8",
@@ -899,8 +865,8 @@
           "type": "text",
           "body": [
             {
-              "en": "Keep them in a password manager, not in the repo. The Team ID is on the Membership page of the developer portal.",
-              "vi": "Cất trong password manager, đừng để trong repo. Team ID xem ở trang Membership của developer portal."
+              "en": "Keep them in a password manager, never in the repo. Without the .p12 a private key cannot be recovered, only replaced.",
+              "vi": "Cất trong password manager, đừng bao giờ để trong repo. Mất .p12 là không lấy lại được private key, chỉ có thể tạo cái mới."
             }
           ]
         }
