@@ -3,7 +3,7 @@
 import { DocCard } from "@/components/docs/DocCard";
 import { LanguageSwitch } from "@/components/docs/LanguageSwitch";
 import { useDocLanguage } from "@/hooks/useDocLanguage";
-import type { Lang, ResolvedDoc } from "@/lib/doc-model";
+import type { Lang, Doc } from "@/lib/doc-model";
 
 /** Accent for the switch on the index, where no single guide owns the page. */
 const ACCENT = "#a855f7";
@@ -12,7 +12,7 @@ const ACCENT = "#a855f7";
  * The guide list, in the reader's language. The choice is shared with the guide
  * pages, so picking a language here is still in force after opening one.
  */
-export function DocIndex({ versions }: { versions: Record<Lang, ResolvedDoc[]> }) {
+export function DocIndex({ versions }: { versions: Record<Lang, Doc[]> }) {
   const [lang, setLang] = useDocLanguage();
 
   return (

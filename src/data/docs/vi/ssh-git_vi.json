@@ -1,0 +1,324 @@
+{
+  "title": "Set up SSH cho git",
+  "tagline": "Key, agent và config, để push thôi hỏi bạn là ai.",
+  "icon": "🔑",
+  "accent": "#22c55e",
+  "tags": [
+    "Git",
+    "SSH",
+    "GitHub"
+  ],
+  "readingTime": "6 phút",
+  "effectiveDate": "2026-08-21",
+  "lastUpdated": "2026-08-21",
+  "intro": [
+    "Mỗi máy một key, thêm vào agent một lần, dán lên GitHub một lần. Sau đó git không hỏi mật khẩu nữa."
+  ],
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Tổng quan",
+      "summary": "Năm bước, xong là xong hẳn.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Key đi đâu và ai kiểm tra nó.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Tạo key",
+                  "detail": "ed25519 + passphrase"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "ssh-agent",
+                  "detail": "Giữ key đã mở khoá"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "GitHub",
+                  "detail": "Chỉ nửa .pub"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Kiểm tra",
+                  "detail": "ssh -T git@github.com"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Remote SSH",
+                  "detail": "git@… thay cho https://…"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "checklist",
+          "items": [
+            "Tạo key ed25519 có passphrase",
+            "Nạp vào ssh-agent và keychain của macOS",
+            "Dán nửa .pub lên GitHub",
+            "Xác nhận bằng ssh -T git@github.com",
+            "Trỏ các repo cũ sang remote SSH"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "create-key",
+      "title": "Tạo key",
+      "summary": "Hai file: một bí mật, một công khai.",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "Dùng ed25519, không dùng RSA — ngắn hơn, nhanh hơn, và là thứ GitHub khuyên.",
+            "Đặt passphrase. Keychain nhớ hộ, nên bạn chỉ gõ một lần.",
+            "Mỗi máy một key. Đừng chép private key từ máy này sang máy khác.",
+            "id_ed25519 là nửa bí mật; id_ed25519.pub là nửa được phép chia sẻ."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "caption": "Tạo key, đặt tên theo máy",
+          "code": [
+            "ssh-keygen -t ed25519 -C \"macbook-2026\" -f ~/.ssh/id_ed25519"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "agent",
+      "title": "Nạp vào agent",
+      "summary": "Agent giữ key đã mở khoá để git dùng mà không hỏi lại.",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "--apple-use-keychain cất passphrase vào keychain của macOS.",
+            "File config tự nạp lại key sau mỗi lần khởi động.",
+            "Trên Linux, bỏ các cờ apple và để keyring của desktop giữ."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "code": [
+            "eval \"$(ssh-agent -s)\"",
+            "ssh-add --apple-use-keychain ~/.ssh/id_ed25519"
+          ]
+        },
+        {
+          "type": "code",
+          "language": "ssh_config",
+          "caption": "~/.ssh/config — sống qua lần khởi động lại",
+          "code": [
+            "Host github.com",
+            "  AddKeysToAgent yes",
+            "  UseKeychain yes",
+            "  IdentityFile ~/.ssh/id_ed25519"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "add-to-github",
+      "title": "Đưa nửa công khai cho GitHub",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "Copy public key vào clipboard.",
+            "GitHub → Settings → SSH and GPG keys → New SSH key.",
+            "Đặt tên theo máy, dán vào, rồi lưu."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "code": [
+            "pbcopy < ~/.ssh/id_ed25519.pub"
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "Chỉ file .pub được rời khỏi máy. Nếu lỡ dán file không có .pub thì thu hồi và làm lại — cái đó chính là key."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "verify",
+      "title": "Kiểm tra",
+      "blocks": [
+        {
+          "type": "code",
+          "language": "bash",
+          "code": [
+            "ssh -T git@github.com"
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "Thấy gì",
+            "Nghĩa là gì"
+          ],
+          "rows": [
+            [
+              "Hi <name>! You've successfully authenticated",
+              "Xong. GitHub không mở shell nên câu chào tạm biệt ngay sau đó là bình thường."
+            ],
+            [
+              "Permission denied (publickey)",
+              "Agent chưa có key, hoặc GitHub đang giữ key khác. Chạy lại ssh-add."
+            ],
+            [
+              "Are you sure you want to continue connecting?",
+              "Lần đầu kết nối. Đối chiếu fingerprint với danh sách GitHub công bố rồi chấp nhận."
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "switch-remote",
+      "title": "Chuyển repo khỏi HTTPS",
+      "summary": "Repo clone bằng HTTPS vẫn sẽ hỏi token cho tới khi bạn đổi remote.",
+      "blocks": [
+        {
+          "type": "code",
+          "language": "bash",
+          "code": [
+            "git remote -v",
+            "git remote set-url origin git@github.com:owner/repo.git"
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Remote HTTPS bắt đầu bằng https://github.com/.",
+            "Remote SSH bắt đầu bằng git@github.com:.",
+            "Clone mới: lấy url SSH ở nút Code màu xanh."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "several-accounts",
+      "title": "Hai tài khoản trên một máy",
+      "summary": "Công việc và cá nhân không dùng chung key được — GitHub chỉ cho một key thuộc một tài khoản.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Host alias trong url remote quyết định key nào được dùng.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "git@github-work:…",
+                  "detail": "Remote của repo công việc"
+                },
+                {
+                  "label": "git@github.com:…",
+                  "detail": "Remote của repo cá nhân"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "~/.ssh/config",
+                  "detail": "Khớp Host, chọn IdentityFile"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "id_work",
+                  "detail": "Tài khoản công việc"
+                },
+                {
+                  "label": "id_ed25519",
+                  "detail": "Tài khoản cá nhân"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "ssh_config",
+          "caption": "Hai host, cùng một server thật",
+          "code": [
+            "Host github-work",
+            "  HostName github.com",
+            "  IdentityFile ~/.ssh/id_work",
+            "  IdentitiesOnly yes",
+            "",
+            "Host github.com",
+            "  IdentityFile ~/.ssh/id_ed25519",
+            "  IdentitiesOnly yes"
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "IdentitiesOnly yes chặn agent chào mời tất cả key nó đang giữ.",
+            "Clone repo công việc bằng git@github-work:org/repo.git.",
+            "Đặt user.email riêng cho từng repo, không thì commit mang sai danh tính."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "troubleshooting",
+      "title": "Lỗi thường gặp",
+      "blocks": [
+        {
+          "type": "table",
+          "columns": [
+            "Lỗi",
+            "Cách xử lý"
+          ],
+          "rows": [
+            [
+              "Permission denied (publickey)",
+              "ssh-add -l không liệt kê gì. Nạp lại key, và kiểm tra GitHub đang giữ đúng file .pub."
+            ],
+            [
+              "Lần nào cũng hỏi passphrase",
+              "Key chưa vào keychain. Thêm lại với --apple-use-keychain."
+            ],
+            [
+              "Bad owner or permissions on ~/.ssh/config",
+              "chmod 700 ~/.ssh và chmod 600 cho các file bên trong."
+            ],
+            [
+              "Push nhầm tài khoản",
+              "Remote đang dùng github.com thay vì host alias công việc. Sửa bằng git remote set-url."
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

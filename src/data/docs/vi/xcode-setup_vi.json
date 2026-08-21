@@ -1,0 +1,493 @@
+{
+  "title": "Set up Xcode trên máy Mac mới",
+  "tagline": "Từ máy trắng đến build nằm trên TestFlight, cho người đã đóng tiền Apple Developer Program.",
+  "icon": "🛠️",
+  "accent": "#147efb",
+  "tags": [
+    "Xcode",
+    "iOS",
+    "Apple Developer"
+  ],
+  "readingTime": "10 phút",
+  "effectiveDate": "2026-08-21",
+  "lastUpdated": "2026-08-21",
+  "intro": [
+    "Bạn đã đóng 99 USD và đang cầm một máy Mac chưa có gì. Đây là đường ngắn nhất tới một môi trường build và ship được.",
+    "Làm lần lượt từ trên xuống, phần sau giả định phần trước đã xong."
+  ],
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Tổng quan",
+      "summary": "Năm chặng. Mọi thứ bên dưới đều nằm trong đó.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Toàn bộ đường đi, từ máy trắng tới TestFlight.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Chuẩn bị",
+                  "detail": "Apple Account, dung lượng, macOS"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Cài Xcode",
+                  "detail": "App Store, .xip hoặc xcodes"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Toolchain",
+                  "detail": "xcode-select, license, Homebrew"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Ký ứng dụng",
+                  "detail": "Certificate, App ID, profile"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Ship",
+                  "detail": "Máy thật, rồi archive"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "checklist",
+          "items": [
+            "Đăng nhập Apple Account trong System Settings",
+            "Cài Xcode, Command Line Tools và simulator runtime",
+            "Chấp nhận license của Xcode",
+            "Cài Homebrew và tooling của dự án",
+            "Thêm Apple ID vào Xcode → Settings → Accounts",
+            "Để Xcode cấp Development certificate",
+            "Đăng ký UDID máy test nếu ký thủ công",
+            "Tạo App Store Connect API key cho CI",
+            "Chạy trên máy thật, rồi archive lên TestFlight"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prepare",
+      "title": "Chuẩn bị máy",
+      "summary": "Ba thứ phải đúng trước khi bấm tải.",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "Dung lượng — Xcode khoảng 15 GB, mỗi simulator runtime thêm 7 – 10 GB. Chừa 60 GB trống.",
+            "Apple Account — đăng nhập đúng Apple ID sở hữu Developer Program. Tài khoản này bắt buộc bật 2FA.",
+            "Phiên bản macOS — mỗi bản Xcode có một mức tối thiểu. Update macOS trước, làm ngược lại sẽ lỗi giữa chừng."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "caption": "Xem máy đang chạy bản nào",
+          "code": [
+            "sw_vers"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "install-xcode",
+      "title": "Cài Xcode",
+      "summary": "Ba cách, cùng ra một Xcode.app. Chọn một.",
+      "blocks": [
+        {
+          "type": "table",
+          "columns": [
+            "Cách",
+            "Khi nào dùng"
+          ],
+          "rows": [
+            [
+              "Mac App Store",
+              "Chỉ cần bản mới nhất và không muốn nghĩ thêm."
+            ],
+            [
+              "xcodereleases.com",
+              "Cần đúng một phiên bản, ví dụ để khớp với CI."
+            ],
+            [
+              "xcodes CLI",
+              "Hay phải nhảy qua lại giữa nhiều bản."
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "caption": "Giải nén file .xip tải từ Xcode Releases",
+          "code": [
+            "xip --expand ~/Downloads/Xcode_26.x.xip",
+            "mv ~/Downloads/Xcode.app /Applications/Xcode.app"
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "caption": "Hoặc để xcodes CLI giữ nhiều bản song song",
+          "code": [
+            "brew install xcodesorg/made/xcodes",
+            "xcodes install --latest",
+            "xcodes select 26.4"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "toolchain",
+      "title": "Toolchain và công cụ",
+      "summary": "Mở Xcode một lần cho nó cài component, rồi làm nốt bằng terminal.",
+      "blocks": [
+        {
+          "type": "code",
+          "language": "bash",
+          "caption": "Trỏ toolchain vào Xcode và chấp nhận license",
+          "code": [
+            "sudo xcode-select -s /Applications/Xcode.app/Contents/Developer",
+            "sudo xcodebuild -license accept",
+            "sudo xcodebuild -runFirstLaunch",
+            "xcode-select --install",
+            "softwareupdate --install-rosetta --agree-to-license"
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "info",
+          "body": [
+            "Bỏ qua bước license thì mọi lệnh xcodebuild sẽ dừng lại hỏi thay vì build."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "caption": "Từ Xcode 15, simulator runtime tải riêng",
+          "code": [
+            "xcodebuild -downloadPlatform iOS",
+            "xcrun simctl list runtimes"
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "caption": "Homebrew, git và bộ công cụ iOS quen thuộc",
+          "code": [
+            "brew install git gh swiftlint swiftformat xcbeautify",
+            "brew install mise && mise use -g ruby@3.3",
+            "gem install cocoapods fastlane"
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "info",
+          "body": [
+            "Cài tooling Ruby qua mise hoặc rbenv, đừng đụng vào system Ruby. Dự án dùng Swift Package Manager thì bỏ hẳn CocoaPods."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "signing",
+      "title": "Ký ứng dụng",
+      "summary": "Phần hay hỏng nhất. Apple ID không mang gì sang cả, máy này cần certificate của riêng nó.",
+      "blocks": [
+        {
+          "type": "table",
+          "columns": [
+            "Thành phần",
+            "Là gì",
+            "Nằm ở đâu"
+          ],
+          "rows": [
+            [
+              "Certificate",
+              "Danh tính của bạn với Apple, mất private key là vô dụng.",
+              "Keychain trên máy này"
+            ],
+            [
+              "App ID",
+              "Bundle id kèm những capability được phép dùng.",
+              "Developer portal"
+            ],
+            [
+              "Provisioning profile",
+              "Giấy Apple ký, gắn hai thứ trên với danh sách thiết bị.",
+              "Portal, Xcode tải về"
+            ]
+          ]
+        },
+        {
+          "type": "flow",
+          "caption": "Ba đầu vào, một profile, một app đã ký.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Certificate",
+                  "detail": "Private key trong Keychain"
+                },
+                {
+                  "label": "App ID",
+                  "detail": "Bundle id + capabilities"
+                },
+                {
+                  "label": "Devices",
+                  "detail": "UDID, tới khi lên store thì thôi"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Provisioning profile",
+                  "detail": "Apple cấp"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "App đã ký",
+                  "detail": "Chạy trên máy thật, upload được lên App Store Connect"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Automatic signing"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Target → Signing & Capabilities → tick Automatically manage signing.",
+            "Chọn team; Xcode tự tạo certificate, App ID và profile.",
+            "Cứ dùng cách này trừ khi bị buộc phải làm khác."
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "Mỗi tài khoản chỉ được 2 Development và 3 Distribution certificate. Khi Xcode báo hết quota thì vào portal revoke bớt cái cũ, đừng lập tài khoản thứ hai."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Manual signing, cho team và CI"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Tạo CSR: Keychain Access → Certificate Assistant → Request a Certificate from a Certificate Authority, chọn Saved to disk.",
+            "Portal → Certificates → upload CSR, tải .cer về rồi double-click.",
+            "Portal → Identifiers → tạo App ID và bật các capability app dùng.",
+            "Portal → Devices → thêm UDID, rồi Profiles → tạo và tải profile về."
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "fastlane match làm hết những việc trên một lần, cho cả team.",
+            "Nó giữ certificate và profile đã mã hoá trong một git repo.",
+            "Máy sau chỉ cần quyền đọc repo và passphrase."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "code": [
+            "fastlane match development",
+            "fastlane match appstore"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "app-store-connect",
+      "title": "App Store Connect",
+      "summary": "Tạo hồ sơ app, rồi tạo key để CI upload mà không vướng 2FA.",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "My Apps → New App.",
+            "Điền platform, tên app và ngôn ngữ chính.",
+            "Chọn bundle id đã tạo sẵn ở portal, và một SKU do bạn tự đặt."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "API key cho CI"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Users and Access → Integrations → App Store Connect API → thêm key.",
+            "Role App Manager là đủ, Admin chỉ khi cần quản lý user.",
+            "Tải file .p8 và ghi lại Key ID cùng Issuer ID."
+          ]
+        },
+        {
+          "type": "flow",
+          "caption": "Ba giá trị đó chính là toàn bộ phần đăng nhập của CI.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "File .p8",
+                  "detail": "Chỉ tải được một lần"
+                },
+                {
+                  "label": "Key ID"
+                },
+                {
+                  "label": "Issuer ID"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "fastlane / altool",
+                  "detail": "Chạy trên CI hoặc trên máy"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "TestFlight",
+                  "detail": "Build hiện ra, không hỏi mã 2FA"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "File .p8 chỉ tải được đúng một lần. Mất là phải tạo key mới, không có cách khác."
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Push notification cần key thứ hai ở cùng trang đó: APNs.",
+            "Một file APNs .p8 dùng chung cho development, production và mọi app trong team."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "first-build",
+      "title": "Build đầu tiên",
+      "summary": "Qua được ba bước này là setup coi như xong.",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "Chạy trên simulator — chứng minh toolchain và runtime ổn.",
+            "Chạy trên iPhone thật, bật Developer Mode trong Settings → Privacy & Security — chứng minh signing ổn.",
+            "Product → Archive → Distribute App → TestFlight & App Store — chứng minh khâu phát hành ổn."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "caption": "Vẫn archive đó, làm bằng dòng lệnh",
+          "code": [
+            "xcodebuild -workspace App.xcworkspace -scheme App \\",
+            "  -destination 'generic/platform=iOS' \\",
+            "  -archivePath build/App.xcarchive archive | xcbeautify"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "troubleshooting",
+      "title": "Lỗi thường gặp",
+      "summary": "Bốn thông báo này chiếm gần hết thời gian mắc kẹt.",
+      "blocks": [
+        {
+          "type": "table",
+          "columns": [
+            "Lỗi",
+            "Cách xử lý"
+          ],
+          "rows": [
+            [
+              "No signing certificate found",
+              "Máy chưa có private key. Vào Xcode → Settings → Accounts → Manage Certificates → thêm mới."
+            ],
+            [
+              "Profile doesn't include signing certificate",
+              "Profile được tạo trước certificate. Vào portal sửa profile, tick certificate, save, rồi tải profile lại."
+            ],
+            [
+              "Device not registered",
+              "UDID chưa nằm trong profile. Thêm thiết bị rồi sinh lại profile, hoặc chuyển sang automatic signing."
+            ],
+            [
+              "xcrun: unable to find utility",
+              "xcode-select đang trỏ vào Command Line Tools thay vì Xcode.app. Trỏ lại là xong."
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "caption": "Khi build chậm bất thường hoặc đầy ổ",
+          "code": [
+            "rm -rf ~/Library/Developer/Xcode/DerivedData/*",
+            "rm -rf ~/Library/Developer/Xcode/iOS\\ DeviceSupport/*",
+            "xcrun simctl delete unavailable"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "backup",
+      "title": "Backup ngay",
+      "summary": "Làm ngay hôm nay thì lần đổi máy sau chỉ mất một buổi chiều.",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "Cả hai certificate export ra .p12, kèm mật khẩu",
+            "File .p8 của App Store Connect và của APNs",
+            "Key ID, Issuer ID và Team ID",
+            "Danh sách bundle id và capability đã bật cho từng cái"
+          ]
+        },
+        {
+          "type": "text",
+          "body": [
+            "Cất trong password manager, đừng bao giờ để trong repo. Mất .p12 là không lấy lại được private key, chỉ có thể tạo cái mới."
+          ]
+        }
+      ]
+    }
+  ]
+}

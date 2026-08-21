@@ -3,11 +3,11 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   LANGUAGES,
-  resolveDoc,
   type Block,
-  type Localized,
+  type CodeBlock,
+  type Doc,
 } from "@/lib/doc-model";
-import { getDocs } from "@/lib/docs";
+import { getDocBundles } from "@/lib/docs";
 import { ResourceConstant } from "@/lib/resource-constant.mts";
 import { RESERVED_SLUGS } from "@/lib/routes";
 
@@ -49,224 +49,312 @@ const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
  */
 const MAX_STRING_LENGTH = 280;
 
-function isLocalized(value: unknown): value is Localized {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value) &&
-    LANGUAGES.some((lang) => lang in value)
-  );
+/**
+ * A guide with the translated words taken out.
+ *
+ * The two language files are separate documents now, so nothing but a test
+ * stops them drifting: a section added to one and not the other, a table that
+ * grew a row on one side, a command edited in English only. Comparing the
+ * skeletons catches all of it in one assertion, and the diff names the part
+ * that moved.
+ */
+function skeleton(doc: Doc) {
+  return {
+    icon: doc.icon,
+    accent: doc.accent,
+    tags: doc.tags,
+    effectiveDate: doc.effectiveDate,
+    lastUpdated: doc.lastUpdated,
+    introParagraphs: doc.intro.length,
+    sections: doc.sections.map((section) => ({
+      id: section.id,
+      hasSummary: section.summary !== undefined,
+      blocks: section.blocks.map(blockSkeleton),
+    })),
+  };
 }
 
-/** Every translated string in a guide, with the path that leads to it. */
-function localizedEntries(value: unknown, at = "doc"): [string, Localized][] {
-  if (Array.isArray(value)) {
-    return value.flatMap((item, index) => localizedEntries(item, `${at}[${index}]`));
+function blockSkeleton(block: Block) {
+  switch (block.type) {
+    case "heading":
+      return { type: block.type };
+    case "text":
+      return { type: block.type, paragraphs: block.body.length };
+    case "note":
+      return { type: block.type, tone: block.tone, paragraphs: block.body.length };
+    case "list":
+    case "checklist":
+    case "steps":
+      return { type: block.type, items: block.items.length };
+    case "code":
+      // Commands are the same in every language; only the caption is written
+      // twice, so the code itself is compared rather than counted.
+      return { type: block.type, language: block.language, code: block.code };
+    case "table":
+      return {
+        type: block.type,
+        columns: block.columns.length,
+        rows: block.rows.map((row) => row.length),
+      };
+    case "flow":
+      return {
+        type: block.type,
+        hasCaption: block.caption !== undefined,
+        stages: block.stages.map((stage) =>
+          stage.items.map((item) => item.detail !== undefined),
+        ),
+      };
+  }
+}
+
+/**
+ * Every string a reader sees, with the path that leads to it.
+ *
+ * Command samples are skipped apart from their caption: a blank line inside one
+ * is deliberate spacing, and the commands are not prose to be measured.
+ */
+function strings(value: unknown, at = "doc"): [string, string][] {
+  if (typeof value === "string") return [[at, value]];
+
+  if (isCodeBlock(value)) {
+    return value.caption === undefined ? [] : [[`${at}.caption`, value.caption]];
   }
 
-  if (isLocalized(value)) {
-    return [[at, value]];
+  if (Array.isArray(value)) {
+    return value.flatMap((item, index) => strings(item, `${at}[${index}]`));
   }
 
   if (typeof value === "object" && value !== null) {
     return Object.entries(value).flatMap(([key, child]) =>
-      localizedEntries(child, `${at}.${key}`),
+      strings(child, `${at}.${key}`),
     );
   }
 
   return [];
 }
 
-const docs = getDocs();
+function isCodeBlock(value: unknown): value is CodeBlock {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (value as Block).type === "code"
+  );
+}
+
+const bundles = getDocBundles();
 
 describe("doc files", () => {
-  it("contains only .json files", () => {
-    const unexpected = fs
-      .readdirSync(docsDir)
-      .filter((file) => !file.endsWith(".json"));
-
-    expect(unexpected).toEqual([]);
+  it("holds nothing but a folder per language", () => {
+    expect(fs.readdirSync(docsDir).sort()).toEqual([...LANGUAGES].sort());
   });
 
-  it("loads at least one doc", () => {
-    expect(docs.length).toBeGreaterThan(0);
+  it("names every file after its slug and its language", () => {
+    // The suffix repeats the folder on purpose: an editor tab shows only the
+    // filename, and a file in the wrong folder stops matching.
+    for (const lang of LANGUAGES) {
+      const misnamed = fs
+        .readdirSync(path.join(docsDir, lang))
+        .filter((file) => !file.endsWith(`_${lang}.json`));
+
+      expect(misnamed).toEqual([]);
+    }
   });
 
-  it("lists the most recently updated doc first", () => {
-    const updated = docs.map((doc) => doc.lastUpdated);
+  it("has the same guides under every language", () => {
+    // A file added to one folder and not the other is the easy mistake now that
+    // a guide is two documents rather than one.
+    const [first, ...rest] = LANGUAGES.map((lang) =>
+      fs
+        .readdirSync(path.join(docsDir, lang))
+        .map((file) => file.replace(`_${lang}.json`, ""))
+        .sort(),
+    );
+
+    for (const other of rest) {
+      expect(other).toEqual(first);
+    }
+  });
+
+  it("loads at least one guide", () => {
+    expect(bundles.length).toBeGreaterThan(0);
+  });
+
+  it("lists the most recently updated guide first", () => {
+    const updated = bundles.map((bundle) => bundle.versions.en.lastUpdated);
 
     expect(updated).toEqual([...updated].sort().reverse());
   });
+
+  it("has both languages of every guide on disk", () => {
+    // The loader throws on a missing half; this states the rule where a reader
+    // of the tests will find it.
+    for (const bundle of bundles) {
+      for (const lang of LANGUAGES) {
+        expect(fs.readdirSync(path.join(docsDir, lang))).toContain(
+          `${bundle.slug}_${lang}.json`,
+        );
+      }
+    }
+  });
 });
 
-describe.each(docs.map((doc) => [doc.slug, doc] as const))("%s", (slug, doc) => {
-  const entries = localizedEntries(doc);
-  const blocks: Block[] = doc.sections.flatMap((section) => section.blocks);
+describe.each(bundles.map((bundle) => [bundle.slug, bundle] as const))(
+  "%s",
+  (slug, bundle) => {
+    it("has a url-safe slug that no top-level section shadows", () => {
+      expect(slug).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+      expect([...RESERVED_SLUGS] as string[]).not.toContain(slug);
+    });
 
-  it("uses only known fields", () => {
-    const unknown = Object.keys(doc).filter(
-      (key) => key !== "slug" && !ALLOWED_KEYS.has(key),
-    );
+    it("is the same document in both languages", () => {
+      expect(skeleton(bundle.versions.vi)).toEqual(skeleton(bundle.versions.en));
+    });
 
-    expect(unknown).toEqual([]);
-  });
+    describe.each(LANGUAGES)("%s", (lang) => {
+      const doc = bundle.versions[lang];
+      const blocks: Block[] = doc.sections.flatMap((section) => section.blocks);
 
-  it("has a url-safe slug that no top-level section shadows", () => {
-    expect(slug).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
-    expect([...RESERVED_SLUGS] as string[]).not.toContain(slug);
-  });
+      it("uses only known fields", () => {
+        const unknown = Object.keys(doc).filter(
+          (key) => key !== "slug" && !ALLOWED_KEYS.has(key),
+        );
 
-  it("is written in every language the switch offers", () => {
-    // A half-translated guide would render an empty heading rather than fail,
-    // so the missing side is named here instead.
-    const missing = entries.flatMap(([at, value]) =>
-      LANGUAGES.filter((lang) => !value[lang]?.trim()).map(
-        (lang) => `${at} (${lang})`,
-      ),
-    );
+        expect(unknown).toEqual([]);
+      });
 
-    expect(missing).toEqual([]);
-  });
+      it("has no empty strings", () => {
+        const blank = strings(doc)
+          .filter(([, text]) => text.trim() === "")
+          .map(([at]) => at);
 
-  it("keeps every string short enough to scan", () => {
-    const sprawling = entries
-      .flatMap(([at, value]) =>
-        LANGUAGES.map((lang) => [`${at} (${lang})`, value[lang]] as const),
-      )
-      .filter(([, text]) => text.length > MAX_STRING_LENGTH)
-      .map(([at, text]) => `${at}: ${text.length} chars`);
+        expect(blank).toEqual([]);
+      });
 
-    expect(sprawling).toEqual([]);
-  });
+      it("keeps every string short enough to scan", () => {
+        const sprawling = strings(doc)
+          .filter(([, text]) => text.length > MAX_STRING_LENGTH)
+          .map(([at, text]) => `${at}: ${text.length} chars`);
 
-  it("illustrates itself with at least one diagram", () => {
-    expect(blocks.filter((block) => block.type === "flow").length).toBeGreaterThan(0);
-  });
+        expect(sprawling).toEqual([]);
+      });
 
-  it("is written in points, not paragraphs", () => {
-    // A guide is read standing at a machine, so the content belongs in lists,
-    // steps and tables. One block of prose per section is the ceiling; a second
-    // one means the point wants breaking up.
-    const wordy = doc.sections
-      .filter(
-        (section) =>
-          section.blocks.filter((block) => block.type === "text").length > 1,
-      )
-      .map((section) => section.id);
+      it("is written in points, not paragraphs", () => {
+        // A guide is read standing at a machine, so the content belongs in
+        // lists, steps and tables. One block of prose per section is the
+        // ceiling; a second one means the point wants breaking up.
+        const wordy = doc.sections
+          .filter(
+            (section) =>
+              section.blocks.filter((block) => block.type === "text").length > 1,
+          )
+          .map((section) => section.id);
 
-    expect(wordy).toEqual([]);
-  });
+        expect(wordy).toEqual([]);
+      });
 
-  it("has non-empty plain fields and a hex accent", () => {
-    expect(doc.icon.trim()).not.toBe("");
-    expect(doc.accent).toMatch(HEX_COLOR);
-    expect(doc.tags.length).toBeGreaterThan(0);
-    expect(doc.intro.length).toBeGreaterThan(0);
-  });
+      it("illustrates itself with at least one diagram", () => {
+        expect(
+          blocks.filter((block) => block.type === "flow").length,
+        ).toBeGreaterThan(0);
+      });
 
-  it("has valid dates that are not in the wrong order", () => {
-    expect(doc.effectiveDate).toMatch(ISO_DATE);
-    expect(doc.lastUpdated).toMatch(ISO_DATE);
+      it("has a hex accent, tags and an intro", () => {
+        expect(doc.accent).toMatch(HEX_COLOR);
+        expect(doc.tags.length).toBeGreaterThan(0);
+        expect(doc.intro.length).toBeGreaterThan(0);
+      });
 
-    expect(Date.parse(doc.lastUpdated)).toBeGreaterThanOrEqual(
-      Date.parse(doc.effectiveDate),
-    );
-  });
+      it("has valid dates that are not in the wrong order", () => {
+        expect(doc.effectiveDate).toMatch(ISO_DATE);
+        expect(doc.lastUpdated).toMatch(ISO_DATE);
 
-  it("has sections with unique, language-independent anchor ids", () => {
-    // Switching language re-renders in place, so an id that differed between
-    // the two would drop the reader out of the section they were in.
-    const ids = doc.sections.map((section) => section.id);
+        expect(Date.parse(doc.lastUpdated)).toBeGreaterThanOrEqual(
+          Date.parse(doc.effectiveDate),
+        );
+      });
 
-    expect(new Set(ids).size).toBe(ids.length);
+      it("has sections with unique, language-independent anchor ids", () => {
+        const ids = doc.sections.map((section) => section.id);
 
-    for (const id of ids) {
-      expect(id).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
-    }
-  });
+        expect(new Set(ids).size).toBe(ids.length);
 
-  it("has a non-empty body in every section", () => {
-    expect(doc.sections.length).toBeGreaterThan(0);
+        for (const id of ids) {
+          expect(id).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+        }
+      });
 
-    for (const section of doc.sections) {
-      expect(section.blocks.length).toBeGreaterThan(0);
-    }
-  });
+      it("has a non-empty body in every section", () => {
+        expect(doc.sections.length).toBeGreaterThan(0);
 
-  it("only uses block types the renderer knows how to draw", () => {
-    const unknown = blocks
-      .map((block) => block.type)
-      .filter((type) => !BLOCK_TYPES.has(type));
+        for (const section of doc.sections) {
+          expect(section.blocks.length).toBeGreaterThan(0);
+        }
+      });
 
-    expect(unknown).toEqual([]);
-  });
+      it("only uses block types the renderer knows how to draw", () => {
+        const unknown = blocks
+          .map((block) => block.type)
+          .filter((type) => !BLOCK_TYPES.has(type));
 
-  it("has content in every block", () => {
-    for (const block of blocks) {
-      switch (block.type) {
-        case "heading":
-          break;
-        case "text":
-        case "note":
-          expect(block.body.length).toBeGreaterThan(0);
-          break;
-        case "list":
-        case "checklist":
-        case "steps":
-          expect(block.items.length).toBeGreaterThan(0);
-          break;
-        case "code":
-          expect(block.code.length).toBeGreaterThan(0);
-          expect(block.language.trim()).not.toBe("");
-          break;
-        case "table":
-          expect(block.columns.length).toBeGreaterThan(0);
-          expect(block.rows.length).toBeGreaterThan(0);
-          break;
-        case "flow":
-          expect(block.stages.length).toBeGreaterThan(1);
-          break;
-      }
-    }
-  });
+        expect(unknown).toEqual([]);
+      });
 
-  it("gives every table row a cell per column", () => {
-    // The header and the body are separate arrays, so a short row would render
-    // a ragged table rather than fail.
-    for (const block of blocks) {
-      if (block.type !== "table") continue;
+      it("has content in every block", () => {
+        for (const block of blocks) {
+          switch (block.type) {
+            case "heading":
+              break;
+            case "text":
+            case "note":
+              expect(block.body.length).toBeGreaterThan(0);
+              break;
+            case "list":
+            case "checklist":
+            case "steps":
+              expect(block.items.length).toBeGreaterThan(0);
+              break;
+            case "code":
+              expect(block.code.length).toBeGreaterThan(0);
+              expect(block.language.trim()).not.toBe("");
+              break;
+            case "table":
+              expect(block.columns.length).toBeGreaterThan(0);
+              expect(block.rows.length).toBeGreaterThan(0);
+              break;
+            case "flow":
+              expect(block.stages.length).toBeGreaterThan(1);
+              break;
+          }
+        }
+      });
 
-      for (const row of block.rows) {
-        expect(row).toHaveLength(block.columns.length);
-      }
-    }
-  });
+      it("gives every table row a cell per column", () => {
+        for (const block of blocks) {
+          if (block.type !== "table") continue;
 
-  it("labels every box in a diagram", () => {
-    for (const block of blocks) {
-      if (block.type !== "flow") continue;
+          for (const row of block.rows) {
+            expect(row).toHaveLength(block.columns.length);
+          }
+        }
+      });
 
-      for (const stage of block.stages) {
-        expect(stage.items.length).toBeGreaterThan(0);
-      }
-    }
-  });
+      it("labels every box in a diagram", () => {
+        for (const block of blocks) {
+          if (block.type !== "flow") continue;
 
-  it("uses a note tone the callout has styling for", () => {
-    for (const block of blocks) {
-      if (block.type !== "note") continue;
+          for (const stage of block.stages) {
+            expect(stage.items.length).toBeGreaterThan(0);
+          }
+        }
+      });
 
-      expect(["info", "warning"]).toContain(block.tone);
-    }
-  });
+      it("uses a note tone the callout has styling for", () => {
+        for (const block of blocks) {
+          if (block.type !== "note") continue;
 
-  it.each(LANGUAGES)("resolves to plain strings in %s", (lang) => {
-    const resolved = resolveDoc(doc, lang);
-
-    expect(typeof resolved.title).toBe("string");
-    expect(localizedEntries(resolved)).toEqual([]);
-    expect(resolved.sections.map((section) => section.id)).toEqual(
-      doc.sections.map((section) => section.id),
-    );
-  });
-});
+          expect(["info", "warning"]).toContain(block.tone);
+        }
+      });
+    });
+  },
+);

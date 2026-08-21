@@ -1,13 +1,8 @@
 import type { Metadata } from "next";
 import { DocIndex } from "@/components/docs/DocIndex";
 import { site } from "@/lib/apps";
-import {
-  LANGUAGES,
-  resolveDoc,
-  type Lang,
-  type ResolvedDoc,
-} from "@/lib/doc-model";
-import { getDocs } from "@/lib/docs";
+import { LANGUAGES, type Doc, type Lang } from "@/lib/doc-model";
+import { getDocBundles } from "@/lib/docs";
 import { routes } from "@/lib/routes";
 
 export const metadata: Metadata = {
@@ -18,11 +13,11 @@ export const metadata: Metadata = {
 };
 
 export default function DocsPage() {
-  const docs = getDocs();
+  const bundles = getDocBundles();
 
   const versions = Object.fromEntries(
-    LANGUAGES.map((lang) => [lang, docs.map((doc) => resolveDoc(doc, lang))]),
-  ) as Record<Lang, ResolvedDoc[]>;
+    LANGUAGES.map((lang) => [lang, bundles.map((bundle) => bundle.versions[lang])]),
+  ) as Record<Lang, Doc[]>;
 
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-20">

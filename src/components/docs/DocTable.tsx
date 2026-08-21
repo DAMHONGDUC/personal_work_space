@@ -16,7 +16,7 @@ export function DocTable({
   block,
   accent,
 }: {
-  block: TableBlock<string>;
+  block: TableBlock;
   accent: string;
 }) {
   return (

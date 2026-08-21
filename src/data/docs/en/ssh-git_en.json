@@ -1,0 +1,324 @@
+{
+  "title": "Set up SSH for git",
+  "tagline": "Keys, agent and config, so pushing stops asking who you are.",
+  "icon": "🔑",
+  "accent": "#22c55e",
+  "tags": [
+    "Git",
+    "SSH",
+    "GitHub"
+  ],
+  "readingTime": "6 min",
+  "effectiveDate": "2026-08-21",
+  "lastUpdated": "2026-08-21",
+  "intro": [
+    "One key per machine, added to the agent once, pasted into GitHub once. After that git never asks for a password."
+  ],
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Overview",
+      "summary": "Five steps, then it is done for good.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Where the key goes and who checks it.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Create the key",
+                  "detail": "ed25519 + passphrase"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "ssh-agent",
+                  "detail": "Holds it unlocked"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "GitHub",
+                  "detail": "Only the .pub half"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Test",
+                  "detail": "ssh -T git@github.com"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "SSH remote",
+                  "detail": "git@… instead of https://…"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "checklist",
+          "items": [
+            "Create an ed25519 key with a passphrase",
+            "Load it into ssh-agent and the macOS keychain",
+            "Paste the .pub half into GitHub",
+            "Confirm with ssh -T git@github.com",
+            "Point existing repos at the SSH remote"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "create-key",
+      "title": "Create the key",
+      "summary": "Two files: one secret, one public.",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "ed25519, not RSA — shorter, faster, and what GitHub recommends.",
+            "Set a passphrase. The keychain remembers it, so you type it once.",
+            "One key per machine. Do not copy a private key between computers.",
+            "id_ed25519 is the secret half; id_ed25519.pub is the half you share."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "caption": "Generate it, named after the machine",
+          "code": [
+            "ssh-keygen -t ed25519 -C \"macbook-2026\" -f ~/.ssh/id_ed25519"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "agent",
+      "title": "Load it into the agent",
+      "summary": "The agent holds the unlocked key so git can use it silently.",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "--apple-use-keychain stores the passphrase in the macOS keychain.",
+            "The config file re-adds the key after every reboot.",
+            "On Linux, drop the apple flags and let the desktop keyring hold it."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "code": [
+            "eval \"$(ssh-agent -s)\"",
+            "ssh-add --apple-use-keychain ~/.ssh/id_ed25519"
+          ]
+        },
+        {
+          "type": "code",
+          "language": "ssh_config",
+          "caption": "~/.ssh/config — survives a reboot",
+          "code": [
+            "Host github.com",
+            "  AddKeysToAgent yes",
+            "  UseKeychain yes",
+            "  IdentityFile ~/.ssh/id_ed25519"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "add-to-github",
+      "title": "Give GitHub the public half",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "Copy the public key to the clipboard.",
+            "GitHub → Settings → SSH and GPG keys → New SSH key.",
+            "Title it after the machine, paste, and save."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "code": [
+            "pbcopy < ~/.ssh/id_ed25519.pub"
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "Only the .pub file ever leaves the machine. If you paste the file without .pub, revoke it and start again — that one is the key itself."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "verify",
+      "title": "Check it works",
+      "blocks": [
+        {
+          "type": "code",
+          "language": "bash",
+          "code": [
+            "ssh -T git@github.com"
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "What you see",
+            "What it means"
+          ],
+          "rows": [
+            [
+              "Hi <name>! You've successfully authenticated",
+              "Done. GitHub does not open shells, so the goodbye that follows is normal."
+            ],
+            [
+              "Permission denied (publickey)",
+              "The agent has no key, or GitHub has a different one. Re-run ssh-add."
+            ],
+            [
+              "Are you sure you want to continue connecting?",
+              "First contact. Compare the fingerprint with GitHub's published list, then accept."
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "switch-remote",
+      "title": "Move repos off HTTPS",
+      "summary": "A repo cloned over HTTPS keeps asking for a token until you switch it.",
+      "blocks": [
+        {
+          "type": "code",
+          "language": "bash",
+          "code": [
+            "git remote -v",
+            "git remote set-url origin git@github.com:owner/repo.git"
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "HTTPS remotes start with https://github.com/.",
+            "SSH remotes start with git@github.com:.",
+            "New clones: copy the SSH url from the green Code button."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "several-accounts",
+      "title": "Two accounts on one machine",
+      "summary": "Work and personal cannot share a key — GitHub allows a key on one account only.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "The host alias in the remote url decides which key is used.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "git@github-work:…",
+                  "detail": "Remote of a work repo"
+                },
+                {
+                  "label": "git@github.com:…",
+                  "detail": "Remote of a personal repo"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "~/.ssh/config",
+                  "detail": "Matches the Host, picks the IdentityFile"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "id_work",
+                  "detail": "Work account"
+                },
+                {
+                  "label": "id_ed25519",
+                  "detail": "Personal account"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "ssh_config",
+          "caption": "Two hosts, one real server",
+          "code": [
+            "Host github-work",
+            "  HostName github.com",
+            "  IdentityFile ~/.ssh/id_work",
+            "  IdentitiesOnly yes",
+            "",
+            "Host github.com",
+            "  IdentityFile ~/.ssh/id_ed25519",
+            "  IdentitiesOnly yes"
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "IdentitiesOnly yes stops the agent offering every key it holds.",
+            "Clone work repos as git@github-work:org/repo.git.",
+            "Set user.email per repo too, or commits carry the wrong identity."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "troubleshooting",
+      "title": "Common errors",
+      "blocks": [
+        {
+          "type": "table",
+          "columns": [
+            "Error",
+            "Fix"
+          ],
+          "rows": [
+            [
+              "Permission denied (publickey)",
+              "ssh-add -l shows nothing. Load the key, and check GitHub holds the matching .pub."
+            ],
+            [
+              "Asks for the passphrase every time",
+              "The key is not in the keychain. Re-add it with --apple-use-keychain."
+            ],
+            [
+              "Bad owner or permissions on ~/.ssh/config",
+              "chmod 700 ~/.ssh and chmod 600 the files inside it."
+            ],
+            [
+              "Pushes to the wrong account",
+              "The remote uses github.com instead of the work host alias. Fix it with git remote set-url."
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

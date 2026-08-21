@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AppIcon } from "@/components/AppIcon";
 import { Badge } from "@/components/ui/badge";
-import type { Lang, ResolvedDoc } from "@/lib/doc-model";
+import type { Lang, Doc } from "@/lib/doc-model";
 import { formatDate } from "@/lib/format";
 import { routes } from "@/lib/routes";
 
@@ -10,7 +10,7 @@ import { routes } from "@/lib/routes";
  * index doubles as a table of contents and you can jump straight to the part you
  * came for instead of opening the guide and hunting for it.
  */
-export function DocCard({ doc, lang }: { doc: ResolvedDoc; lang: Lang }) {
+export function DocCard({ doc, lang }: { doc: Doc; lang: Lang }) {
   return (
     <article className="relative overflow-hidden rounded-2xl border border-border-soft bg-surface">
       <span

@@ -1,12 +1,12 @@
 import { HubCard } from "@/components/home/HubCard";
 import { formatDate, getApps, site } from "@/lib/apps";
 import { cv } from "@/lib/cv";
-import { getDocs } from "@/lib/docs";
+import { getDocBundles } from "@/lib/docs";
 import { routes } from "@/lib/routes";
 
 export default function Home() {
   const apps = getApps();
-  const docs = getDocs();
+  const docs = getDocBundles();
 
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-20">

@@ -12,7 +12,7 @@ const TONES = {
  * one destructive look, so the two tones this site uses are tinted here — the
  * component supplies the layout and the icon slot, the tone supplies the colour.
  */
-export function Callout({ block }: { block: NoteBlock<string> }) {
+export function Callout({ block }: { block: NoteBlock }) {
   const tone = TONES[block.tone];
 
   return (

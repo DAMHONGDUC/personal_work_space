@@ -13,7 +13,7 @@ export function FlowDiagram({
   block,
   accent,
 }: {
-  block: FlowBlock<string>;
+  block: FlowBlock;
   accent: string;
 }) {
   return (

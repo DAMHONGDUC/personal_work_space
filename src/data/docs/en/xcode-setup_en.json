@@ -1,0 +1,493 @@
+{
+  "title": "Set up Xcode on a new Mac",
+  "tagline": "From a blank machine to a build on TestFlight, for anyone already paying for the Apple Developer Program.",
+  "icon": "🛠️",
+  "accent": "#147efb",
+  "tags": [
+    "Xcode",
+    "iOS",
+    "Apple Developer"
+  ],
+  "readingTime": "10 min",
+  "effectiveDate": "2026-08-21",
+  "lastUpdated": "2026-08-21",
+  "intro": [
+    "You have paid the 99 USD and you are holding a Mac with nothing on it. This is the short path to a setup that builds and ships.",
+    "Work through the sections in order — each one assumes the one above it is done."
+  ],
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Overview",
+      "summary": "Five stages. Everything below fits into one of them.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "The whole route, blank machine to TestFlight.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Prepare",
+                  "detail": "Apple Account, disk, macOS"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Install Xcode",
+                  "detail": "App Store, .xip or xcodes"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Toolchain",
+                  "detail": "xcode-select, license, Homebrew"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Signing",
+                  "detail": "Certificate, App ID, profile"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Ship",
+                  "detail": "Real device, then archive"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "checklist",
+          "items": [
+            "Sign in to your Apple Account in System Settings",
+            "Install Xcode, Command Line Tools and a simulator runtime",
+            "Accept the Xcode license",
+            "Install Homebrew and the project's tooling",
+            "Add your Apple ID under Xcode → Settings → Accounts",
+            "Let Xcode issue a Development certificate",
+            "Register test device UDIDs if you sign manually",
+            "Create an App Store Connect API key for CI",
+            "Run on a real device, then archive to TestFlight"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prepare",
+      "title": "Prepare the machine",
+      "summary": "Three things to get right before you start downloading.",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "Disk — Xcode is about 15 GB and each simulator runtime another 7 – 10 GB. Keep 60 GB free.",
+            "Apple Account — sign in with the Apple ID that owns the Developer Program. Two-factor is mandatory on it.",
+            "macOS version — every Xcode has a minimum. Update macOS first; the other order fails halfway."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "caption": "Check what you are on",
+          "code": [
+            "sw_vers"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "install-xcode",
+      "title": "Install Xcode",
+      "summary": "Three ways to the same Xcode.app. Pick one.",
+      "blocks": [
+        {
+          "type": "table",
+          "columns": [
+            "Way",
+            "When to use it"
+          ],
+          "rows": [
+            [
+              "Mac App Store",
+              "You want the latest version and never want to think about it again."
+            ],
+            [
+              "xcodereleases.com",
+              "You need one specific version, for example to match CI."
+            ],
+            [
+              "xcodes CLI",
+              "You switch between versions often."
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "caption": "Unpack a .xip downloaded from Xcode Releases",
+          "code": [
+            "xip --expand ~/Downloads/Xcode_26.x.xip",
+            "mv ~/Downloads/Xcode.app /Applications/Xcode.app"
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "caption": "Or let the xcodes CLI hold several side by side",
+          "code": [
+            "brew install xcodesorg/made/xcodes",
+            "xcodes install --latest",
+            "xcodes select 26.4"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "toolchain",
+      "title": "Toolchain and tooling",
+      "summary": "Open Xcode once so it installs its components, then finish from the terminal.",
+      "blocks": [
+        {
+          "type": "code",
+          "language": "bash",
+          "caption": "Point the toolchain at Xcode and accept the license",
+          "code": [
+            "sudo xcode-select -s /Applications/Xcode.app/Contents/Developer",
+            "sudo xcodebuild -license accept",
+            "sudo xcodebuild -runFirstLaunch",
+            "xcode-select --install",
+            "softwareupdate --install-rosetta --agree-to-license"
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "info",
+          "body": [
+            "Skip the license step and every xcodebuild call stops with a prompt instead of building."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "caption": "Simulator runtimes ship separately since Xcode 15",
+          "code": [
+            "xcodebuild -downloadPlatform iOS",
+            "xcrun simctl list runtimes"
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "caption": "Homebrew, git and the usual iOS tooling",
+          "code": [
+            "brew install git gh swiftlint swiftformat xcbeautify",
+            "brew install mise && mise use -g ruby@3.3",
+            "gem install cocoapods fastlane"
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "info",
+          "body": [
+            "Install Ruby tooling under mise or rbenv, never into the system Ruby. Projects on Swift Package Manager can skip CocoaPods entirely."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "signing",
+      "title": "Signing",
+      "summary": "The part that goes wrong. Nothing carries over with your Apple ID — this machine needs its own certificate.",
+      "blocks": [
+        {
+          "type": "table",
+          "columns": [
+            "Piece",
+            "What it is",
+            "Where it lives"
+          ],
+          "rows": [
+            [
+              "Certificate",
+              "Your identity with Apple, useless without its private key.",
+              "Keychain on this Mac"
+            ],
+            [
+              "App ID",
+              "The bundle id plus the capabilities it may use.",
+              "Developer portal"
+            ],
+            [
+              "Provisioning profile",
+              "Apple's signed statement tying the two to a list of devices.",
+              "Portal, downloaded by Xcode"
+            ]
+          ]
+        },
+        {
+          "type": "flow",
+          "caption": "Three inputs, one profile, one signed app.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Certificate",
+                  "detail": "Private key in Keychain"
+                },
+                {
+                  "label": "App ID",
+                  "detail": "Bundle id + capabilities"
+                },
+                {
+                  "label": "Devices",
+                  "detail": "UDIDs, until you are on the store"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Provisioning profile",
+                  "detail": "Issued by Apple"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Signed app",
+                  "detail": "Runs on device, uploads to App Store Connect"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Automatic signing"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Target → Signing & Capabilities → tick Automatically manage signing.",
+            "Pick your team; Xcode creates the certificate, the App ID and the profile.",
+            "Use this unless something forces you not to."
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "You get 2 Development and 3 Distribution certificates per account. When Xcode says the limit is reached, revoke an old one in the portal — do not create a second account."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Manual signing, for teams and CI"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Create a CSR: Keychain Access → Certificate Assistant → Request a Certificate from a Certificate Authority, saved to disk.",
+            "Portal → Certificates → upload the CSR, download the .cer and double-click it.",
+            "Portal → Identifiers → create the App ID and enable the capabilities the app uses.",
+            "Portal → Devices → add the UDIDs, then Profiles → create and download the profile."
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "fastlane match does all of the above once, for the whole team.",
+            "It keeps the certificates and profiles encrypted in a git repo.",
+            "The next machine needs only read access and the passphrase."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "code": [
+            "fastlane match development",
+            "fastlane match appstore"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "app-store-connect",
+      "title": "App Store Connect",
+      "summary": "Create the app record, then the key that lets CI upload without a 2FA prompt.",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "My Apps → New App.",
+            "Fill in platform, app name and primary language.",
+            "Pick a bundle id created in the portal beforehand, and an SKU of your own."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "API key for CI"
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Users and Access → Integrations → App Store Connect API → add a key.",
+            "App Manager is enough; Admin only if it must manage users.",
+            "Download the .p8 and note the Key ID and Issuer ID."
+          ]
+        },
+        {
+          "type": "flow",
+          "caption": "Those three values are the whole login for CI.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": ".p8 key file",
+                  "detail": "Downloadable once"
+                },
+                {
+                  "label": "Key ID"
+                },
+                {
+                  "label": "Issuer ID"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "fastlane / altool",
+                  "detail": "On CI or on your machine"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "TestFlight",
+                  "detail": "Build appears with no 2FA prompt"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "The .p8 downloads exactly once. Lose it and the only fix is a new key."
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Push notifications need a second key from the same page: APNs.",
+            "One APNs .p8 covers development, production and every app in the team."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "first-build",
+      "title": "First build",
+      "summary": "Get through these three and the setup is proven.",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "Run on a simulator — proves the toolchain and the runtime.",
+            "Run on a real iPhone, with Developer Mode enabled under Settings → Privacy & Security — proves signing.",
+            "Product → Archive → Distribute App → TestFlight & App Store — proves distribution."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "caption": "The same archive from the command line",
+          "code": [
+            "xcodebuild -workspace App.xcworkspace -scheme App \\",
+            "  -destination 'generic/platform=iOS' \\",
+            "  -archivePath build/App.xcarchive archive | xcbeautify"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "troubleshooting",
+      "title": "Common errors",
+      "summary": "Four messages cover most of the time lost here.",
+      "blocks": [
+        {
+          "type": "table",
+          "columns": [
+            "Error",
+            "Fix"
+          ],
+          "rows": [
+            [
+              "No signing certificate found",
+              "The machine has no private key yet. Xcode → Settings → Accounts → Manage Certificates → add one."
+            ],
+            [
+              "Profile doesn't include signing certificate",
+              "The profile predates the certificate. Edit it in the portal, tick the certificate, save, then download profiles again."
+            ],
+            [
+              "Device not registered",
+              "The UDID is not in the profile. Add the device and regenerate, or switch to automatic signing."
+            ],
+            [
+              "xcrun: unable to find utility",
+              "xcode-select points at the Command Line Tools instead of Xcode.app. Point it back."
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "caption": "When builds turn slow or the disk fills up",
+          "code": [
+            "rm -rf ~/Library/Developer/Xcode/DerivedData/*",
+            "rm -rf ~/Library/Developer/Xcode/iOS\\ DeviceSupport/*",
+            "xcrun simctl delete unavailable"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "backup",
+      "title": "Back it up now",
+      "summary": "Do this today and the next machine takes an afternoon.",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "Both certificates exported as .p12, with their passwords",
+            "The App Store Connect .p8 and the APNs .p8",
+            "Key ID, Issuer ID and Team ID",
+            "Your bundle ids and the capabilities each one enables"
+          ]
+        },
+        {
+          "type": "text",
+          "body": [
+            "Keep them in a password manager, never in the repo. Without the .p12 a private key cannot be recovered, only replaced."
+          ]
+        }
+      ]
+    }
+  ]
+}

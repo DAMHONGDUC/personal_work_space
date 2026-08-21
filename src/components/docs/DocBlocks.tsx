@@ -14,7 +14,7 @@ export function DocBlocks({
   blocks,
   accent,
 }: {
-  blocks: Block<string>[];
+  blocks: Block[];
   accent: string;
 }) {
   return (

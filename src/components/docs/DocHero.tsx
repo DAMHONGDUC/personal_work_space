@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AppIcon } from "@/components/AppIcon";
 import { Badge } from "@/components/ui/badge";
-import type { Lang, ResolvedDoc } from "@/lib/doc-model";
+import type { Lang, Doc } from "@/lib/doc-model";
 import { formatDate } from "@/lib/format";
 import { routes } from "@/lib/routes";
 
@@ -15,7 +15,7 @@ export function DocHero({
   lang,
   children,
 }: {
-  doc: ResolvedDoc;
+  doc: Doc;
   lang: Lang;
   /** The language switch, placed alongside the guide's metadata. */
   children?: React.ReactNode;

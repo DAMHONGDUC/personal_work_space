@@ -1,0 +1,351 @@
+{
+  "title": "SSL pinning in a mobile app",
+  "tagline": "Pin the server's key, so a proxy holding a trusted certificate still reads nothing.",
+  "icon": "📌",
+  "accent": "#e11d48",
+  "tags": [
+    "Security",
+    "TLS",
+    "Mobile"
+  ],
+  "readingTime": "8 min",
+  "effectiveDate": "2026-08-21",
+  "lastUpdated": "2026-08-21",
+  "intro": [
+    "TLS proves the certificate is signed by a trusted CA. Pinning adds a second question: is it the key we expect?"
+  ],
+  "sections": [
+    {
+      "id": "overview",
+      "title": "What it does",
+      "summary": "One extra check, after the normal one passes.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "The pin check runs after the chain is already valid.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "App connects",
+                  "detail": "TLS handshake starts"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Server sends its chain",
+                  "detail": "Leaf + intermediates"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "OS validates the chain",
+                  "detail": "Signed by a trusted CA?"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "App compares the pin",
+                  "detail": "SHA-256 of the public key"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Match → continue",
+                  "detail": "Request is sent"
+                },
+                {
+                  "label": "Mismatch → abort",
+                  "detail": "Nothing leaves the app"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Stops a proxy whose CA was installed on the device — Charles, mitmproxy, an MDM profile.",
+            "Stops a compromised or mis-issuing CA signing a certificate for your domain.",
+            "Does not stop a rooted device: Frida can patch the check out.",
+            "Raises the cost of intercepting traffic. It is not a wall."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "what-to-pin",
+      "title": "What to pin",
+      "summary": "Three choices, and only one of them survives renewal.",
+      "blocks": [
+        {
+          "type": "table",
+          "columns": [
+            "Pin",
+            "Breaks when",
+            "Verdict"
+          ],
+          "rows": [
+            [
+              "Leaf certificate",
+              "Every renewal, so a few times a year.",
+              "Avoid."
+            ],
+            [
+              "Public key (SPKI)",
+              "Only when the key pair itself changes.",
+              "Use this."
+            ],
+            [
+              "Intermediate CA",
+              "The CA rotates its intermediate, without telling you.",
+              "Weak: anyone with a cert from that CA passes."
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "caption": "Read the SPKI pin off the live server",
+          "code": [
+            "openssl s_client -connect api.example.com:443 -servername api.example.com < /dev/null \\",
+            "  | openssl x509 -pubkey -noout \\",
+            "  | openssl pkey -pubin -outform der \\",
+            "  | openssl dgst -sha256 -binary \\",
+            "  | openssl enc -base64"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rotation",
+      "title": "Always ship a backup pin",
+      "summary": "This is the section that decides whether pinning ever bricks your app.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "The app already trusts the next key before the server switches to it.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Pin A",
+                  "detail": "Key in use today"
+                },
+                {
+                  "label": "Pin B",
+                  "detail": "Next key, generated early, kept offline"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Both ship in the release",
+                  "detail": "The app accepts either"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Server moves to key B",
+                  "detail": "Installed apps keep working"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Next release adds pin C",
+                  "detail": "And the cycle repeats"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "A single pin means the day the key changes, every installed app stops working.",
+            "Users on old versions cannot be fixed by a server change — only by a store update.",
+            "Generate the backup key now and keep it offline; a pin for a key you own is useless if it is lost with the server.",
+            "Pin only your own API. Third-party SDKs rotate on their schedule, not yours."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "android",
+      "title": "Android",
+      "summary": "Config for the whole app, or OkHttp for one client.",
+      "blocks": [
+        {
+          "type": "code",
+          "language": "xml",
+          "caption": "res/xml/network_security_config.xml — expiration disables the pin instead of killing the app",
+          "code": [
+            "<network-security-config>",
+            "  <domain-config>",
+            "    <domain includeSubdomains=\"true\">api.example.com</domain>",
+            "    <pin-set expiration=\"2027-06-01\">",
+            "      <pin digest=\"SHA-256\">AAAA…=</pin>",
+            "      <pin digest=\"SHA-256\">BBBB…=</pin>",
+            "    </pin-set>",
+            "  </domain-config>",
+            "</network-security-config>"
+          ]
+        },
+        {
+          "type": "code",
+          "language": "kotlin",
+          "caption": "Or per OkHttp client",
+          "code": [
+            "val pinner = CertificatePinner.Builder()",
+            "    .add(\"api.example.com\", \"sha256/AAAA…=\")",
+            "    .add(\"api.example.com\", \"sha256/BBBB…=\")",
+            "    .build()",
+            "",
+            "val client = OkHttpClient.Builder().certificatePinner(pinner).build()"
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "info",
+          "body": [
+            "Point android:networkSecurityConfig at the file in the manifest, or nothing is enforced."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ios",
+      "title": "iOS",
+      "blocks": [
+        {
+          "type": "code",
+          "language": "swift",
+          "caption": "TrustKit, declared once at launch",
+          "code": [
+            "let config: [String: Any] = [",
+            "    kTSKPinnedDomains: [",
+            "        \"api.example.com\": [",
+            "            kTSKPublicKeyHashes: [\"AAAA…=\", \"BBBB…=\"],",
+            "            kTSKEnforcePinning: true,",
+            "        ]",
+            "    ]",
+            "]",
+            "",
+            "TrustKit.initSharedInstance(withConfiguration: config)"
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "By hand it is a URLSessionDelegate that hashes the SPKI of the leaf and compares.",
+            "Never call completionHandler(.useCredential, …) without comparing — that turns pinning off.",
+            "TrustKit also reports failures, which is how you find a bad rollout early."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "flutter",
+      "title": "Flutter",
+      "blocks": [
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "badCertificateCallback is not pinning. It only runs after validation already failed, and returning true there weakens TLS instead of strengthening it."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "dart",
+          "caption": "Trust only your own CA, nothing the device trusts",
+          "code": [
+            "final context = SecurityContext(withTrustedRoots: false)",
+            "  ..setTrustedCertificatesBytes(await rootBundle",
+            "      .load('assets/api-ca.pem')",
+            "      .then((b) => b.buffer.asUint8List()));",
+            "",
+            "dio.httpClientAdapter = IOHttpClientAdapter(",
+            "  createHttpClient: () => HttpClient(context: context),",
+            ");"
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "This pins the CA, so renewing the leaf under the same CA keeps working.",
+            "For SPKI pinning use a package that hashes the key, and ship two hashes.",
+            "Bundle the .pem as an asset; do not fetch it over the network you are protecting."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "verify",
+      "title": "Prove it works",
+      "summary": "A pin you never tested is a pin you do not have.",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "Run mitmproxy and install its CA on the device or simulator.",
+            "Open the app without pinning: requests appear in the proxy.",
+            "Turn pinning on and repeat: the calls must fail, not merely look empty.",
+            "Change one pin to a wrong value and confirm the app fails closed."
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Test on a release build. Debug builds often trust user CAs and hide the result.",
+            "Add a test that fails if the pin list is empty, so a bad merge cannot silently disable it."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "risks",
+      "title": "How it goes wrong",
+      "blocks": [
+        {
+          "type": "table",
+          "columns": [
+            "Mistake",
+            "Consequence"
+          ],
+          "rows": [
+            [
+              "One pin, no backup",
+              "The key changes and every installed app is dead until users update."
+            ],
+            [
+              "Pinning a public CA root",
+              "Anyone who buys a certificate from that CA passes the check."
+            ],
+            [
+              "Pinning third-party hosts",
+              "Analytics or payments break on their rotation schedule, not yours."
+            ],
+            [
+              "No expiry and no kill switch",
+              "A bad pin can only be fixed by a store release, which takes days."
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

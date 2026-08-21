@@ -3,9 +3,9 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DocArticle } from "./DocArticle";
-import type { Lang, ResolvedDoc } from "@/lib/doc-model";
+import type { Lang, Doc } from "@/lib/doc-model";
 
-function version(lang: Lang): ResolvedDoc {
+function version(lang: Lang): Doc {
   const word = lang === "en" ? "English" : "Vietnamese";
 
   return {
@@ -29,7 +29,7 @@ function version(lang: Lang): ResolvedDoc {
   };
 }
 
-const versions: Record<Lang, ResolvedDoc> = { en: version("en"), vi: version("vi") };
+const versions: Record<Lang, Doc> = { en: version("en"), vi: version("vi") };
 
 let container: HTMLDivElement;
 let root: Root;

@@ -1,0 +1,351 @@
+{
+  "title": "SSL pinning trong app mobile",
+  "tagline": "Ghim key của server, để một proxy có certificate được tin vẫn không đọc được gì.",
+  "icon": "📌",
+  "accent": "#e11d48",
+  "tags": [
+    "Security",
+    "TLS",
+    "Mobile"
+  ],
+  "readingTime": "8 phút",
+  "effectiveDate": "2026-08-21",
+  "lastUpdated": "2026-08-21",
+  "intro": [
+    "TLS chứng minh certificate được một CA tin cậy ký. Pinning hỏi thêm câu thứ hai: có đúng key mình chờ không?"
+  ],
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Nó làm gì",
+      "summary": "Thêm đúng một bước kiểm tra, sau khi bước thường đã qua.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Bước so pin chạy sau khi chain đã hợp lệ.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "App mở kết nối",
+                  "detail": "Bắt đầu handshake TLS"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Server gửi chain",
+                  "detail": "Leaf + intermediate"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Hệ điều hành kiểm tra chain",
+                  "detail": "Có CA tin cậy ký không?"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "App so pin",
+                  "detail": "SHA-256 của public key"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Khớp → đi tiếp",
+                  "detail": "Request được gửi"
+                },
+                {
+                  "label": "Lệch → huỷ",
+                  "detail": "Không gì rời khỏi app"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Chặn proxy có CA đã cài trên máy — Charles, mitmproxy, hồ sơ MDM.",
+            "Chặn một CA bị chiếm hoặc cấp sai ký certificate cho domain của bạn.",
+            "Không chặn được máy đã root: Frida vá bỏ được bước kiểm tra.",
+            "Nâng giá phải trả để chặn traffic. Không phải bức tường."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "what-to-pin",
+      "title": "Ghim cái gì",
+      "summary": "Ba lựa chọn, chỉ một cái sống sót qua lần gia hạn.",
+      "blocks": [
+        {
+          "type": "table",
+          "columns": [
+            "Ghim",
+            "Vỡ khi",
+            "Kết luận"
+          ],
+          "rows": [
+            [
+              "Certificate leaf",
+              "Mỗi lần gia hạn, tức vài lần một năm.",
+              "Tránh."
+            ],
+            [
+              "Public key (SPKI)",
+              "Chỉ khi chính cặp key đổi.",
+              "Dùng cái này."
+            ],
+            [
+              "CA trung gian",
+              "CA xoay intermediate mà không báo bạn.",
+              "Yếu: ai có cert cùng CA đó đều qua."
+            ]
+          ]
+        },
+        {
+          "type": "code",
+          "language": "bash",
+          "caption": "Đọc pin SPKI từ server đang chạy",
+          "code": [
+            "openssl s_client -connect api.example.com:443 -servername api.example.com < /dev/null \\",
+            "  | openssl x509 -pubkey -noout \\",
+            "  | openssl pkey -pubin -outform der \\",
+            "  | openssl dgst -sha256 -binary \\",
+            "  | openssl enc -base64"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rotation",
+      "title": "Luôn ship pin dự phòng",
+      "summary": "Đây là phần quyết định pinning có làm chết app hay không.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "App đã tin key kế tiếp từ trước khi server chuyển sang nó.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Pin A",
+                  "detail": "Key đang dùng hôm nay"
+                },
+                {
+                  "label": "Pin B",
+                  "detail": "Key kế tiếp, tạo sẵn, cất offline"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Cả hai đi cùng bản release",
+                  "detail": "App chấp nhận cái nào cũng được"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Server chuyển sang key B",
+                  "detail": "App đã cài vẫn chạy"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Bản sau thêm pin C",
+                  "detail": "Rồi lặp lại vòng đó"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Chỉ một pin nghĩa là ngày key đổi, mọi app đã cài đều chết.",
+            "Người dùng bản cũ không cứu được bằng cách sửa server — chỉ bằng bản cập nhật trên store.",
+            "Tạo key dự phòng ngay và cất offline; pin cho một key sẽ vô dụng nếu nó mất cùng server.",
+            "Chỉ ghim API của mình. SDK bên thứ ba xoay key theo lịch của họ, không theo lịch của bạn."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "android",
+      "title": "Android",
+      "summary": "Config cho cả app, hoặc OkHttp cho một client.",
+      "blocks": [
+        {
+          "type": "code",
+          "language": "xml",
+          "caption": "res/xml/network_security_config.xml — expiration tắt pin thay vì giết app",
+          "code": [
+            "<network-security-config>",
+            "  <domain-config>",
+            "    <domain includeSubdomains=\"true\">api.example.com</domain>",
+            "    <pin-set expiration=\"2027-06-01\">",
+            "      <pin digest=\"SHA-256\">AAAA…=</pin>",
+            "      <pin digest=\"SHA-256\">BBBB…=</pin>",
+            "    </pin-set>",
+            "  </domain-config>",
+            "</network-security-config>"
+          ]
+        },
+        {
+          "type": "code",
+          "language": "kotlin",
+          "caption": "Hoặc theo từng OkHttp client",
+          "code": [
+            "val pinner = CertificatePinner.Builder()",
+            "    .add(\"api.example.com\", \"sha256/AAAA…=\")",
+            "    .add(\"api.example.com\", \"sha256/BBBB…=\")",
+            "    .build()",
+            "",
+            "val client = OkHttpClient.Builder().certificatePinner(pinner).build()"
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "info",
+          "body": [
+            "Trỏ android:networkSecurityConfig tới file đó trong manifest, không thì chẳng có gì được áp dụng."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ios",
+      "title": "iOS",
+      "blocks": [
+        {
+          "type": "code",
+          "language": "swift",
+          "caption": "TrustKit, khai báo một lần lúc khởi động",
+          "code": [
+            "let config: [String: Any] = [",
+            "    kTSKPinnedDomains: [",
+            "        \"api.example.com\": [",
+            "            kTSKPublicKeyHashes: [\"AAAA…=\", \"BBBB…=\"],",
+            "            kTSKEnforcePinning: true,",
+            "        ]",
+            "    ]",
+            "]",
+            "",
+            "TrustKit.initSharedInstance(withConfiguration: config)"
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Làm tay thì là một URLSessionDelegate băm SPKI của leaf rồi so.",
+            "Đừng gọi completionHandler(.useCredential, …) mà không so — làm vậy là tắt pinning.",
+            "TrustKit còn báo cáo lỗi, nhờ đó phát hiện sớm một lần rollout hỏng."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "flutter",
+      "title": "Flutter",
+      "blocks": [
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "badCertificateCallback không phải pinning. Nó chỉ chạy sau khi việc kiểm tra đã thất bại, và trả về true ở đó là làm yếu TLS chứ không phải mạnh lên."
+          ]
+        },
+        {
+          "type": "code",
+          "language": "dart",
+          "caption": "Chỉ tin CA của bạn, không tin gì máy đang tin",
+          "code": [
+            "final context = SecurityContext(withTrustedRoots: false)",
+            "  ..setTrustedCertificatesBytes(await rootBundle",
+            "      .load('assets/api-ca.pem')",
+            "      .then((b) => b.buffer.asUint8List()));",
+            "",
+            "dio.httpClientAdapter = IOHttpClientAdapter(",
+            "  createHttpClient: () => HttpClient(context: context),",
+            ");"
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Cách này ghim CA, nên gia hạn leaf dưới cùng CA đó vẫn chạy.",
+            "Muốn ghim SPKI thì dùng package băm key, và ship hai hash.",
+            "Đóng gói .pem thành asset; đừng tải nó qua chính đường mạng bạn đang bảo vệ."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "verify",
+      "title": "Chứng minh nó chạy",
+      "summary": "Pin chưa test là pin coi như không có.",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "Chạy mitmproxy và cài CA của nó lên máy hoặc simulator.",
+            "Mở app khi chưa bật pinning: request hiện trong proxy.",
+            "Bật pinning rồi làm lại: các lời gọi phải lỗi, không phải chỉ trông trống rỗng.",
+            "Đổi một pin thành giá trị sai và xác nhận app từ chối kết nối."
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Test trên bản release. Bản debug thường tin CA của user và che mất kết quả.",
+            "Thêm test fail khi danh sách pin rỗng, để một lần merge hỏng không âm thầm tắt nó."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "risks",
+      "title": "Nó hỏng kiểu gì",
+      "blocks": [
+        {
+          "type": "table",
+          "columns": [
+            "Sai lầm",
+            "Hậu quả"
+          ],
+          "rows": [
+            [
+              "Một pin, không dự phòng",
+              "Key đổi là mọi app đã cài chết cho tới khi người dùng cập nhật."
+            ],
+            [
+              "Ghim root của một CA công cộng",
+              "Ai mua certificate từ CA đó cũng qua được."
+            ],
+            [
+              "Ghim host của bên thứ ba",
+              "Analytics hay thanh toán vỡ theo lịch xoay của họ, không phải của bạn."
+            ],
+            [
+              "Không hạn và không kill switch",
+              "Pin sai chỉ sửa được bằng bản release trên store, mất vài ngày."
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

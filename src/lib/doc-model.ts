@@ -1,10 +1,16 @@
 /**
- * The shape of a guide, and how one language is picked out of it.
+ * The shape of a guide, in one language.
  *
- * Kept apart from the loader in `docs.ts` because the guide pages render in
- * a client component to switch language without a navigation — importing
- * anything that touches `node:fs` from there fails the build.
+ * A guide is two files — `<slug>_en.json` and `<slug>_vi.json` — each a whole
+ * guide on its own, so nothing here knows about translation. What keeps the two
+ * in step is `tests/doc-data.test.ts`, which fails if they stop matching
+ * structurally.
+ *
+ * Kept apart from the loader in `docs.ts` because the guide pages render in a
+ * client component to switch language without a navigation — importing anything
+ * that touches `node:fs` from there fails the build.
  */
+
 /** Every language a guide is written in. Both are required, never a fallback. */
 export const LANGUAGES = ["en", "vi"] as const;
 
@@ -15,31 +21,24 @@ export const LANGUAGE_LABELS: Record<Lang, string> = {
   vi: "Tiếng Việt",
 };
 
-/** One string in every language. */
-export type Localized = Record<Lang, string>;
-
-/**
- * The block types a guide is built from. `T` is what a piece of prose looks
- * like: `Localized` in the JSON on disk, `string` once resolved to one language,
- * so the renderers never learn about translation.
- */
-export type Block<T = Localized> =
+/** The block types a guide is built from. */
+export type Block =
   /** A sub-heading inside a section, for the "one way / the other way" splits. */
-  | { type: "heading"; text: T }
-  | { type: "text"; body: T[] }
-  | { type: "list"; items: T[] }
+  | { type: "heading"; text: string }
+  | { type: "text"; body: string[] }
+  | { type: "list"; items: string[] }
   /** Same data as a list, drawn with boxes because the reader ticks it off. */
-  | { type: "checklist"; items: T[] }
+  | { type: "checklist"; items: string[] }
   /** An ordered list, for steps that only work in the given order. */
-  | { type: "steps"; items: T[] }
+  | { type: "steps"; items: string[] }
   /**
-   * A command sample. The commands themselves are the same in every language —
-   * anything that needs explaining goes in the caption instead of a comment, so
-   * the code stays copy-pasteable and the prose stays translated.
+   * A command sample. The commands are identical in both languages — anything
+   * that needs explaining goes in the caption instead of a comment, so the code
+   * stays copy-pasteable and the prose stays translated.
    */
-  | { type: "code"; language: string; caption?: T; code: string[] }
-  | { type: "table"; columns: T[]; rows: T[][] }
-  | { type: "note"; tone: "info" | "warning"; body: T[] }
+  | { type: "code"; language: string; caption?: string; code: string[] }
+  | { type: "table"; columns: string[]; rows: string[][] }
+  | { type: "note"; tone: "info" | "warning"; body: string[] }
   /**
    * A diagram, described as data rather than markup: stages run top to bottom
    * with an arrow between them, and the boxes within one stage sit side by side.
@@ -47,110 +46,53 @@ export type Block<T = Localized> =
    */
   | {
       type: "flow";
-      caption?: T;
-      stages: { items: { label: T; detail?: T }[] }[];
+      caption?: string;
+      stages: { items: { label: string; detail?: string }[] }[];
     };
 
 /** Named shortcuts for the block types that have a renderer of their own. */
-export type CodeBlock<T = Localized> = Extract<Block<T>, { type: "code" }>;
-export type TableBlock<T = Localized> = Extract<Block<T>, { type: "table" }>;
-export type NoteBlock<T = Localized> = Extract<Block<T>, { type: "note" }>;
-export type FlowBlock<T = Localized> = Extract<Block<T>, { type: "flow" }>;
+export type CodeBlock = Extract<Block, { type: "code" }>;
+export type TableBlock = Extract<Block, { type: "table" }>;
+export type NoteBlock = Extract<Block, { type: "note" }>;
+export type FlowBlock = Extract<Block, { type: "flow" }>;
 
-export type DocSection<T = Localized> = {
-  /** Anchor id. Language-independent, so switching language keeps your place. */
+export type DocSection = {
+  /**
+   * Anchor id. The same in both languages, so switching language keeps the
+   * reader where they were.
+   */
   id: string;
-  title: T;
+  title: string;
   /** One line under the heading, also used as the blurb in the index. */
-  summary?: T;
-  blocks: Block<T>[];
+  summary?: string;
+  blocks: Block[];
 };
 
-/** The shape of one file in src/data/docs. The slug comes from the filename. */
-export type DocData<T = Localized> = {
-  title: T;
-  tagline: T;
+/** The shape of one file in src/data/docs. */
+export type DocData = {
+  title: string;
+  tagline: string;
   icon: string;
   accent: string;
   /** Product names, left untranslated. */
   tags: string[];
-  readingTime: T;
+  readingTime: string;
   effectiveDate: string;
   lastUpdated: string;
-  intro: T[];
-  sections: DocSection<T>[];
+  intro: string[];
+  sections: DocSection[];
 };
 
-export type Doc<T = Localized> = DocData<T> & { slug: string };
-
-/** A guide narrowed to one language, which is all the components ever see. */
-export type ResolvedDoc = Doc<string>;
-
-function pick(value: Localized, lang: Lang): string {
-  return value[lang];
-}
-
-function resolveBlock(block: Block, lang: Lang): Block<string> {
-  const t = (value: Localized) => pick(value, lang);
-
-  switch (block.type) {
-    case "heading":
-      return { ...block, text: t(block.text) };
-    case "text":
-    case "note":
-      return { ...block, body: block.body.map(t) };
-    case "list":
-    case "checklist":
-    case "steps":
-      return { ...block, items: block.items.map(t) };
-    case "code":
-      return { ...block, caption: block.caption && t(block.caption) };
-    case "table":
-      return {
-        ...block,
-        columns: block.columns.map(t),
-        rows: block.rows.map((row) => row.map(t)),
-      };
-    case "flow":
-      return {
-        ...block,
-        caption: block.caption && t(block.caption),
-        stages: block.stages.map((stage) => ({
-          items: stage.items.map((item) => ({
-            label: t(item.label),
-            detail: item.detail && t(item.detail),
-          })),
-        })),
-      };
-  }
-}
+/** One guide in one language. The slug comes from the filename. */
+export type Doc = DocData & { slug: string };
 
 /**
- * One language's version of a guide. Both versions are resolved at build time
- * and handed to the page together, so the language switch is a re-render with
- * nothing left to fetch.
+ * Every language's version of one guide.
+ *
+ * The page ships all of them and picks one in the browser, so switching is a
+ * re-render with nothing left to fetch.
  */
-export function resolveDoc(doc: Doc, lang: Lang): ResolvedDoc {
-  const t = (value: Localized) => pick(value, lang);
-
-  return {
-    ...doc,
-    title: t(doc.title),
-    tagline: t(doc.tagline),
-    readingTime: t(doc.readingTime),
-    intro: doc.intro.map(t),
-    sections: doc.sections.map((section) => ({
-      ...section,
-      title: t(section.title),
-      summary: section.summary && t(section.summary),
-      blocks: section.blocks.map((block) => resolveBlock(block, lang)),
-    })),
-  };
-}
-
-/** Every language's version of a guide, keyed by language. */
-export function resolveDocs(doc: Doc): Record<Lang, ResolvedDoc> {
-  return Object.fromEntries(
-    LANGUAGES.map((lang) => [lang, resolveDoc(doc, lang)]),
-  ) as Record<Lang, ResolvedDoc>;
-}
+export type DocBundle = {
+  slug: string;
+  versions: Record<Lang, Doc>;
+};

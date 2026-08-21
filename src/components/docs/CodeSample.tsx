@@ -5,7 +5,7 @@ import type { CodeBlock } from "@/lib/doc-model";
  * data file stays readable; they are joined back into a single <code> here so
  * selecting and copying the block gives real newlines.
  */
-export function CodeSample({ block }: { block: CodeBlock<string> }) {
+export function CodeSample({ block }: { block: CodeBlock }) {
   return (
     <figure className="mt-5 max-w-[68ch] overflow-hidden rounded-xl border border-border-soft bg-muted-surface">
       <figcaption className="flex items-center justify-between gap-4 border-b border-border-soft px-4 py-2 text-xs text-muted">

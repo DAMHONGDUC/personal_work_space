@@ -9,7 +9,7 @@ import { MobileToc, SidebarToc } from "@/components/policy/PolicyToc";
 import { Prose } from "@/components/policy/Prose";
 import { Section } from "@/components/policy/Section";
 import { useDocLanguage } from "@/hooks/useDocLanguage";
-import type { Lang, ResolvedDoc } from "@/lib/doc-model";
+import type { Lang, Doc } from "@/lib/doc-model";
 
 /**
  * One guide, in whichever language the reader picked.
@@ -18,7 +18,7 @@ import type { Lang, ResolvedDoc } from "@/lib/doc-model";
  * is a re-render: no request, no navigation, and because section ids are the
  * same in both, the anchor you arrived on still points at the same place.
  */
-export function DocArticle({ versions }: { versions: Record<Lang, ResolvedDoc> }) {
+export function DocArticle({ versions }: { versions: Record<Lang, Doc> }) {
   const [lang, setLang] = useDocLanguage();
   const doc = versions[lang];
 

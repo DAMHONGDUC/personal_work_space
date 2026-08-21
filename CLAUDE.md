@@ -18,13 +18,18 @@
 
 - **Apps**: one file per app in `src/data/apps/`. The filename is the URL slug.
   The loader reads the directory, so there is no index to register an app in.
-- **Guides**: one file per guide in `src/data/docs/`. The filename is the URL
-  slug; the loader reads the directory, so there is nothing to register. Three
-  rules, all enforced by `tests/doc-data.test.ts` — a guide that breaks one
-  fails the suite rather than shipping half-done:
-  - **Bilingual.** Every reader-visible string is `{ "en": …, "vi": … }`. The
-    page carries both languages and switches in the browser, so a missing side
-    is a blank on the page, not a fallback to the other language.
+- **Guides**: two files per guide — `src/data/docs/en/<slug>_en.json` and
+  `src/data/docs/vi/<slug>_vi.json`. The folder is the language and so is the
+  suffix: the repetition is deliberate, because an editor tab shows the
+  filename and not the folder. The slug is the URL, and the loader reads the
+  folders, so there is nothing to register. Rules, all enforced by
+  `tests/doc-data.test.ts` — a guide that breaks one fails the suite rather
+  than shipping half-done:
+  - **Bilingual, and structurally identical.** Each file is a whole guide in one
+    language. A slug present under one language and not the other fails the
+    build outright; there is no fallback. A test compares the two with the
+    words removed, so a section, a row or a command added on one side only is
+    caught and named.
   - **Short.** No string over 280 characters. If a point needs more, it wants a
     list, a table or two shorter entries — not a longer paragraph.
   - **Points, not paragraphs.** Lists, steps, tables and notes carry the
