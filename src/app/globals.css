@@ -1,34 +1,100 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
+/*
+ * Dark mode follows the operating system: no class, no toggle, no JavaScript,
+ * so a statically exported page is already correct in the first paint.
+ *
+ * shadcn components ship `dark:` utilities of their own, which normally look
+ * for a `.dark` ancestor. Pointing the variant at the media query instead makes
+ * those follow the OS too, rather than sitting permanently in light mode.
+ */
+@custom-variant dark (@media (prefers-color-scheme: dark));
+
+/*
+ * One palette, under two sets of names.
+ *
+ * The site's own names came first; the rest are what shadcn components ask for,
+ * defined here in terms of the same colours so a component dropped in matches
+ * the pages around it instead of bringing its own greys.
+ *
+ * Note `--accent` is shadcn's hover surface, and has nothing to do with the
+ * per-app accent colour the policies and guides use — that one is data, passed
+ * to components as a prop, and never a CSS variable.
+ */
 :root {
   --background: #ffffff;
+  --foreground: #14141a;
   --surface: #ffffff;
   --muted-surface: #f7f7f8;
   --border: #e6e6e9;
-  --foreground: #14141a;
-  --muted: #62626d;
-}
+  /* The site's `text-muted`. shadcn calls this muted-foreground, so it is
+     defined under that name and mapped to both below. */
+  --muted-foreground: #62626d;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-surface: var(--surface);
-  --color-muted-surface: var(--muted-surface);
-  --color-border-soft: var(--border);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --primary: var(--foreground);
+  --primary-foreground: var(--background);
+  --secondary: var(--muted-surface);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--muted-surface);
+  --accent: var(--muted-surface);
+  --accent-foreground: var(--foreground);
+  --destructive: oklch(0.577 0.245 27.325);
+  --input: var(--border);
+  --ring: var(--muted-foreground);
+  --radius: 0.625rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0c;
+    --foreground: #ededf0;
     --surface: #121216;
     --muted-surface: #16161b;
     --border: #26262d;
-    --foreground: #ededf0;
-    --muted: #9b9ba6;
+    --muted-foreground: #9b9ba6;
+    --destructive: oklch(0.704 0.191 22.216);
   }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-muted-surface: var(--muted-surface);
+  --color-border-soft: var(--border);
+  /* `text-muted` across the site predates shadcn and stays; it resolves to the
+     same colour shadcn components call muted-foreground. */
+  --color-muted: var(--muted-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
 }
 
 body {
