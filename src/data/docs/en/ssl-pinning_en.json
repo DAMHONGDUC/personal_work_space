@@ -82,6 +82,79 @@
       ]
     },
     {
+      "id": "fake-wifi",
+      "title": "Scenario: a fake Wi-Fi",
+      "summary": "What a coffee-shop network can do to an app that trusts the device.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "The same network, with and without a pin.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Free_Airport_WiFi",
+                  "detail": "An access point the attacker runs"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "A portal asks to install a profile",
+                  "detail": "Its CA lands in the device trust store"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "The app calls api.example.com",
+                  "detail": "The traffic goes through the attacker proxy"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "The chain looks valid",
+                  "detail": "Signed by a CA the device now trusts"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "No pin → readable",
+                  "detail": "Tokens, request bodies, and responses that can be edited"
+                },
+                {
+                  "label": "Pin → dropped",
+                  "detail": "The key is not the one shipped in the app"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "The session token in the Authorization header, replayable from anywhere.",
+            "Every request body: credentials at login, personal data after it.",
+            "The responses too — a balance, a price or a feature flag rewritten before the app sees it.",
+            "Nothing looks wrong to the user: the padlock is there and the certificate is valid."
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "The device is not compromised and the user did nothing careless. Trusting one extra CA is enough, and a captive portal is a normal-looking place to be asked."
+          ]
+        }
+      ]
+    },
+    {
       "id": "what-to-pin",
       "title": "What to pin",
       "summary": "Three choices, and only one of them survives renewal.",

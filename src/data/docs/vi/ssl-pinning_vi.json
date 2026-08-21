@@ -82,6 +82,79 @@
       ]
     },
     {
+      "id": "fake-wifi",
+      "title": "Kịch bản: wifi giả",
+      "summary": "Một mạng quán cà phê làm được gì với app chỉ tin vào máy.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Cùng một mạng, khác nhau ở chỗ có pin hay không.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Free_Airport_WiFi",
+                  "detail": "Điểm phát do kẻ tấn công dựng"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Trang đăng nhập mời cài profile",
+                  "detail": "CA của nó vào kho tin cậy của máy"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "App gọi api.example.com",
+                  "detail": "Traffic đi qua proxy của kẻ tấn công"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Chain trông vẫn hợp lệ",
+                  "detail": "Được ký bởi CA mà máy vừa tin"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Không pin → đọc được",
+                  "detail": "Token, body request, và response sửa được"
+                },
+                {
+                  "label": "Có pin → cắt kết nối",
+                  "detail": "Key không phải cái ship trong app"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Token phiên trong header Authorization, phát lại được từ bất cứ đâu.",
+            "Toàn bộ body request: thông tin đăng nhập lúc login, dữ liệu cá nhân sau đó.",
+            "Cả response — số dư, giá tiền hay feature flag bị sửa trước khi app nhìn thấy.",
+            "Người dùng không thấy gì bất thường: vẫn có ổ khoá và certificate vẫn hợp lệ."
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "Máy không hề bị chiếm và người dùng cũng không bất cẩn. Chỉ cần tin thêm một CA là đủ, mà trang đăng nhập wifi lại là chỗ trông rất bình thường để hỏi điều đó."
+          ]
+        }
+      ]
+    },
+    {
       "id": "what-to-pin",
       "title": "Ghim cái gì",
       "summary": "Ba lựa chọn, chỉ một cái sống sót qua lần gia hạn.",
