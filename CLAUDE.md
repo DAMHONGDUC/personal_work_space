@@ -18,6 +18,21 @@
 
 - **Apps**: one file per app in `src/data/apps/`. The filename is the URL slug.
   The loader reads the directory, so there is no index to register an app in.
+- **Guides**: one file per guide in `src/data/docs/`. The filename is the URL
+  slug; the loader reads the directory, so there is nothing to register. Three
+  rules, all enforced by `tests/doc-data.test.ts` — a guide that breaks one
+  fails the suite rather than shipping half-done:
+  - **Bilingual.** Every reader-visible string is `{ "en": …, "vi": … }`. The
+    page carries both languages and switches in the browser, so a missing side
+    is a blank on the page, not a fallback to the other language.
+  - **Short.** No string over 280 characters. If a point needs more, it wants a
+    list, a table or two shorter entries — not a longer paragraph.
+  - **Illustrated.** At least one `flow` diagram. Diagrams are data — stages of
+    labelled boxes, drawn by `FlowDiagram` — never SVG or markup in the JSON.
+  - Section `id`s are language-independent slugs. Switching language re-renders
+    in place, so a differing id would drop the reader out of their section.
+  - Commands in a `code` block stay the same in both languages. Anything that
+    needs explaining goes in the localized `caption`, not a comment in the code.
 - **CV**: `src/data/cv/`. Which file in there is live is decided by
   `src/lib/cv-source.mts` — check it before editing, because the others are
   valid CVs too and editing the wrong one changes nothing. The LaTeX in
@@ -32,7 +47,7 @@
 
 - Every URL is defined in `src/lib/routes.ts`. Use `routes.*`; never hand-write
   a path in a component, a test or the sitemap.
-- The site has two top-level sections: `/apps` and `/personal`.
+- The site has three top-level sections: `/apps`, `/docs` and `/personal`.
 - `/<slug>/` and `/<slug>/privacy_policy/` are **legacy addresses submitted to
   the app stores**. They must keep resolving — they render a `noindex` meta
   refresh to the current path. Do not delete them.
