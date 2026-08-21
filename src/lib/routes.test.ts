@@ -2,8 +2,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import { RESERVED_SLUGS, routes, withBasePath } from "./routes";
 
 describe("routes", () => {
-  it("puts the apps and the CV under different top-level sections", () => {
+  it("puts the apps, the guides and the CV under different top-level sections", () => {
     expect(routes.apps).toBe("/apps");
+    expect(routes.docs).toBe("/docs");
     expect(routes.cv).toBe("/personal/cv");
   });
 
@@ -14,8 +15,18 @@ describe("routes", () => {
     );
   });
 
+  it("nests a guide under the guides section", () => {
+    expect(routes.doc("xcode-setup")).toBe(`${routes.docs}/xcode-setup`);
+  });
+
   it("carries no trailing slash, so appending one never doubles it", () => {
-    for (const path of [routes.apps, routes.cv, routes.privacyPolicy("focus-timer")]) {
+    for (const path of [
+      routes.apps,
+      routes.docs,
+      routes.cv,
+      routes.privacyPolicy("focus-timer"),
+      routes.doc("xcode-setup"),
+    ]) {
       expect(path).not.toMatch(/\/$/);
       expect(path).toMatch(/^\//);
     }
@@ -23,7 +34,9 @@ describe("routes", () => {
 
   it("reserves the first segment of every section", () => {
     // An app slug matching one of these would be shadowed by the static route.
-    const sections = [routes.apps, routes.cv].map((path) => path.split("/")[1]);
+    const sections = [routes.apps, routes.docs, routes.cv].map(
+      (path) => path.split("/")[1],
+    );
 
     for (const section of sections) {
       expect([...RESERVED_SLUGS] as string[]).toContain(section);
