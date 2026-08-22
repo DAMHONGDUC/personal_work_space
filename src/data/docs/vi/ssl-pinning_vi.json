@@ -7,7 +7,7 @@
     "TLS",
     "Mobile"
   ],
-  "readingTime": "8 phút",
+  "readingTime": "9 phút",
   "effectiveDate": "2026-08-21",
   "lastUpdated": "2026-08-21",
   "intro": [
@@ -223,6 +223,141 @@
           "tone": "warning",
           "body": [
             "Máy không hề bị chiếm và người dùng cũng không bất cẩn. Chỉ cần tin thêm một CA là đủ, mà trang đăng nhập wifi lại là chỗ trông rất bình thường để hỏi điều đó."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "proxyman",
+      "title": "Proxyman bắt traffic iOS Simulator kiểu gì",
+      "summary": "Vẫn đòn chen giữa ở trên, nhưng trên iOS Simulator và do chính bạn dựng.",
+      "blocks": [
+        {
+          "type": "text",
+          "body": [
+            "Với simulator, Proxyman phải được tin hai lần: một lần trong keychain của máy Mac, một lần trong kho tin cậy riêng của simulator. Nhìn hai lần cài đó rơi vào đâu là cách ngắn nhất để hiểu pinning lấy đi thứ gì."
+          ]
+        },
+        {
+          "type": "flow",
+          "caption": "Hai lần cài certificate, và hai kết cục có thể xảy ra.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "CA của Proxyman → keychain máy Mac",
+                  "detail": "Root được thêm vào keychain và đặt Always Trust, không thì trên máy Mac chẳng thứ gì tin nó cả",
+                  "explain": [
+                    "Lần chạy đầu, Proxyman tự tạo một root CA của riêng nó — gọi là Proxyman_CA — và giữ private key ngay trên máy Mac này. Mọi certificate giả bạn sắp thấy đều ký bằng nó.",
+                    "Cài là đưa root vào keychain; còn tin nó lại là bước riêng: đặt 'When using this certificate: Always Trust' trong Keychain Access.",
+                    "macOS hỏi mật khẩu vì một root được tin là thay đổi ở mức hệ thống: Safari, curl và mọi app Mac khác từ giờ đều nhận thứ gì Proxyman_CA ký.",
+                    "Đây đúng là bước mà Airport_CA cần ở phần trên. Cùng cơ chế, cùng quyền lực — khác duy nhất ở chỗ cái CA này do chính bạn tạo ra.",
+                    "Muốn xem mình vừa tin cái gì: security find-certificate -c Proxyman -p | openssl x509 -noout -subject -fingerprint."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Cũng CA đó → từng simulator",
+                  "detail": "Certificate → Install Certificate on iOS Simulators ghi root vào kho tin cậy riêng của từng simulator",
+                  "explain": [
+                    "Simulator là một hệ iOS riêng với keychain riêng, nằm trong ~/Library/Developer/CoreSimulator/Devices/<UDID>/. Nó không đọc keychain của máy Mac bao giờ.",
+                    "Mục menu đó chạy xcrun simctl keychain <udid> add-root-cert proxyman-ca.pem cho từng simulator bạn tick — đúng câu lệnh bạn tự gõ trong script được.",
+                    "Phải làm cho từng máy: iPhone 16 và iPhone SE là hai simulator với hai kho tin cậy, và cái bạn tạo ngày mai lại bắt đầu từ rỗng.",
+                    "Cài xong hãy mở lại app. Tiến trình đang chạy vẫn giữ kết quả tin cậy nó tính lúc khởi động, nên chắc ăn nhất là khởi động lại cả simulator.",
+                    "Erase All Content and Settings ném kho đó đi cùng mọi thứ khác, và đó là lý do quen thuộc khiến việc bắt traffic tuần trước còn chạy nay 'tự nhiên hết'."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "App gọi api.example.com",
+                  "detail": "Simulator dùng chung tầng mạng của máy Mac, nên không có mục proxy Wi-Fi nào phải khai như trên điện thoại",
+                  "explain": [
+                    "Simulator là một tiến trình trên máy Mac chứ không phải máy ảo có card mạng riêng, nên nó dùng thẳng tầng mạng của máy Mac.",
+                    "Nghĩa là không có màn hình Wi-Fi nào để mở và không có host với port proxy nào để điền: những thiết lập bạn hay dùng trên iPhone thật đơn giản là không tồn tại ở đây.",
+                    "Proxyman tự đặt mình làm system proxy HTTP/HTTPS của macOS khi chạy — đúng ô ở Settings → Network → Proxies — và simulator thừa hưởng luôn.",
+                    "Cụ thể: URLSession trong simulator gửi CONNECT api.example.com:443 tới 127.0.0.1:9090 thay vì mở socket thẳng tới server của bạn.",
+                    "Trên máy thật thì bạn làm hai cách kia: khai proxy bằng tay trên mạng Wi-Fi đó, hoặc để chế độ VPN của Proxyman hứng traffic."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Proxyman tự cấp một certificate",
+                  "detail": "Nó tạo ngay tại chỗ một leaf cho đúng tên miền ấy rồi ký bằng CA mà giờ cả hai bên đều tin",
+                  "explain": [
+                    "Proxyman đọc tên miền từ dòng CONNECT và từ SNI trong ClientHello, rồi tạo cert_X cho đúng cái tên đó, hiệu lực tính từ giây này.",
+                    "cert_X do Proxyman_CA ký và mang pub_key_X — key của Proxyman, không phải của server bạn. Đúng một phép thay thế đó là thứ pinning bắt được.",
+                    "Giờ cả hai kho tin cậy đều nhận chữ ký ấy: kho của Mac vì bạn đặt Always Trust, kho của simulator vì root đã được thêm vào keychain của nó.",
+                    "App của bạn thấy một chain hai tầng, cert_X ← Proxyman_CA. Còn chain thật, cert_A ← R3 ← ISRG Root X1, chỉ mình Proxyman ở đầu bên kia nhìn thấy.",
+                    "Mỗi tên miền được cấp một certificate rồi lưu lại, nên request đầu tiên tới một domain mới chậm hơn hẳn những cái sau."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Hai phiên TLS, không phải một",
+                  "detail": "Đoạn simulator ↔ Proxyman được giải mã, còn Proxyman ↔ server là một kết nối thứ hai do Proxyman tự mở",
+                  "explain": [
+                    "Phiên thứ nhất, simulator ↔ Proxyman, mã hoá bằng khoá suy ra từ pub_key_X. Proxyman giữ priv_key_X nên giải mã được từng byte.",
+                    "Phiên thứ hai, Proxyman ↔ api.example.com, là một kết nối TLS bình thường do Proxyman tự mở, và nó kiểm cert_A y như mọi client khác.",
+                    "Ở giữa hai phiên, request nằm dạng rõ trong bộ nhớ Proxyman — và đó chính là thứ công cụ này bán: một danh sách request đọc được, sửa được, phát lại được.",
+                    "Server của bạn thấy Proxyman là client. Cùng một request, khác phiên TLS, và log phía backend không có gì bất thường.",
+                    "Đây đúng định nghĩa sách vở của kẻ chen giữa. Khác biệt thành thật duy nhất so với đòn ở quán cà phê là ai dựng nó lên và người dùng có đồng ý hay không."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Không pin → danh sách request đầy dần",
+                  "detail": "Header, token, body và response đều đọc được, và đó chính là thứ khiến công cụ này đáng dùng",
+                  "explain": [
+                    "Bạn thấy trọn cuộc trao đổi: GET /v1/profile, Authorization: Bearer eyJhbGciOi…, body JSON, response và mọi header trên đó.",
+                    "Breakpoint và Map Local cho sửa cả hai chiều — trả về 500 để thử nhánh lỗi, hay ép isPremium: true mà không đụng gì tới backend.",
+                    "Cũng đúng khung cảnh mà kẻ tấn công thấy trên mạng do họ dựng. Công cụ không biết, và không quan tâm, bạn là bên nào trong hai bên đó.",
+                    "Và đó là lý lẽ cho pinning gói trong một câu: nếu buổi debug của bạn dễ dựng tới vậy, thì của họ cũng thế."
+                  ]
+                },
+                {
+                  "label": "Có pin → handshake hỏng",
+                  "detail": "Cái leaf giả mang sai key, nên app đóng kết nối trước khi kịp gửi bất kỳ request nào",
+                  "explain": [
+                    "App tính SHA-256(SPKI(pub_key_X)) = pin_X, tìm trong danh sách chỉ thấy pin_A, rồi đóng kết nối ngay trong handshake.",
+                    "Proxyman hiện dòng đó màu đỏ, là handshake TLS thất bại, không body và không header, vì có gửi gì đâu mà có.",
+                    "Mẹo phân biệt hai kiểu hỏng: quên tin certificate thì mọi app trên máy đều chết, còn dính pin thì chỉ một app chết trong khi Safari vẫn vào mạng bình thường.",
+                    "Đường vào là một bản debug tắt bước kiểm — bọc #if DEBUG quanh nó, hoặc thêm một pin chỉ dùng cho debug chứa hash key của Proxyman_CA.",
+                    "Cả hai đều không được lên store. Một bản release chấp nhận pin debug còn tệ hơn không pin, vì nó trông như được bảo vệ trong khi không hề."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Proxyman → Certificate → Install Certificate on this Mac, rồi mở Keychain Access kiểm lại xem root đó có đúng là Always Trust không.",
+            "Proxyman → Certificate → Install Certificate on iOS Simulators, và tick đúng những simulator bạn thật sự chạy app trên đó.",
+            "Khởi động lại simulator rồi mở app lần nữa, để nó dùng kho tin cậy vừa được cài chứ không phải kho nó nạp lúc khởi động.",
+            "Muốn xem một app có pin thì chạy bản debug đã tắt pinning — đừng dùng bản release, và xong việc thì đừng để cái CA đó còn được tin."
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "Simulator giữ CA đó cho tới khi bạn erase máy ảo, còn trên Mac thì mọi thứ bạn chạy đều tin nó. Debug xong hãy bỏ tin nó đi, và đừng bao giờ cài một CA do người khác tạo ra."
           ]
         }
       ]

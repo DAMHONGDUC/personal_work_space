@@ -7,7 +7,7 @@
     "TLS",
     "Mobile"
   ],
-  "readingTime": "8 min",
+  "readingTime": "9 min",
   "effectiveDate": "2026-08-21",
   "lastUpdated": "2026-08-21",
   "intro": [
@@ -223,6 +223,141 @@
           "tone": "warning",
           "body": [
             "The device is not compromised and the user did nothing careless. Trusting one extra CA is enough, and a captive portal is a normal-looking place to be asked."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "proxyman",
+      "title": "How Proxyman intercepts a simulator",
+      "summary": "The same interception as above, on an iOS Simulator, run by you.",
+      "blocks": [
+        {
+          "type": "text",
+          "body": [
+            "On a simulator, Proxyman has to be trusted twice: once in the Mac's keychain and once inside the simulator's own trust store. Watching where those two installs land is the shortest explanation of what pinning takes away."
+          ]
+        },
+        {
+          "type": "flow",
+          "caption": "Two certificate installs, and the two ways it ends.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Proxyman CA → the Mac's keychain",
+                  "detail": "The root is added to the keychain and marked Always Trust, or nothing on the Mac believes a word of it",
+                  "explain": [
+                    "On first run Proxyman generates its own root CA — call it Proxyman_CA — and keeps the private key on this Mac. Every certificate you are about to see forged is signed with it.",
+                    "Installing puts the root into the keychain; trusting it is the separate step of setting 'When using this certificate: Always Trust' in Keychain Access.",
+                    "macOS asks for your password because a trusted root is a system-wide change: Safari, curl and every other Mac app now accept anything Proxyman_CA signs.",
+                    "This is exactly the step Airport_CA needed in the section above. Same mechanism, same power — the only difference is that you generated this CA yourself.",
+                    "To see what you just trusted: security find-certificate -c Proxyman -p | openssl x509 -noout -subject -fingerprint."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "The same CA → each simulator",
+                  "detail": "Certificate → Install Certificate on iOS Simulators writes the root into every simulator's own trust store",
+                  "explain": [
+                    "A simulator is a separate iOS system with its own keychain, stored under ~/Library/Developer/CoreSimulator/Devices/<UDID>/. It never reads the Mac's keychain.",
+                    "The menu item runs xcrun simctl keychain <udid> add-root-cert proxyman-ca.pem for each simulator you tick — the same command you can run by hand in a script.",
+                    "Do it per device: an iPhone 16 and an iPhone SE are two simulators with two trust stores, and one you create tomorrow starts empty again.",
+                    "Relaunch the app afterwards. A running process keeps the trust it evaluated at launch, so the reliable move is to reboot the simulator entirely.",
+                    "Erase All Content and Settings throws the store away with everything else, which is the usual reason an interception that worked last week 'suddenly stopped'."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "The app calls api.example.com",
+                  "detail": "The simulator shares the Mac's network stack, so there is no Wi-Fi proxy to set on a phone",
+                  "explain": [
+                    "The simulator is a process on your Mac rather than a virtual machine with its own network card, so it uses the Mac's network stack directly.",
+                    "That means there is no Wi-Fi screen to open and no proxy host and port to type: the settings you would use on a real iPhone simply do not exist here.",
+                    "Proxyman makes itself the macOS system HTTP/HTTPS proxy while it runs — the same field under Settings → Network → Proxies — and the simulator inherits it.",
+                    "Concretely: URLSession in the simulator sends CONNECT api.example.com:443 to 127.0.0.1:9090 instead of opening a socket to your server.",
+                    "On a physical device you would do the other two things instead: set the proxy by hand on that Wi-Fi network, or let Proxyman's VPN mode capture the traffic."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Proxyman mints a certificate",
+                  "detail": "It generates a leaf for that exact hostname on the spot and signs it with the CA both sides now trust",
+                  "explain": [
+                    "Proxyman reads the hostname from the CONNECT line and from SNI in ClientHello, then generates cert_X for exactly that name, valid from this second.",
+                    "cert_X is signed by Proxyman_CA and carries pub_key_X — Proxyman's key, not your server's. That one substitution is the whole thing pinning detects.",
+                    "Both trust stores now accept the signature: the Mac's because you set Always Trust, the simulator's because the root was added to its keychain.",
+                    "Your app sees a chain of two, cert_X ← Proxyman_CA. The real chain, cert_A ← R3 ← ISRG Root X1, is seen only by Proxyman on the far side.",
+                    "One certificate is minted per hostname and cached, which is why the first request to a new domain is noticeably slower than the ones after it."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Two TLS sessions, not one",
+                  "detail": "Simulator ↔ Proxyman is decrypted, and Proxyman ↔ server is a second connection Proxyman makes itself",
+                  "explain": [
+                    "Session one, simulator ↔ Proxyman, is encrypted with keys derived from pub_key_X. Proxyman holds priv_key_X, so it can decrypt every byte.",
+                    "Session two, Proxyman ↔ api.example.com, is an ordinary TLS connection Proxyman opens itself, validating cert_A the way any client would.",
+                    "Between the two, the request exists as plaintext in Proxyman's memory — which is precisely the product: a readable, editable, replayable request list.",
+                    "Your server sees Proxyman as the client. Same request, different TLS session, nothing unusual in the backend logs.",
+                    "This is the textbook definition of a man in the middle. The honest difference from the café attack is who set it up, and whether the user agreed to it."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "No pin → the request list fills up",
+                  "detail": "Headers, tokens, bodies and responses are all readable, which is exactly what makes the tool worth having",
+                  "explain": [
+                    "You get the whole exchange: GET /v1/profile, Authorization: Bearer eyJhbGciOi…, the JSON body, the response and every header on it.",
+                    "Breakpoints and Map Local rewrite either direction — return a 500 to test the error path, or force isPremium: true without touching the backend.",
+                    "It is the same view an attacker gets on a network they control. The tool does not know, and does not care, which of the two you are.",
+                    "Which is the argument for pinning in one sentence: if your debugging session is this easy to set up, so is theirs."
+                  ]
+                },
+                {
+                  "label": "Pinned → the handshake fails",
+                  "detail": "The forged leaf holds the wrong key, so the app closes the connection before sending any request",
+                  "explain": [
+                    "The app computes SHA-256(SPKI(pub_key_X)) = pin_X, finds only pin_A in its list, and closes the connection during the handshake.",
+                    "Proxyman shows the entry in red as a failed TLS handshake, with no body and no headers, because none were ever sent.",
+                    "Rule of thumb for telling the two failures apart: a certificate you forgot to trust breaks every app on the device, while a pin breaks one app and leaves Safari working.",
+                    "The way in is a debug build with the check disabled — an #if DEBUG around it, or a debug-only pin holding the hash of Proxyman_CA's key.",
+                    "Neither may ship. A release build that accepts a debug pin is worse than no pinning at all, because it looks protected and is not."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Proxyman → Certificate → Install Certificate on this Mac, then check in Keychain Access that the root really says Always Trust.",
+            "Proxyman → Certificate → Install Certificate on iOS Simulators, and tick the simulators you actually run the app on.",
+            "Reboot that simulator and launch the app again, so it picks up the trust store it was given rather than the one it started with.",
+            "To inspect a pinned app, run a debug build with pinning disabled — never the release build, and never leave the CA trusted afterwards."
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "The simulator keeps that CA until the device is erased, and on the Mac it is trusted by everything you run. Untrust it when you are done debugging, and never install a CA that somebody else generated."
           ]
         }
       ]
