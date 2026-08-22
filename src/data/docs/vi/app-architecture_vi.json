@@ -1,0 +1,654 @@
+{
+  "title": "Bên trong Flutter, React Native và React",
+  "tagline": "Thứ gì thật sự vẽ ra pixel trong từng cái, và clean architecture nằm ở đâu.",
+  "icon": "🏗️",
+  "tags": [
+    "Flutter",
+    "React Native",
+    "React"
+  ],
+  "readingTime": "10 phút",
+  "effectiveDate": "2026-08-21",
+  "lastUpdated": "2026-08-21",
+  "intro": [
+    "Bốn kiến trúc đặt cạnh nhau: mỗi cái biến code của bạn thành pixel ra sao, giữa kiến trúc cũ và mới của React Native đổi những gì, và clean architecture chồng lên Flutter ở chỗ nào."
+  ],
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Một ý tưởng, ba nơi vẽ",
+      "summary": "Chỗ giống nhau, và đúng một dòng khiến chúng rẽ hướng.",
+      "blocks": [
+        {
+          "type": "text",
+          "body": [
+            "Cả ba đều khai báo: bạn mô tả màn hình nên trông thế nào với trạng thái hiện tại, còn việc tìm ra phải đổi gì là của framework. Chúng rẽ hướng ở câu hỏi ai sở hữu pixel — trình duyệt, view của nền tảng, hay chính framework."
+          ]
+        },
+        {
+          "type": "flow",
+          "caption": "Cùng một đường ống, nhưng kết thúc ở ba nơi khác nhau.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Bạn mô tả giao diện",
+                  "detail": "Một hàm của trạng thái: JSX hoặc build() trong Dart trả về cây mô tả, không phải lệnh vẽ",
+                  "explain": [
+                    "Khai báo nghĩa là bạn không bao giờ viết label.setText(name). Bạn trả về một mô tả — <Text>{name}</Text> hay Text(name) — rồi framework tự tìm ra khác biệt so với lần trước.",
+                    "Cùng một trạng thái luôn cho ra cùng một cây, và đó là thứ khiến hot reload, snapshot test hay debug tua ngược mới làm được.",
+                    "React gọi những object đó là element, Flutter gọi là widget. Cả hai đều rẻ và bất biến: tạo ra, đem so, rồi vứt đi sau mỗi lần build."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Dựng cây rồi đem so",
+                  "detail": "Mô tả mới được so với mô tả trước đó để tìm ra tập thay đổi thật nhỏ nhất",
+                  "explain": [
+                    "Reconciler của React duyệt cây element và đánh dấu từng nút là thêm, sửa hay xoá; cây Element của Flutter làm đúng việc đó, bên dưới còn có RenderObject.",
+                    "Chính phép so này khiến chuyện 'dựng lại cả màn hình mỗi lần đổi state' trở nên rẻ: bạn mô tả lại tất cả, còn thực tế chỉ ba nút thay đổi.",
+                    "Key quan trọng ở cả hai bên vì cùng một lý do: nó cho phép so biết món nào trong danh sách vẫn là món nó thấy ở khung hình trước."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "React → DOM",
+                  "detail": "react-dom áp phần thay đổi lên các nút DOM thật, còn style, layout và paint là việc của trình duyệt",
+                  "explain": [
+                    "Đầu ra là các thao tác DOM: setAttribute, appendChild, removeChild. Mọi thứ sau đó thuộc về bộ máy dựng hình của trình duyệt.",
+                    "Nhờ vậy React hưởng sẵn box model, CSS và cây trợ năng của trình duyệt — và cũng hưởng luôn đặc tính hiệu năng của nó."
+                  ]
+                },
+                {
+                  "label": "React Native → view của nền tảng",
+                  "detail": "Vẫn React đó, nhưng bộ dựng tạo ra UIView và android.view.View thay vì nút DOM",
+                  "explain": [
+                    "Một <View> trở thành UIView thật trên iOS và ViewGroup trên Android, nên cuộn, bôi chọn chữ và trợ năng đều là bản cài đặt gốc của nền tảng.",
+                    "Giá phải trả là một đường biên: JavaScript của bạn và đám object native sống ở hai thế giới, và mọi thứ đi lại đều phải vượt biên. Hai phần sau nói về chỗ vượt biên đó."
+                  ]
+                },
+                {
+                  "label": "Flutter → canvas của chính nó",
+                  "detail": "Không dùng widget của nền tảng: engine tự vẽ từng pixel, qua Impeller hoặc Skia",
+                  "explain": [
+                    "Một nút Material trong Flutter không phải nút native. Nó là một hình chữ nhật, một cái bóng đổ và một dòng chữ do Flutter vẽ cho giống nút.",
+                    "Vì thế app Flutter trông y hệt nhau trên hai nền tảng, và cũng vì thế một control mới của iOS chỉ xuất hiện khi framework tự vẽ lại phiên bản của nó."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Pixel lên màn hình",
+                  "detail": "Ai sở hữu bề mặt vẽ thì người đó ghép khung hình — trình duyệt, hệ view của OS, hay engine Flutter",
+                  "explain": [
+                    "Ngân sách ở đâu cũng như nhau: 16,7ms mỗi khung ở 60Hz, hay 8,3ms ở 120Hz. Vượt ngưỡng là người dùng thấy giật, framework nào cũng vậy.",
+                    "Khác nhau là ở chỗ cái gì ăn hết ngân sách đó: một lần reflow DOM, một vòng đi về qua bridge, hay một lần build Dart dựng lại quá nhiều cây."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "Framework",
+            "Ai vẽ giao diện",
+            "Code của bạn chạy ở đâu"
+          ],
+          "rows": [
+            [
+              "React",
+              "DOM của trình duyệt",
+              "Máy JS trong trình duyệt"
+            ],
+            [
+              "React Native (cũ)",
+              "View native, qua bridge",
+              "Luồng JS — JavaScriptCore"
+            ],
+            [
+              "React Native (mới)",
+              "View native, qua JSI + Fabric",
+              "Luồng JS cộng C++ dùng chung"
+            ],
+            [
+              "Flutter",
+              "Canvas của chính nó — Impeller / Skia",
+              "Dart, biên dịch sẵn trước"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "react",
+      "title": "React trên web",
+      "summary": "Cái khuôn mà hai bên kia đều là biến thể của nó.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Một lần setState, từ hàm của bạn tới nút được vẽ lại.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "State đổi",
+                  "detail": "Setter của useState đánh dấu component bẩn rồi xếp lịch — chứ không render ngay tại chỗ",
+                  "explain": [
+                    "setCount(1) không chạy component của bạn ngay. React xếp cập nhật vào hàng và gộp mọi thứ xảy ra trong cùng một nhịp.",
+                    "Việc gộp đó là lý do hai lần setState trong một handler chỉ gây một lần render, và cũng là lý do đọc state ngay sau khi set lại ra giá trị cũ.",
+                    "Từ React 18, bộ lập lịch chạy đồng thời: nó bắt đầu render, tạm dừng cho việc gấp hơn như một cú gõ phím, rồi quay lại chạy tiếp."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Component chạy lại",
+                  "detail": "React gọi lại hàm và nhận về cây element mới — chỉ là object thường, màn hình chưa đổi gì",
+                  "explain": [
+                    "Một element chỉ là {type: 'div', props: {…}}. Tạo nó rất rẻ, và toàn bộ thiết kế đặt cược vào đúng giả định đó.",
+                    "Việc chạy lại hàm cũng là lý do hook phải được gọi đúng thứ tự mỗi lần: React khớp chúng theo vị trí, không theo tên.",
+                    "Tới đây trên màn hình chưa có gì đổi. Giai đoạn này thuần tính toán, và vứt đi được nếu có cập nhật gấp hơn ập tới."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Fiber đối chiếu",
+                  "detail": "Reconciler duyệt cây theo từng đơn vị công việc ngắt được, đánh dấu nút là thêm, sửa hay xoá",
+                  "explain": [
+                    "Một fiber là một đơn vị công việc — một nút kèm liên kết tới con, anh em và cha — nên việc duyệt dừng giữa chừng rồi chạy tiếp được.",
+                    "Đây chính là 'virtual DOM': không phải bản sao của DOM, mà là cây mô tả cộng phần sổ sách cần để đem so hai cây với nhau.",
+                    "Phép so cố tình nông: khác type thì vứt cả nhánh con đi, khác key thì coi như là món khác."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Commit vào DOM",
+                  "detail": "Các thay đổi đã đánh dấu được áp trong một lượt đồng bộ, để không ai thấy màn hình nửa vời",
+                  "explain": [
+                    "Giai đoạn commit không ngắt được, và đó đúng là lý do giai đoạn render phải thuần khiết, không tác dụng phụ.",
+                    "Đây là nơi ref được gắn, layout effect chạy, và các lệnh appendChild với setAttribute thật sự diễn ra.",
+                    "useEffect chạy sau khi vẽ; useLayoutEffect chạy trong giai đoạn này, trước khi trình duyệt vẽ — nên một cái gây nháy hình còn cái kia thì không."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Trình duyệt vẽ",
+                  "detail": "Style, layout, paint và composite là việc của trình duyệt — phần của React kết thúc ở lệnh gọi DOM",
+                  "explain": [
+                    "Một vấn đề hiệu năng của React thường là vấn đề của trình duyệt bên dưới: quá nhiều nút, một lần layout đắt đỏ, một thuộc tính CSS ép reflow.",
+                    "Nên cách sửa nhiều khi chẳng nằm trong React: ảo hoá danh sách, đừng đo đạc trong vòng lặp, hay chỉ animate những thuộc tính không kéo theo layout."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Bản thân React không vẽ gì cả. react-dom, react-native và react-three-fiber là những bộ dựng riêng dùng chung một reconciler.",
+            "Chính chỗ tách đó khiến React Native ra đời được mà không phải viết lại React.",
+            "Câu cần nhớ: render thì thuần khiết, còn commit thì không."
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "info",
+          "body": [
+            "Virtual DOM không nhanh nhờ phép màu. Nó nhanh vì so mấy object trong bộ nhớ rẻ hơn nhiều so với đụng vào DOM, và vì React gộp lại những chỗ nó phải đụng."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "react-native-old",
+      "title": "React Native, kiến trúc cũ",
+      "summary": "Hai thế giới, ở giữa là một hàng đợi bất đồng bộ.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Ba luồng, và mọi thông điệp giữa chúng đều bị đóng gói thành chuỗi.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Luồng JS",
+                  "detail": "Code React của bạn chạy trong JavaScriptCore trên luồng riêng, không chạm được trực tiếp vào object native nào",
+                  "explain": [
+                    "JavaScriptCore chính là máy JS mà Safari dùng; trên Android nó được đóng gói kèm app, và đó là một phần lý do file APK khá nặng.",
+                    "Component, state, logic nghiệp vụ của bạn đều sống ở đây. Luồng này không bao giờ đụng vào một UIView — nó thậm chí không nhìn thấy.",
+                    "Một luồng nghĩa là một vòng lặp nặng đủ phá hỏng tất cả: một cú JSON.parse trên response danh sách dài sẽ đóng băng thao tác cho tới khi xong."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Bridge",
+                  "detail": "Mọi lời gọi đều được đóng thành JSON, xếp hàng và chuyển đi bất đồng bộ — ở cả hai chiều",
+                  "explain": [
+                    "Cụ thể, gọi một native module trở thành một thông điệp kiểu [moduleId, methodId, [args]] nối vào hàng đợi rồi đẩy đi ở nhịp sau.",
+                    "Ba tính chất định nghĩa nó, và mỗi tính chất là một giới hạn: bất đồng bộ, gộp lô, và đóng gói thành chuỗi. Không thể hỏi và có đáp ngay trong một khung hình.",
+                    "Đóng gói thành chuỗi cũng có nghĩa không dùng chung bộ nhớ và không có tham chiếu: không đưa một view native cho JS được, chỉ đưa một con số định danh nó.",
+                    "Đây chính là thiết kế mà cả 'kiến trúc mới' sinh ra để dẹp bỏ, nên hiểu nó là hiểu thứ đang bị thay thế."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Luồng shadow (Yoga)",
+                  "detail": "Layout flexbox được tính bằng C++ ngoài luồng chính, biến style của bạn thành khung toạ độ cụ thể",
+                  "explain": [
+                    "Yoga là bản cài đặt flexbox bằng C++ của Facebook, và đó là lý do layout React Native theo luật CSS trên những nền tảng chưa từng nghe tới CSS.",
+                    "Nó giữ một shadow tree — bản sao nhẹ của cây view — và tính x, y, chiều rộng, chiều cao cho từng nút.",
+                    "Kết quả được gửi sang luồng UI dưới dạng lệnh thay đổi: tạo view này, đặt khung kia, gỡ đứa con nọ."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Luồng UI",
+                  "detail": "UIView và ViewGroup thật được tạo ra và cập nhật theo những gì shadow tree vừa tính",
+                  "explain": [
+                    "Đây là luồng chính của nền tảng: luồng phải luôn rảnh, vì nó còn lo cảm ứng, cuộn và vòng lặp sự kiện.",
+                    "View ở đây là view native thật, nên một <ScrollView> cuộn theo đúng vật lý của hệ điều hành chứ không phải bản bắt chước.",
+                    "Nhờ vậy animation chạy phía native và thao tác cuộn vẫn mượt ngay cả khi luồng JS đang bận — miễn là chúng không cần hỏi gì từ JS."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Sự kiện quay về cũng bằng đường đó",
+                  "detail": "Chạm, cuộn và nhập chữ đều bị đóng gói rồi xếp hàng gửi ngược về JS, tới nơi chậm ít nhất một khung hình",
+                  "explain": [
+                    "onScroll từ một scroll view native cũng vượt bridge như mọi thứ khác, nên JS thấy một vị trí vốn đã cũ.",
+                    "Đó là lý do animate cái header theo onScroll ở JS trông cứ lệch pha, và cũng là lý do Animated có useNativeDriver: true."
+                  ]
+                },
+                {
+                  "label": "Chỗ đau",
+                  "detail": "Thứ gì cần câu trả lời ngay trong khung hình đó đều phải chờ một vòng đi về vốn không thể có",
+                  "explain": [
+                    "Danh sách dài là ca kinh điển: từng ô được tạo ở JS, nên cuộn nhanh là vượt mặt hàng đợi và để lại khoảng trắng.",
+                    "Khởi động là ca thứ hai: phải dựng xong bridge và phân tích xong bundle JS thì mới vẽ được gì.",
+                    "Không có gì ở đây là bug cả. Đó là cái giá của thiết kế, và cũng đúng là thứ mà phần sau nói tới."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Kiến trúc cũ trong một câu: JS và native không bao giờ dùng chung bộ nhớ, chúng gửi thông điệp cho nhau.",
+            "Nó đã đưa vô số app lên store, và phần lớn tới nay vẫn chạy nguyên như thế.",
+            "Kiểu hỏng lúc nào cũng cùng một dáng — có thứ cần đáp ngay bây giờ, còn hàng đợi thì trả lời lát nữa."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "react-native-new",
+      "title": "React Native, kiến trúc mới",
+      "summary": "Hàng đợi biến mất. JS và native dùng chung bộ nhớ qua C++.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Vẫn React đó, nhưng ở giữa không còn bridge.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Hermes",
+                  "detail": "Máy JS mặc định, biên dịch JavaScript của bạn thành bytecode lúc build thay vì phân tích lúc khởi động",
+                  "explain": [
+                    "Bundle đóng trong app đã là bytecode, nên lúc mở app không phải trả giá cho việc phân tích vài megabyte JavaScript trước đã.",
+                    "Nó được làm cho điện thoại chứ không phải cho benchmark: tốn ít bộ nhớ và mở nhanh hơn, đổi lại chậm hơn ở những vòng lặp chạy dài.",
+                    "Việc debug cũng theo đó mà đổi — Hermes nói giao thức Chrome DevTools, nên bạn soi nó như soi một trang web."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "JSI (JavaScript Interface)",
+                  "detail": "Một lớp C++ mỏng cho phép JavaScript giữ tham chiếu tới object native và gọi thẳng vào nó",
+                  "explain": [
+                    "Thay cho hàng đợi thông điệp, một object native được phơi ra dưới dạng HostObject: JS gọi phương thức, C++ chạy, ngay trong cùng lời gọi đó.",
+                    "Nghĩa là gọi đồng bộ đã khả thi trở lại, và tham số không còn phải sống sót qua một chuyến đi vòng qua JSON.",
+                    "Cũng nghĩa là JS giữ được thứ nặng — một buffer ảnh, một handle database — bằng tham chiếu thay vì copy qua biên.",
+                    "Mọi thứ còn lại trong phần này đều dựng trên JSI: TurboModules và Fabric đều là khách hàng của nó."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Codegen",
+                  "detail": "Phần keo C++ và Java/ObjC an toàn kiểu, sinh ra lúc build từ file spec TypeScript của bạn",
+                  "explain": [
+                    "Bạn khai báo giao diện của module một lần bằng TypeScript, và bản build sinh ra đúng bộ khung native khớp với nó.",
+                    "Cái được là lệch nhau — đổi tên phương thức, đổi kiểu tham số — sẽ hỏng ngay lúc biên dịch, thay vì hỏng lúc chạy trên máy người dùng.",
+                    "Đây cũng là thứ khiến việc phơi lời gọi JSI đồng bộ trở nên an toàn: cả hai bên đều sinh ra từ cùng một khai báo."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "TurboModules",
+                  "detail": "Module native nạp khi được dùng lần đầu thay vì nạp hết một lượt, và gọi thẳng qua JSI",
+                  "explain": [
+                    "Ở kiến trúc cũ, mọi native module đều được khởi tạo lúc khởi động, dù màn hình có dùng tới hay không.",
+                    "Một TurboModule chỉ được tạo lần đầu tiên JavaScript hỏi tới, và điều đó cắt đi khoảng thời gian đo được khỏi lần mở nguội của app nhiều thư viện.",
+                    "Vì đường gọi là JSI, một phương thức trả về giá trị ngay được — đúng thứ mà bridge cũ không bao giờ làm nổi."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Fabric",
+                  "detail": "Bộ dựng mới: một shadow tree bất biến, viết bằng C++ và dùng chung giữa JS với luồng UI",
+                  "explain": [
+                    "Cây đó sống trong C++ chứ không trong JS, nên luồng UI đọc thẳng được thay vì phải chờ một bản sao đóng gói gửi sang.",
+                    "Nó bất biến: mỗi thay đổi tạo ra một cây mới, rồi hai cây được đem so ra danh sách lệnh thay đổi áp lên luồng UI.",
+                    "Vì việc dựng có thể bắt đầu ở cả hai phía, React dựng được ngoài luồng chính và commit đồng bộ khi cần — ví dụ lúc đổi kích thước.",
+                    "Cụ thể, đây chính là thứ dẹp được mấy ô trắng khi bạn cuộn nhanh một danh sách dài."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Concurrent React chạy đúng nghĩa",
+                  "detail": "Suspense, transition và useDeferredValue ở đây hành xử đúng như trên web",
+                  "explain": [
+                    "Dựng hình ngắt được đòi hỏi bộ dựng phải vứt việc đi rồi làm lại, thứ mà hàng đợi một chiều của bridge cũ không cho phép.",
+                    "Nhờ vậy những tính năng ra mắt cùng React 18 trên web nay mới thật sự có cùng ý nghĩa trong một app native.",
+                    "Quy tắc thực dụng: ở kiến trúc mới bạn tinh chỉnh React, không tinh chỉnh bridge. Đường biên thôi làm nút thắt cổ chai."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Kiến trúc mới thành mặc định từ React Native 0.76, và kiến trúc cũ đang trên đường bị bỏ.",
+            "Cách viết component không đổi gì — vẫn JSX đó, vẫn hook đó, vẫn style đó.",
+            "Thứ đổi là kiểu hỏng: bớt hẳn chuyện 'chờ bridge', và còn lại chủ yếu là chuyện hiệu năng dựng hình bình thường."
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "Một thư viện còn viết tay code bridge kiểu cũ thì phải cập nhật mới chạy được ở đây. Rà lại danh sách thư viện mới là phần việc chuyển đổi thật sự, chứ không phải component của bạn."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "flutter",
+      "title": "Flutter",
+      "summary": "Ba cái cây và một canvas — không dùng widget của nền tảng ở đâu cả.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Từ setState tới một khung hình được tô, hoàn toàn bên trong Flutter.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Dart, biên dịch sẵn từ trước",
+                  "detail": "Bản release là mã máy ARM thật: không máy JavaScript, và không bridge nào nằm trên đường vẽ",
+                  "explain": [
+                    "Bản debug chạy Dart VM với JIT, và đó là thứ khiến hot reload giữ được state; bản release biên dịch AOT để nhanh và nhẹ.",
+                    "Nên cái ranh giới ngôn ngữ mà React Native phải vượt ở đây không tồn tại — Dart của bạn và Dart của framework là cùng một chương trình.",
+                    "Code của bạn chạy trên isolate UI. Mỗi isolate có bộ nhớ riêng và không chia sẻ state, nên việc nặng thì đẩy sang Isolate.run rồi nhận kết quả về."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Cây widget",
+                  "detail": "Những mô tả bất biến, vứt đi và dựng lại sau mỗi setState — cố tình làm cho thật rẻ",
+                  "explain": [
+                    "Widget là một cấu hình chứ không phải một view: const Text('hi') chỉ cấp phát một object nhỏ, hết.",
+                    "Vì thế 'dựng lại' không phải chỗ đắt, và const constructor cùng hàm build ngắn quan trọng hơn nhiều so với mấy mẹo cache khôn ngoan.",
+                    "Cái cây bạn viết trong build() bị tạo lại liên tục. Tới bước này trên màn hình chưa có gì nhúc nhích cả."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Cây element",
+                  "detail": "Lớp ở giữa sống lâu, giữ state và quyết định widget nào được tái dùng thay vì tạo mới",
+                  "explain": [
+                    "Element là thực thể tồn tại xuyên các lần build; nó là nơi object State của bạn sống, và là lý do state không mất sau mỗi lần dựng lại.",
+                    "Tái dùng hay không do runtimeType và key quyết định: cùng kiểu cùng key thì cập nhật tại chỗ, khác thì dẹp đi và tạo cái mới.",
+                    "Đây đúng là bản đối chiếu của cây fiber bên React, làm cùng một việc sổ sách dưới một cái tên khác."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Cây RenderObject",
+                  "detail": "Layout và vẽ: ràng buộc đi xuống, kích thước đi lên, rồi từng object tự vẽ phần của mình",
+                  "explain": [
+                    "Luật layout của Flutter gói trong một dòng — ràng buộc đi xuống, kích thước đi lên, và cha là bên quyết định vị trí.",
+                    "Nó chỉ một lượt, và đó là thứ giữ cho layout tuyến tính thay vì kiểu thương lượng nhiều lượt như trình duyệt làm.",
+                    "RenderObject thì đắt, nên framework cố hết sức giữ lại và sửa tại chỗ chứ không dựng cái mới."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Engine: Impeller hoặc Skia",
+                  "detail": "Framework đưa sang một display list, engine tô nó bằng GPU trên luồng raster",
+                  "explain": [
+                    "Impeller thay Skia làm mặc định vì nó biên dịch sẵn shader, dẹp được cái khựng ở lần chạy đầu mà Flutter từng nổi tiếng.",
+                    "Phần build và layout chạy trên luồng UI; phần tô chạy trên luồng raster, nên hai việc gối lên nhau được.",
+                    "Đó là lý do app Flutter trông giống nhau tới từng pixel giữa các nền tảng: không có gì trên màn hình đến từ bộ widget của nền tảng."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Platform channel",
+                  "detail": "Chỗ vượt biên duy nhất còn lại, và chỉ để gọi API nền tảng — camera, file, quyền — không bao giờ để vẽ",
+                  "explain": [
+                    "Channel là bất đồng bộ và dựa trên thông điệp, nên nhìn khá giống bridge cũ của React Native — chỉ khác là không có gì trên đường vẽ dùng tới nó.",
+                    "Từ Dart 3, FFI và package:jnigen còn cho gọi thẳng C hay Java mà chẳng cần channel nào.",
+                    "Hệ quả thực tế: một platform channel chậm làm một tính năng chậm; nó không làm thao tác cuộn bị giật."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Widget, Element, RenderObject — mô tả, thực thể, và thứ thật sự vẽ ra.",
+            "Biết mình đang nhìn cái nào trong ba cái đó là giải thích được phần lớn bug Flutter, nhất là mấy bug mất state.",
+            "Mọi thứ bạn thấy đều do Flutter vẽ, và đó vừa là điểm mạnh vừa là cái giá của thiết kế này."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "flutter-clean-arch",
+      "title": "Clean architecture trong Flutter",
+      "summary": "Một cú chạm đi qua từng tầng, và mũi tên chỉ về hướng nào.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Một cú chạm 'Tải lại hồ sơ', đi xuống hết rồi quay lên.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Presentation: widget + Bloc",
+                  "detail": "Widget và một chỗ giữ state — Bloc, Cubit hay notifier của Riverpod. Ở đây không HTTP, không JSON, không SQL",
+                  "explain": [
+                    "Widget phát ra một ý định (ProfileRequested) rồi dựng lại theo state nhận về. Nó không bao giờ tự await một repository.",
+                    "Chỗ giữ state ánh xạ kết quả của use case thành các state mà giao diện vẽ được: Loading, Loaded(profile), Failure(message).",
+                    "Giữ tầng này sạch bóng Dio và json_decode chính là thứ cho phép bạn đổi HTTP client, hoặc test màn hình mà không cần mạng."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Use case: GetProfile",
+                  "detail": "Một hành động của ứng dụng, với một hàm call() nhận tham số và trả về entity hoặc failure",
+                  "explain": [
+                    "Một class, một động từ. GetProfile, RefreshProfile, SignOut — nhìn danh sách thư mục này là liệt kê được app làm những gì.",
+                    "Nó không chứa kiểu của Flutter cũng không chứa kiểu của HTTP, nên test được chỉ với một repository giả, không cần gì chạy kèm.",
+                    "App nhỏ thường bỏ tầng này và cho Bloc gọi thẳng repository. Đó là một lựa chọn hợp lệ, không phải làm ẩu — miễn là chọn có chủ đích."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Domain: entity + hợp đồng",
+                  "detail": "Dart thuần: entity Profile và lớp trừu tượng ProfileRepository, không phụ thuộc thứ gì ngoài tầng này",
+                  "explain": [
+                    "Entity là thứ mà app của bạn hiểu là một hồ sơ — id, tên, ảnh đại diện — chứ không phải thứ mà API hôm nay tình cờ trả về.",
+                    "Repository ở đây là một abstract class: một lời hứa rằng lấy được hồ sơ, và không nói gì về chuyện lấy bằng cách nào.",
+                    "Tầng này không import gì cả: không Flutter, không Dio, không Isar. Đó là phép thử — hễ import một package là nó không còn là tầng domain."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Data: bản cài đặt repository",
+                  "detail": "Cài đặt lớp trừu tượng của domain, chọn nguồn dữ liệu, và ánh xạ DTO thành entity",
+                  "explain": [
+                    "Đây mới là chỗ chứa chính sách thật: thử mạng trước, hỏng thì quay về cache, ghi bản mới về, và biến lỗi thành failure.",
+                    "DTO là hình dạng mà API gửi lên — trường snake_case, cái gì cũng nullable. Ánh xạ nó thành entity ngay tại đây giữ cho phần bừa bộn của API không lan ra chỗ khác.",
+                    "Vì nó cài đặt interface của domain, get_it hay Riverpod gắn nó vào lúc khởi động và các tầng trên chẳng biết mình nhận được bản nào."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Nguồn dữ liệu từ xa",
+                  "detail": "Dio hay http, cộng thứ gì API cần: base url, header xác thực, thử lại, và phần phân tích JSON",
+                  "explain": [
+                    "Nó trả về DTO và ném ra exception của riêng nó. Nó không biết Profile là gì, cũng không biết màn hình nào vừa hỏi.",
+                    "Việc nó là một class riêng mới khiến nó giả lập được trong test, và thay được khi backend chuyển từ REST sang GraphQL."
+                  ]
+                },
+                {
+                  "label": "Nguồn dữ liệu cục bộ",
+                  "detail": "Isar, sqflite hay shared_preferences — bản lưu tạm, và những gì cần chạy được khi mất mạng",
+                  "explain": [
+                    "Nó cũng lưu DTO, để hình dạng bản cache khớp hình dạng dữ liệu trên đường truyền và phần code ánh xạ chỉ nằm một chỗ.",
+                    "Đọc cache trước hay đọc mạng trước là quyết định của repository ở tầng trên, không bao giờ là của class này."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Entity đi ngược lên",
+                  "detail": "Kết quả quay về dưới dạng Profile hoặc Failure, và mọi tầng phía trên chỉ thấy đúng hai kiểu đó",
+                  "explain": [
+                    "Tới lúc Bloc nhìn thấy, không còn Response, không còn mã trạng thái, không còn JSON — chỉ còn một giá trị do app bạn định nghĩa.",
+                    "Vì thế đổi REST sang GraphQL chỉ động vào tầng data chứ không động chỗ nào khác: hợp đồng phía trên nó có đổi đâu.",
+                    "Lỗi ở đây cũng là giá trị — Either<Failure, Profile> với dartz, hoặc một sealed class — nên một chỗ quên try/catch không thể lặng lẽ giết màn hình."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "caption": "Mỗi tính năng một thư mục, bên trong ba tầng. Tên tầng ở đâu cũng như nhau, nên mở thư mục tính năng nào cũng biết ngay đường đi.",
+          "code": [
+            "lib/",
+            "└─ features/",
+            "   └─ profile/",
+            "      ├─ presentation/",
+            "      ├─ domain/",
+            "      └─ data/"
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Luật phụ thuộc: mũi tên chỉ vào trong, không chỉ ra ngoài. Data biết domain, presentation biết domain, còn domain không biết ai cả.",
+            "Cách soát nhanh nhất là nhìn danh sách import: một file trong domain mà import Flutter hay Dio là đã phá luật.",
+            "Dependency injection mới là thứ khiến luật chỉ-vào-trong chạy được — get_it hay Riverpod đưa bản cài đặt vào lúc khởi động.",
+            "Hãy co giãn số tầng theo cỡ app. Ba thư mục cho một màn hình gọi đúng một API là làm màu, không phải kiến trúc."
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "info",
+          "body": [
+            "Chia tầng không phải để cho gọn. Ý nghĩa của nó là những phần bạn hay sửa nhất — hình dạng API, HTTP client, đám widget — đúng là những phần không ai phụ thuộc vào."
+          ]
+        }
+      ]
+    }
+  ]
+}

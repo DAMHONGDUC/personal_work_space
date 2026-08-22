@@ -1,0 +1,654 @@
+{
+  "title": "Flutter, React Native and React inside",
+  "tagline": "What actually draws the pixels in each of them, and where clean architecture fits.",
+  "icon": "🏗️",
+  "tags": [
+    "Flutter",
+    "React Native",
+    "React"
+  ],
+  "readingTime": "10 min",
+  "effectiveDate": "2026-08-21",
+  "lastUpdated": "2026-08-21",
+  "intro": [
+    "Four architectures side by side: how each one turns your code into pixels, what really changed between React Native's old and new architecture, and where clean architecture sits on top of Flutter."
+  ],
+  "sections": [
+    {
+      "id": "overview",
+      "title": "One idea, three renderers",
+      "summary": "What they share, and the single line where they part company.",
+      "blocks": [
+        {
+          "type": "text",
+          "body": [
+            "All three are declarative: you describe what the screen should look like for the current state, and something else works out what to change. They part company over who owns the pixels — the browser, the platform's own views, or the framework itself."
+          ]
+        },
+        {
+          "type": "flow",
+          "caption": "The same pipeline, ending in three different places.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "You describe the UI",
+                  "detail": "A function of state: JSX or a Dart build() returning a tree of descriptions, not imperative draw calls",
+                  "explain": [
+                    "Declarative means you never write label.setText(name). You return a description — <Text>{name}</Text> or Text(name) — and the framework works out the difference from last time.",
+                    "The same state always produces the same tree, which is what makes hot reload, snapshot tests and time-travel debugging possible at all.",
+                    "React calls those objects elements, Flutter calls them widgets. Both are cheap and immutable: created, compared and thrown away on every build."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "A tree is built and diffed",
+                  "detail": "The new description is compared with the previous one to find the smallest set of real changes",
+                  "explain": [
+                    "React's reconciler walks the element tree and tags each node as inserted, updated or removed; Flutter's Element tree does the same job, with RenderObjects underneath it.",
+                    "This diff is what makes 'rebuild the whole screen on every state change' affordable: you re-describe everything, and three real nodes actually change.",
+                    "Keys matter in both worlds for the same reason: they tell the diff which item in a list is the same item it saw last frame."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "React → the DOM",
+                  "detail": "react-dom applies the diff to real DOM nodes, and the browser handles style, layout and paint",
+                  "explain": [
+                    "The output is DOM operations: setAttribute, appendChild, removeChild. Everything after that belongs to the browser's own rendering engine.",
+                    "So React inherits the browser's box model, its CSS and its accessibility tree for free — and inherits its performance characteristics too."
+                  ]
+                },
+                {
+                  "label": "React Native → platform views",
+                  "detail": "The same React, but the renderer creates UIView and android.view.View objects instead of DOM nodes",
+                  "explain": [
+                    "A <View> becomes a real UIView on iOS and a ViewGroup on Android, so scrolling, text selection and accessibility are the platform's own implementations.",
+                    "The price is a boundary: your JavaScript and those native objects live in different worlds, and everything between them has to cross it. The next two sections are about that crossing."
+                  ]
+                },
+                {
+                  "label": "Flutter → its own canvas",
+                  "detail": "No platform widgets at all: the engine paints every pixel itself, through Impeller or Skia",
+                  "explain": [
+                    "A Flutter Material button is not a native button. It is a rectangle, a shadow and a label that Flutter draws to look like one.",
+                    "That is why a Flutter app looks identical on both platforms, and why a new iOS control does not appear until the framework draws its own version of it."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Pixels on the screen",
+                  "detail": "Whoever owns the surface composites the frame — the browser, the OS view system, or the Flutter engine",
+                  "explain": [
+                    "The budget is the same everywhere: 16.7ms per frame at 60Hz, or 8.3ms at 120Hz. Miss it and the user sees jank, whatever the framework.",
+                    "Where the frameworks differ is what can eat that budget: a DOM reflow, a bridge round trip, or a Dart build that rebuilds too much of the tree."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "Framework",
+            "What draws the UI",
+            "Where your code runs"
+          ],
+          "rows": [
+            [
+              "React",
+              "Browser DOM",
+              "JS engine in the browser"
+            ],
+            [
+              "React Native (old)",
+              "Native views, over the bridge",
+              "JS thread — JavaScriptCore"
+            ],
+            [
+              "React Native (new)",
+              "Native views, over JSI + Fabric",
+              "JS thread plus shared C++"
+            ],
+            [
+              "Flutter",
+              "Its own canvas — Impeller / Skia",
+              "Dart, compiled ahead of time"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "react",
+      "title": "React on the web",
+      "summary": "The model the other two are variations of.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "One setState, from your function to a repainted node.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "State changes",
+                  "detail": "A useState setter marks the component dirty and schedules work — it does not render there and then",
+                  "explain": [
+                    "setCount(1) does not run your component immediately. React queues the update and batches everything that happened in the same tick.",
+                    "That batching is why two setState calls in one handler cause one re-render, not two, and why reading state right after setting it gives the old value.",
+                    "Since React 18 the scheduler is concurrent: it can start rendering, pause for something more urgent such as a keystroke, and resume afterwards."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Your components re-run",
+                  "detail": "React calls the function again and gets a fresh tree of elements — plain objects, nothing on screen yet",
+                  "explain": [
+                    "An element is just {type: 'div', props: {…}}. Creating one is cheap, and the whole design rests on that assumption.",
+                    "Re-running the function is also why hooks must be called in the same order every time: React matches them to slots by position, not by name.",
+                    "Nothing on screen has changed at this point. The phase is pure computation, and it can be thrown away if a more urgent update arrives."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Fiber reconciles",
+                  "detail": "The reconciler walks the tree in interruptible units of work, tagging nodes as placed, updated or deleted",
+                  "explain": [
+                    "A fiber is one unit of work — a node with links to its child, sibling and parent — so the walk can stop between nodes and continue later.",
+                    "This is the 'virtual DOM': not a copy of the DOM, but a tree of descriptions plus the bookkeeping needed to compare two of them.",
+                    "The diff is deliberately shallow: a different type means throw the subtree away, and a different key means it is a different item."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Commit to the DOM",
+                  "detail": "The tagged changes are applied in one synchronous pass, so nobody sees a half-updated screen",
+                  "explain": [
+                    "The commit phase cannot be interrupted, which is exactly why the render phase has to be pure and free of side effects.",
+                    "This is where refs are attached, layout effects run, and the real appendChild and setAttribute calls finally happen.",
+                    "useEffect runs after paint; useLayoutEffect runs inside this phase, before the browser draws — which is why one of them can cause a flicker and the other cannot."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "The browser paints",
+                  "detail": "Style, layout, paint and composite are the browser's job — React's work ended at the DOM call",
+                  "explain": [
+                    "A React performance problem is often a browser problem underneath: too many nodes, an expensive layout, a CSS property that forces a reflow.",
+                    "Which is why the fix is often not in React at all: virtualise the list, stop measuring inside a loop, or animate properties that do not trigger layout."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "React itself renders nothing. react-dom, react-native and react-three-fiber are separate renderers sharing one reconciler.",
+            "That split is exactly why React Native could exist without rewriting React.",
+            "The rule to hold onto: rendering is pure, committing is not."
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "info",
+          "body": [
+            "The virtual DOM is not fast by magic. It is fast because comparing plain objects in memory is cheap next to touching the DOM, and because React batches what it does touch."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "react-native-old",
+      "title": "React Native, the old architecture",
+      "summary": "Two worlds, one asynchronous queue between them.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Three threads, and every message between them serialised.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "JS thread",
+                  "detail": "Your React code runs in JavaScriptCore on its own thread, with no direct access to any native object",
+                  "explain": [
+                    "JavaScriptCore is the same engine Safari uses; on Android it was shipped with the app, which is part of why APKs were large.",
+                    "Your components, your state, your business logic all live here. This thread never touches a UIView — it cannot even see one.",
+                    "One thread means one blocking loop ruins everything: a heavy JSON.parse on a list response freezes gestures until it finishes."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "The bridge",
+                  "detail": "Every call is serialised to JSON, queued and delivered asynchronously — in both directions",
+                  "explain": [
+                    "Concretely, calling a native module becomes a message like [moduleId, methodId, [args]] appended to a queue and flushed on the next tick.",
+                    "Three properties define it, and each one is a limitation: asynchronous, batched, and serialised. Nothing can be asked and answered within one frame.",
+                    "Serialised also means no shared memory and no references: a native view cannot be handed to JS, only an integer tag naming it.",
+                    "This is the design the whole 'new architecture' exists to remove, so it is worth understanding as the thing being replaced."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Shadow thread (Yoga)",
+                  "detail": "Flexbox layout is computed in C++ off the main thread, turning your styles into concrete frames",
+                  "explain": [
+                    "Yoga is Facebook's C++ implementation of flexbox, which is why React Native layout follows CSS rules on platforms that have never heard of CSS.",
+                    "It keeps a shadow tree — a lightweight mirror of the view hierarchy — and computes x, y, width and height for every node.",
+                    "The results are then sent to the UI thread as mutations: create this view, set that frame, remove this child."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "UI thread",
+                  "detail": "Real UIView and ViewGroup objects are created and updated from what the shadow tree worked out",
+                  "explain": [
+                    "This is the platform's own main thread: the one that must stay free, because it also handles touches, scrolling and the run loop.",
+                    "The views are genuine platform views, so a <ScrollView> scrolls with the OS's own physics rather than an imitation of them.",
+                    "Native-driven animations and native scrolling therefore keep running smoothly even when the JS thread is busy — as long as they need nothing from JS."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Events go back the same way",
+                  "detail": "Touches, scrolls and text input are serialised and queued back to JS, arriving a frame or more later",
+                  "explain": [
+                    "onScroll from a native scroll view crosses the bridge like everything else, so JS sees a position that is already out of date.",
+                    "This is why animating a header from onScroll in JS looks wrong, and why Animated with useNativeDriver: true exists at all."
+                  ]
+                },
+                {
+                  "label": "Where it hurts",
+                  "detail": "Anything that needs an answer within the same frame has to wait for a round trip that cannot be made",
+                  "explain": [
+                    "Long lists are the classic case: cells are created in JS, so scrolling fast outruns the queue and leaves blank space behind.",
+                    "Startup is another: the bridge has to be initialised and the JS bundle parsed before anything can be rendered at all.",
+                    "Nothing here is a bug. It is the cost of the design, and it is exactly what the next section is about."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Old architecture in one sentence: JS and native never share memory, they exchange messages.",
+            "It shipped an enormous number of apps, and most of it still works unchanged today.",
+            "The failure mode is always the same shape — something needed an answer now, and the queue delivers later."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "react-native-new",
+      "title": "React Native, the new architecture",
+      "summary": "The queue is gone. JS and native now share memory through C++.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Same React, no bridge in the middle.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Hermes",
+                  "detail": "The default engine, with your JavaScript compiled to bytecode at build time instead of parsed at startup",
+                  "explain": [
+                    "The bundle shipped in the app is already bytecode, so launching does not pay for parsing megabytes of JavaScript first.",
+                    "It is built for phones rather than for benchmarks: lower memory use and faster start, at the cost of peak throughput on long-running loops.",
+                    "Debugging moved with it — Hermes speaks the Chrome DevTools protocol, so you inspect it the way you inspect a browser page."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "JSI (JavaScript Interface)",
+                  "detail": "A thin C++ layer that lets JavaScript hold a reference to a native object and call it directly",
+                  "explain": [
+                    "Instead of a message queue, a native object is exposed as a HostObject: JS calls a method on it and C++ runs, in the same call.",
+                    "That means synchronous calls are possible again, and arguments no longer have to survive a trip through JSON.",
+                    "It also means JS can hold something big — an image buffer, a database handle — by reference instead of copying it across a boundary.",
+                    "Everything else in this section is built on JSI: TurboModules and Fabric are both users of it."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Codegen",
+                  "detail": "Type-safe C++ and Java/ObjC glue generated at build time from your TypeScript spec files",
+                  "explain": [
+                    "You declare a module's interface once in TypeScript, and the build generates the native scaffolding that matches it exactly.",
+                    "The payoff is that a mismatch — a renamed method, a changed argument type — fails at compile time instead of at runtime on a user's phone.",
+                    "This is also what makes synchronous JSI calls safe to expose: both sides were generated from the same declaration."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "TurboModules",
+                  "detail": "Native modules loaded on first use rather than all at once, and callable straight through JSI",
+                  "explain": [
+                    "In the old architecture every native module was initialised at startup, whether the screen used it or not.",
+                    "A TurboModule is created the first time JavaScript asks for it, which takes measurable time off cold start in an app with many dependencies.",
+                    "Because the call path is JSI, a method can return a value immediately — the thing the old bridge could never do."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Fabric",
+                  "detail": "The new renderer: one immutable shadow tree, written in C++ and shared by JS and the UI thread",
+                  "explain": [
+                    "The tree lives in C++ rather than in JS, so the UI thread can read it directly instead of waiting for a serialised copy.",
+                    "It is immutable: a change produces a new tree, and the two are diffed to a list of mutations applied on the UI thread.",
+                    "Because rendering can start on either side, React can render off the main thread and commit synchronously when it matters — a resize, for instance.",
+                    "Concretely, this is what removes the blank cells when scrolling a long list quickly."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Concurrent React works properly",
+                  "detail": "Suspense, transitions and useDeferredValue behave here as they do on the web",
+                  "explain": [
+                    "Interruptible rendering needs the renderer to be able to throw work away and restart, which the old bridge's one-way queue made impossible.",
+                    "So features that shipped in React 18 for the web finally mean the same thing in a native app.",
+                    "The practical rule: on the new architecture you tune React, not the bridge. The boundary stopped being the bottleneck."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "The new architecture became the default in React Native 0.76 and the old one is on its way out.",
+            "Nothing about writing components changes — the same JSX, the same hooks, the same styles.",
+            "What changes is the failure mode: fewer 'waiting for the bridge' problems, more ordinary render-performance ones."
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "A library that still ships hand-written bridge code has to be updated before it works here. Checking your dependency list is the real migration work, not your own components."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "flutter",
+      "title": "Flutter",
+      "summary": "Three trees and a canvas — no platform widgets anywhere.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "From setState to a rasterised frame, entirely inside Flutter.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Dart, compiled ahead of time",
+                  "detail": "A release build is native ARM machine code: no JavaScript engine, and no bridge in the drawing path",
+                  "explain": [
+                    "Debug builds run the Dart VM with JIT, which is what makes stateful hot reload possible; release builds are AOT-compiled for speed and size.",
+                    "So the language boundary that React Native has to cross does not exist here — your Dart and the framework's Dart are the same program.",
+                    "Your code runs on the UI isolate. An isolate has its own memory and no shared state, so heavy work goes to Isolate.run and messages come back."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Widget tree",
+                  "detail": "Immutable descriptions, thrown away and rebuilt on every setState — deliberately cheap objects",
+                  "explain": [
+                    "A widget is a configuration, not a view: const Text('hi') allocates a small object and nothing more.",
+                    "Which is why 'rebuilding' is not the expensive part, and why const constructors and small build methods matter more than clever caching.",
+                    "The tree you write in build() is re-created constantly. Nothing on screen has moved yet at this point."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Element tree",
+                  "detail": "The long-lived middle layer holding state and deciding which widgets can be reused instead of recreated",
+                  "explain": [
+                    "An Element is the instance that persists between builds; it is where your State object lives, and why state survives a rebuild.",
+                    "Reuse is decided by runtimeType and key: same type and key means update this element in place, otherwise tear it down and make a new one.",
+                    "This is the exact counterpart of React's fiber tree, doing the same bookkeeping under a different name."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "RenderObject tree",
+                  "detail": "Layout and painting: constraints go down, sizes come back up, then each object paints itself",
+                  "explain": [
+                    "Flutter's layout rule in one line — constraints go down, sizes go up, and the parent decides the position.",
+                    "It is a single pass, which is what keeps layout linear rather than the multi-pass negotiation a browser performs.",
+                    "RenderObjects are expensive, so the framework works hard to keep them and mutate them rather than build new ones."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Engine: Impeller or Skia",
+                  "detail": "The framework hands over a display list, and the engine rasterises it on the GPU on the raster thread",
+                  "explain": [
+                    "Impeller replaced Skia as the default because it precompiles its shaders, removing the first-run stutter Flutter used to be known for.",
+                    "The build and layout work happens on the UI thread; rasterising happens on the raster thread, so the two can overlap.",
+                    "This is why a Flutter app looks pixel-identical across platforms: nothing on screen came from the platform's own widget set."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Platform channels",
+                  "detail": "The only crossing left, and it is for platform APIs — camera, files, permissions — never for drawing",
+                  "explain": [
+                    "A channel is asynchronous and message-based, so it looks a lot like React Native's old bridge — but nothing in the render path uses it.",
+                    "Since Dart 3, FFI and package:jnigen also let you call C or Java directly, without a channel at all.",
+                    "The practical consequence: a slow platform channel makes a feature slow; it does not make scrolling stutter."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Widget, Element, RenderObject — description, instance, and the thing that actually paints.",
+            "Knowing which of the three you are looking at explains most Flutter bugs, especially the ones about lost state.",
+            "Everything you see is drawn by Flutter, which is both the strength and the cost of the design."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "flutter-clean-arch",
+      "title": "Clean architecture in Flutter",
+      "summary": "Where a tap goes, layer by layer, and which way the arrows point.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "One tap on 'Refresh profile', all the way down and back.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Presentation: widget + Bloc",
+                  "detail": "Widgets and a state holder — Bloc, Cubit or a Riverpod notifier. No HTTP, no JSON, no SQL in here",
+                  "explain": [
+                    "The widget emits an intent (ProfileRequested) and rebuilds from whatever state comes back. It never awaits a repository itself.",
+                    "The state holder maps a use case's result onto states the UI can draw: Loading, Loaded(profile), Failure(message).",
+                    "Keeping this layer free of Dio and json_decode is what lets you swap the HTTP client, or test the screen with no network at all."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Use case: GetProfile",
+                  "detail": "One action of the application, with a call() that takes parameters and returns an entity or a failure",
+                  "explain": [
+                    "One class, one verb. GetProfile, RefreshProfile, SignOut — a reader can list what the app does by listing this folder.",
+                    "It holds no Flutter types and no HTTP types, so it is testable with a fake repository and nothing else running.",
+                    "Small apps often skip this layer and let the Bloc call the repository directly. That is a legitimate choice, not a failure — just make it deliberately."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Domain: entity + contract",
+                  "detail": "Pure Dart: the Profile entity and the abstract ProfileRepository, depending on nothing outside the layer",
+                  "explain": [
+                    "The entity is what your app means by a profile — id, name, avatar — not what the API happens to return today.",
+                    "The repository here is an abstract class: a promise that a profile can be fetched, with no statement about how.",
+                    "This layer imports nothing: no Flutter, no Dio, no Isar. That is the test — if it imports a package, it is not the domain layer."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Data: repository implementation",
+                  "detail": "Implements the domain's abstract class, picks a source, and maps DTOs onto entities",
+                  "explain": [
+                    "This is where the real policy lives: try the network, fall back to cache, write the fresh copy back, and turn errors into failures.",
+                    "A DTO is the shape the API sends — snake_case fields, nullable everything. Mapping it to an entity here keeps the API's mess out of the rest of the app.",
+                    "Because it implements the domain's interface, get_it or Riverpod can bind it at startup and nothing above knows which implementation it got."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Remote data source",
+                  "detail": "Dio or http, plus whatever the API needs: base url, auth headers, retries, and the JSON parsing",
+                  "explain": [
+                    "It returns DTOs and throws its own exceptions. It knows nothing about Profile, and nothing about the screen that asked.",
+                    "Being a separate class is what makes it mockable in tests, and swappable when the backend moves from REST to GraphQL."
+                  ]
+                },
+                {
+                  "label": "Local data source",
+                  "detail": "Isar, sqflite or shared_preferences — the cached copy, and whatever works offline",
+                  "explain": [
+                    "It stores DTOs too, so the cached shape matches the wire shape and the mapping code stays in one place.",
+                    "Whether the app reads cache first or network first is a decision for the repository above, never for this class."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Entities travel back up",
+                  "detail": "The result returns as Profile or Failure, and every layer above sees only those two types",
+                  "explain": [
+                    "By the time the Bloc sees it, there is no Response, no status code and no JSON left — only a value your app defines.",
+                    "Which is why swapping REST for GraphQL touches the data layer and nothing else: the contract above it did not change.",
+                    "Errors are values here too — Either<Failure, Profile> with dartz, or a sealed class — so a forgotten try/catch cannot silently kill the screen."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "caption": "One folder per feature, three layers inside it. The layer names are the same everywhere, so any feature folder is navigable on sight.",
+          "code": [
+            "lib/",
+            "└─ features/",
+            "   └─ profile/",
+            "      ├─ presentation/",
+            "      ├─ domain/",
+            "      └─ data/"
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "The dependency rule: arrows point inward only. Data knows domain, presentation knows domain, and domain knows nothing.",
+            "The quickest audit is the import list: a file in domain that imports Flutter or Dio has broken the rule.",
+            "Dependency injection is what makes the inward-only rule work — get_it or Riverpod hands the implementation in at startup.",
+            "Scale the layers to the app. Three folders for a screen with one API call is ceremony, not architecture."
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "info",
+          "body": [
+            "The point of the layering is not tidiness. It is that the pieces you change most often — the API's shape, the HTTP client, the widgets — are the pieces nothing else depends on."
+          ]
+        }
+      ]
+    }
+  ]
+}
