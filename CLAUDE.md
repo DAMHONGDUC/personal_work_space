@@ -37,6 +37,11 @@
     a second one in the same section means the point wants breaking up.
   - **Illustrated.** At least one `flow` diagram. Diagrams are data — stages of
     labelled boxes, drawn by `FlowDiagram` — never SVG or markup in the JSON.
+  - **Every diagram box explains itself.** `detail` is required, not optional:
+    a label names a step, the detail says what actually happens and why it
+    matters, in one plain phrase. A diagram has to make sense to someone who
+    has not read the text around it, so a detail that only restates the label
+    is a bug. Roughly 30–110 characters, and a test holds that line.
   - **One colour.** The whole section uses `DOCS_ACCENT`; a guide has no colour
     of its own, so the set reads as one body of work. (App policies are the
     other way round — there the colour belongs to the app.)

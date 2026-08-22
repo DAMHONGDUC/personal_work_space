@@ -27,7 +27,7 @@
               "items": [
                 {
                   "label": "Create the key",
-                  "detail": "ed25519 + passphrase"
+                  "detail": "ssh-keygen writes two files: the secret half, and the .pub half you may share"
                 }
               ]
             },
@@ -35,7 +35,7 @@
               "items": [
                 {
                   "label": "ssh-agent",
-                  "detail": "Holds it unlocked"
+                  "detail": "Keeps the key unlocked in memory, so git never stops to ask for the passphrase"
                 }
               ]
             },
@@ -43,7 +43,7 @@
               "items": [
                 {
                   "label": "GitHub",
-                  "detail": "Only the .pub half"
+                  "detail": "Paste only the .pub half. GitHub uses it to recognise you and never needs the secret one"
                 }
               ]
             },
@@ -51,7 +51,7 @@
               "items": [
                 {
                   "label": "Test",
-                  "detail": "ssh -T git@github.com"
+                  "detail": "ssh -T greets you by name once the agent and GitHub hold the matching halves"
                 }
               ]
             },
@@ -59,7 +59,7 @@
               "items": [
                 {
                   "label": "SSH remote",
-                  "detail": "git@… instead of https://…"
+                  "detail": "A repo cloned over HTTPS keeps asking for a token until its remote url is switched"
                 }
               ]
             }
@@ -233,11 +233,11 @@
               "items": [
                 {
                   "label": "git@github-work:…",
-                  "detail": "Remote of a work repo"
+                  "detail": "A made-up host name that exists only in your config and in work remote urls"
                 },
                 {
                   "label": "git@github.com:…",
-                  "detail": "Remote of a personal repo"
+                  "detail": "The real host name, left alone so personal repos keep working unchanged"
                 }
               ]
             },
@@ -245,7 +245,7 @@
               "items": [
                 {
                   "label": "~/.ssh/config",
-                  "detail": "Matches the Host, picks the IdentityFile"
+                  "detail": "Matches the host name in the url, then hands ssh the key named on that entry"
                 }
               ]
             },
@@ -253,11 +253,11 @@
               "items": [
                 {
                   "label": "id_work",
-                  "detail": "Work account"
+                  "detail": "Uploaded to the work account. GitHub allows one key on one account only"
                 },
                 {
                   "label": "id_ed25519",
-                  "detail": "Personal account"
+                  "detail": "Uploaded to the personal account — which is the reason two keys are needed at all"
                 }
               ]
             }

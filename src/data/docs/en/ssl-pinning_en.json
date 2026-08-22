@@ -27,7 +27,7 @@
               "items": [
                 {
                   "label": "App connects",
-                  "detail": "TLS handshake starts"
+                  "detail": "The app opens a TLS connection. Nothing has been trusted yet"
                 }
               ]
             },
@@ -35,7 +35,7 @@
               "items": [
                 {
                   "label": "Server sends its chain",
-                  "detail": "Leaf + intermediates"
+                  "detail": "The leaf certificate for the domain, plus the intermediates linking it up to a root"
                 }
               ]
             },
@@ -43,7 +43,7 @@
               "items": [
                 {
                   "label": "OS validates the chain",
-                  "detail": "Signed by a trusted CA?"
+                  "detail": "The device checks the signatures up to a CA in its own trust store, and the dates"
                 }
               ]
             },
@@ -51,7 +51,7 @@
               "items": [
                 {
                   "label": "App compares the pin",
-                  "detail": "SHA-256 of the public key"
+                  "detail": "Only now: hash the public key out of that certificate and look for it in the app's list"
                 }
               ]
             },
@@ -59,11 +59,11 @@
               "items": [
                 {
                   "label": "Match → continue",
-                  "detail": "Request is sent"
+                  "detail": "The peer holds the exact key you shipped, so the request finally goes out"
                 },
                 {
                   "label": "Mismatch → abort",
-                  "detail": "Nothing leaves the app"
+                  "detail": "Valid certificate, wrong key — the connection closes before any data is sent"
                 }
               ]
             }
@@ -93,7 +93,7 @@
               "items": [
                 {
                   "label": "Free_Airport_WiFi",
-                  "detail": "An access point the attacker runs"
+                  "detail": "A network named to look ordinary, run by someone who wants your traffic"
                 }
               ]
             },
@@ -101,7 +101,7 @@
               "items": [
                 {
                   "label": "A portal asks to install a profile",
-                  "detail": "Its CA lands in the device trust store"
+                  "detail": "The page looks like a normal login step, but installing it adds the attacker's CA"
                 }
               ]
             },
@@ -109,7 +109,7 @@
               "items": [
                 {
                   "label": "The app calls api.example.com",
-                  "detail": "The traffic goes through the attacker proxy"
+                  "detail": "The proxy answers instead of your server, holding a certificate it issued itself"
                 }
               ]
             },
@@ -117,7 +117,7 @@
               "items": [
                 {
                   "label": "The chain looks valid",
-                  "detail": "Signed by a CA the device now trusts"
+                  "detail": "Every normal check passes, because the device was just told to trust that CA"
                 }
               ]
             },
@@ -125,11 +125,11 @@
               "items": [
                 {
                   "label": "No pin → readable",
-                  "detail": "Tokens, request bodies, and responses that can be edited"
+                  "detail": "The proxy reads and rewrites everything: tokens, request bodies, responses"
                 },
                 {
                   "label": "Pin → dropped",
-                  "detail": "The key is not the one shipped in the app"
+                  "detail": "The key in that certificate is not the one built into the app, so nothing is sent"
                 }
               ]
             }
@@ -210,11 +210,11 @@
               "items": [
                 {
                   "label": "Build time",
-                  "detail": "You read the key off the server you control"
+                  "detail": "You read the key off your own server once, and compile the hash into the app"
                 },
                 {
                   "label": "Runtime",
-                  "detail": "The certificate the peer just sent"
+                  "detail": "The certificate the peer presented a moment ago, whoever that peer turns out to be"
                 }
               ]
             },
@@ -222,7 +222,7 @@
               "items": [
                 {
                   "label": "SPKI → SHA-256 → base64",
-                  "detail": "The same reduction on both sides"
+                  "detail": "The key is cut out, hashed and encoded — same steps, so the same key gives the same string"
                 }
               ]
             },
@@ -230,11 +230,11 @@
               "items": [
                 {
                   "label": "Equal",
-                  "detail": "The peer holds the key you pinned"
+                  "detail": "The peer already proved it holds this key during the handshake, so it is your server"
                 },
                 {
                   "label": "Different",
-                  "detail": "Connection aborted"
+                  "detail": "Some other key, no matter who signed it — the connection closes with nothing sent"
                 }
               ]
             }
@@ -261,10 +261,130 @@
           ]
         },
         {
+          "type": "heading",
+          "text": "But the public key is public — why can it not be copied?"
+        },
+        {
+          "type": "list",
+          "items": [
+            "It can. Anyone may download your certificate and read the key out of it.",
+            "The copy is useless: TLS makes the server sign the handshake with the private key, which never leaves the server.",
+            "So an attacker presenting your certificate is dropped at the signature, before any data moves — the pin is never even reached.",
+            "Using their own key pair fails the other way round: a valid handshake, the wrong pin, connection dropped.",
+            "The pin says which key to expect; TLS proves the peer is holding it. Neither half is enough on its own."
+          ]
+        },
+        {
           "type": "note",
           "tone": "warning",
           "body": [
             "Hashing the whole certificate instead of the SubjectPublicKeyInfo is the classic mistake: the digest then changes at every renewal, even when the key did not."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "handshake",
+      "title": "The handshake, end to end",
+      "summary": "Where the pin check sits in a real TLS 1.3 exchange.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "TLS 1.3. In 1.2 the messages differ, but the pin check sits in the same place.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "1. ClientHello",
+                  "detail": "App → server: versions, ciphers, its key share, the hostname in SNI"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "2. ServerHello",
+                  "detail": "Server → app: chosen cipher and the server key share"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "3. Shared secret",
+                  "detail": "Both sides derive it from the two key shares. Everything below is encrypted"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "4. Certificate",
+                  "detail": "Server → app: the leaf certificate and its intermediates"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "5. CertificateVerify",
+                  "detail": "Server signs the transcript with its private key — the step a copied certificate cannot fake"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "6. Finished",
+                  "detail": "A MAC over the whole transcript, proving both sides derived the same keys"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "7a. Chain",
+                  "detail": "Each certificate signed by the next, up to a root the device already trusts"
+                },
+                {
+                  "label": "7b. Hostname",
+                  "detail": "The certificate must list the domain you asked for in its SAN field"
+                },
+                {
+                  "label": "7c. Validity",
+                  "detail": "Inside its dates, and not on a revocation list the device can reach"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "8. Pin check",
+                  "detail": "SPKI → SHA-256 → base64, compared with the pins in the app"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "All pass",
+                  "detail": "Client Finished, then the first request is sent"
+                },
+                {
+                  "label": "Any fails",
+                  "detail": "Alert, connection closed, nothing sent"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Steps 4 to 8 are already encrypted; an observer sees only the ClientHello and the hostname in SNI.",
+            "Step 5 is what makes a stolen copy of your certificate useless — signing needs the private key.",
+            "Step 8 is the only part the library adds. Steps 7a to 7c happen with or without pinning.",
+            "The pin is checked before the first byte of your request leaves, not after a reply comes back."
           ]
         }
       ]
@@ -282,11 +402,11 @@
               "items": [
                 {
                   "label": "Pin A",
-                  "detail": "Key in use today"
+                  "detail": "The hash of the key the server is actually serving today"
                 },
                 {
                   "label": "Pin B",
-                  "detail": "Next key, generated early, kept offline"
+                  "detail": "The hash of a key you generated early and locked away, not in use yet"
                 }
               ]
             },
@@ -294,7 +414,7 @@
               "items": [
                 {
                   "label": "Both ship in the release",
-                  "detail": "The app accepts either"
+                  "detail": "The app accepts either, so it is ready for the switch months before it happens"
                 }
               ]
             },
@@ -302,7 +422,7 @@
               "items": [
                 {
                   "label": "Server moves to key B",
-                  "detail": "Installed apps keep working"
+                  "detail": "Installed apps keep working, because pin B was already in their list"
                 }
               ]
             },
@@ -310,7 +430,7 @@
               "items": [
                 {
                   "label": "Next release adds pin C",
-                  "detail": "And the cycle repeats"
+                  "detail": "Pin C replaces the one just retired, so there is always a spare in hand"
                 }
               ]
             }

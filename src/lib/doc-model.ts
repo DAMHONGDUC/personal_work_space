@@ -53,11 +53,15 @@ export type Block =
    * A diagram, described as data rather than markup: stages run top to bottom
    * with an arrow between them, and the boxes within one stage sit side by side.
    * One box per stage draws a pipeline; several boxes feeding one draws a join.
+   *
+   * Every box carries a `detail`, and it is required rather than optional: a
+   * label alone names a step without explaining it, and a diagram has to make
+   * sense to someone who has not read the paragraphs around it.
    */
   | {
       type: "flow";
       caption?: string;
-      stages: { items: { label: string; detail?: string }[] }[];
+      stages: { items: { label: string; detail: string }[] }[];
     };
 
 /** Named shortcuts for the block types that have a renderer of their own. */

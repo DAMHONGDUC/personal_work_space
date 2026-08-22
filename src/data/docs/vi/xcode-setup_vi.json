@@ -28,7 +28,7 @@
               "items": [
                 {
                   "label": "Chuẩn bị",
-                  "detail": "Apple Account, dung lượng, macOS"
+                  "detail": "Đăng nhập, chừa khoảng 60 GB trống, và update macOS trước — Xcode từ chối bản cũ hơn"
                 }
               ]
             },
@@ -36,7 +36,7 @@
               "items": [
                 {
                   "label": "Cài Xcode",
-                  "detail": "App Store, .xip hoặc xcodes"
+                  "detail": "App Store nếu chỉ cần bản mới nhất; .xip hoặc xcodes CLI khi cần đúng một phiên bản"
                 }
               ]
             },
@@ -44,7 +44,7 @@
               "items": [
                 {
                   "label": "Toolchain",
-                  "detail": "xcode-select, license, Homebrew"
+                  "detail": "Trỏ xcode-select vào Xcode, chấp nhận licence, rồi cài Homebrew và công cụ của dự án"
                 }
               ]
             },
@@ -52,7 +52,7 @@
               "items": [
                 {
                   "label": "Ký ứng dụng",
-                  "detail": "Certificate, App ID, profile"
+                  "detail": "Thêm Apple ID để Xcode cấp certificate và tải profile mà máy thật cần"
                 }
               ]
             },
@@ -60,7 +60,7 @@
               "items": [
                 {
                   "label": "Ship",
-                  "detail": "Máy thật, rồi archive"
+                  "detail": "Chạy trên iPhone thật để chứng minh signing ổn, rồi archive và đẩy lên TestFlight"
                 }
               ]
             }
@@ -242,15 +242,15 @@
               "items": [
                 {
                   "label": "Certificate",
-                  "detail": "Private key trong Keychain"
+                  "detail": "Danh tính của bạn với Apple. Vô dụng nếu thiếu private key, thứ chỉ nằm trong Keychain máy này"
                 },
                 {
                   "label": "App ID",
-                  "detail": "Bundle id + capabilities"
+                  "detail": "Bundle id kèm những capability app được phép dùng, ví dụ push hay App Groups"
                 },
                 {
                   "label": "Devices",
-                  "detail": "UDID, tới khi lên store thì thôi"
+                  "detail": "UDID của những máy được phép chạy bản build. Lên store rồi thì không cần nữa"
                 }
               ]
             },
@@ -258,7 +258,7 @@
               "items": [
                 {
                   "label": "Provisioning profile",
-                  "detail": "Apple cấp"
+                  "detail": "Giấy Apple ký, gắn ba thứ trên lại với nhau. Xcode tải về và nhúng vào app"
                 }
               ]
             },
@@ -266,7 +266,7 @@
               "items": [
                 {
                   "label": "App đã ký",
-                  "detail": "Chạy trên máy thật, upload được lên App Store Connect"
+                  "detail": "Chạy được trên các máy đã đăng ký, và là dạng duy nhất App Store Connect chấp nhận"
                 }
               ]
             }
@@ -355,13 +355,15 @@
               "items": [
                 {
                   "label": "File .p8",
-                  "detail": "Chỉ tải được một lần"
+                  "detail": "File private key. Chỉ tải được đúng một lần — mất là phải tạo key mới"
                 },
                 {
-                  "label": "Key ID"
+                  "label": "Key ID",
+                  "detail": "Mã ngắn hiện cạnh key, cho Apple biết key nào của bạn đang ký"
                 },
                 {
-                  "label": "Issuer ID"
+                  "label": "Issuer ID",
+                  "detail": "Định danh team của bạn. Mọi key tài khoản tạo ra đều dùng chung giá trị này"
                 }
               ]
             },
@@ -369,7 +371,7 @@
               "items": [
                 {
                   "label": "fastlane / altool",
-                  "detail": "Chạy trên CI hoặc trên máy"
+                  "detail": "Ký một token ngắn hạn từ ba giá trị đó, nên không ai phải gõ mã 2FA"
                 }
               ]
             },
@@ -377,7 +379,7 @@
               "items": [
                 {
                   "label": "TestFlight",
-                  "detail": "Build hiện ra, không hỏi mã 2FA"
+                  "detail": "Build về đây và gửi được cho tester, cả quy trình không cần thao tác tay"
                 }
               ]
             }

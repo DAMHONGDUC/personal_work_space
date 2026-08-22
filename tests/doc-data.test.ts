@@ -47,6 +47,10 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
  */
 const MAX_STRING_LENGTH = 280;
 
+/** A diagram box explains itself in a phrase — long enough to say something. */
+const MIN_DETAIL_LENGTH = 30;
+const MAX_DETAIL_LENGTH = 110;
+
 /**
  * A guide with the translated words taken out.
  *
@@ -342,6 +346,30 @@ describe.each(bundles.map((bundle) => [bundle.slug, bundle] as const))(
             expect(stage.items.length).toBeGreaterThan(0);
           }
         }
+      });
+
+      it("explains every box in a diagram", () => {
+        // A diagram is read on its own, so a label that only names a step is
+        // not enough — and an explanation that runs long stops being scannable.
+        const bad: string[] = [];
+
+        for (const block of blocks) {
+          if (block.type !== "flow") continue;
+
+          for (const stage of block.stages) {
+            expect(stage.items.length).toBeGreaterThan(0);
+
+            for (const item of stage.items) {
+              const length = item.detail.trim().length;
+
+              if (length < MIN_DETAIL_LENGTH || length > MAX_DETAIL_LENGTH) {
+                bad.push(`${item.label}: ${length} chars`);
+              }
+            }
+          }
+        }
+
+        expect(bad).toEqual([]);
       });
 
       it("uses a note tone the callout has styling for", () => {

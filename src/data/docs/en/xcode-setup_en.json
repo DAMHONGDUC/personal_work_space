@@ -28,7 +28,7 @@
               "items": [
                 {
                   "label": "Prepare",
-                  "detail": "Apple Account, disk, macOS"
+                  "detail": "Sign in, free up about 60 GB, and update macOS first — Xcode refuses an older one"
                 }
               ]
             },
@@ -36,7 +36,7 @@
               "items": [
                 {
                   "label": "Install Xcode",
-                  "detail": "App Store, .xip or xcodes"
+                  "detail": "App Store for the latest; a .xip or the xcodes CLI when you need one exact version"
                 }
               ]
             },
@@ -44,7 +44,7 @@
               "items": [
                 {
                   "label": "Toolchain",
-                  "detail": "xcode-select, license, Homebrew"
+                  "detail": "Point xcode-select at Xcode, accept the licence, then install Homebrew and the project tools"
                 }
               ]
             },
@@ -52,7 +52,7 @@
               "items": [
                 {
                   "label": "Signing",
-                  "detail": "Certificate, App ID, profile"
+                  "detail": "Add your Apple ID so Xcode can issue a certificate and fetch the profile a device needs"
                 }
               ]
             },
@@ -60,7 +60,7 @@
               "items": [
                 {
                   "label": "Ship",
-                  "detail": "Real device, then archive"
+                  "detail": "Run on a real iPhone to prove signing works, then archive and upload to TestFlight"
                 }
               ]
             }
@@ -242,15 +242,15 @@
               "items": [
                 {
                   "label": "Certificate",
-                  "detail": "Private key in Keychain"
+                  "detail": "Your identity with Apple. Useless without the private key, which lives only in this Mac's Keychain"
                 },
                 {
                   "label": "App ID",
-                  "detail": "Bundle id + capabilities"
+                  "detail": "The bundle id plus the capabilities the app may use, such as push or App Groups"
                 },
                 {
                   "label": "Devices",
-                  "detail": "UDIDs, until you are on the store"
+                  "detail": "UDIDs of the phones allowed to run the build. Not needed once the app ships through the store"
                 }
               ]
             },
@@ -258,7 +258,7 @@
               "items": [
                 {
                   "label": "Provisioning profile",
-                  "detail": "Issued by Apple"
+                  "detail": "Apple's signed statement tying those three together. Xcode downloads it and embeds it in the app"
                 }
               ]
             },
@@ -266,7 +266,7 @@
               "items": [
                 {
                   "label": "Signed app",
-                  "detail": "Runs on device, uploads to App Store Connect"
+                  "detail": "Runs on the registered devices, and is the only form App Store Connect will accept"
                 }
               ]
             }
@@ -355,13 +355,15 @@
               "items": [
                 {
                   "label": ".p8 key file",
-                  "detail": "Downloadable once"
+                  "detail": "The private key file. It downloads exactly once — lose it and the only fix is a new key"
                 },
                 {
-                  "label": "Key ID"
+                  "label": "Key ID",
+                  "detail": "Short id shown beside the key, telling Apple which of your keys is signing"
                 },
                 {
-                  "label": "Issuer ID"
+                  "label": "Issuer ID",
+                  "detail": "Identifies your team. The same value for every key the account creates"
                 }
               ]
             },
@@ -369,7 +371,7 @@
               "items": [
                 {
                   "label": "fastlane / altool",
-                  "detail": "On CI or on your machine"
+                  "detail": "Signs a short-lived token from those three values, so nobody has to type a 2FA code"
                 }
               ]
             },
@@ -377,7 +379,7 @@
               "items": [
                 {
                   "label": "TestFlight",
-                  "detail": "Build appears with no 2FA prompt"
+                  "detail": "The build lands here and can go to testers, with nothing interactive in the pipeline"
                 }
               ]
             }

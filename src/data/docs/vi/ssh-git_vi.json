@@ -27,7 +27,7 @@
               "items": [
                 {
                   "label": "Tạo key",
-                  "detail": "ed25519 + passphrase"
+                  "detail": "ssh-keygen tạo hai file: nửa bí mật, và nửa .pub được phép chia sẻ"
                 }
               ]
             },
@@ -35,7 +35,7 @@
               "items": [
                 {
                   "label": "ssh-agent",
-                  "detail": "Giữ key đã mở khoá"
+                  "detail": "Giữ key đã mở khoá trong bộ nhớ, để git không dừng lại hỏi passphrase"
                 }
               ]
             },
@@ -43,7 +43,7 @@
               "items": [
                 {
                   "label": "GitHub",
-                  "detail": "Chỉ nửa .pub"
+                  "detail": "Chỉ dán nửa .pub. GitHub dùng nó để nhận ra bạn và không bao giờ cần nửa bí mật"
                 }
               ]
             },
@@ -51,7 +51,7 @@
               "items": [
                 {
                   "label": "Kiểm tra",
-                  "detail": "ssh -T git@github.com"
+                  "detail": "ssh -T chào đúng tên bạn khi agent và GitHub giữ hai nửa khớp nhau"
                 }
               ]
             },
@@ -59,7 +59,7 @@
               "items": [
                 {
                   "label": "Remote SSH",
-                  "detail": "git@… thay cho https://…"
+                  "detail": "Repo clone bằng HTTPS vẫn hỏi token cho tới khi đổi url remote"
                 }
               ]
             }
@@ -233,11 +233,11 @@
               "items": [
                 {
                   "label": "git@github-work:…",
-                  "detail": "Remote của repo công việc"
+                  "detail": "Một tên host tự đặt, chỉ tồn tại trong config của bạn và trong url remote công việc"
                 },
                 {
                   "label": "git@github.com:…",
-                  "detail": "Remote của repo cá nhân"
+                  "detail": "Tên host thật, để nguyên nên repo cá nhân vẫn chạy như cũ"
                 }
               ]
             },
@@ -245,7 +245,7 @@
               "items": [
                 {
                   "label": "~/.ssh/config",
-                  "detail": "Khớp Host, chọn IdentityFile"
+                  "detail": "Khớp tên host trong url, rồi đưa cho ssh đúng key khai ở mục đó"
                 }
               ]
             },
@@ -253,11 +253,11 @@
               "items": [
                 {
                   "label": "id_work",
-                  "detail": "Tài khoản công việc"
+                  "detail": "Đã nạp lên tài khoản công việc. GitHub chỉ cho một key thuộc một tài khoản"
                 },
                 {
                   "label": "id_ed25519",
-                  "detail": "Tài khoản cá nhân"
+                  "detail": "Đã nạp lên tài khoản cá nhân — chính là lý do phải có tới hai key"
                 }
               ]
             }

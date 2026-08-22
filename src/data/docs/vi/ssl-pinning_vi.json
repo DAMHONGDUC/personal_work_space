@@ -27,7 +27,7 @@
               "items": [
                 {
                   "label": "App mở kết nối",
-                  "detail": "Bắt đầu handshake TLS"
+                  "detail": "App mở kết nối TLS. Chưa có gì được tin cả"
                 }
               ]
             },
@@ -35,7 +35,7 @@
               "items": [
                 {
                   "label": "Server gửi chain",
-                  "detail": "Leaf + intermediate"
+                  "detail": "Certificate leaf của tên miền, kèm các intermediate nối nó lên tới root"
                 }
               ]
             },
@@ -43,7 +43,7 @@
               "items": [
                 {
                   "label": "Hệ điều hành kiểm tra chain",
-                  "detail": "Có CA tin cậy ký không?"
+                  "detail": "Máy kiểm chữ ký lên tới một CA trong kho tin cậy của nó, và kiểm cả hạn"
                 }
               ]
             },
@@ -51,7 +51,7 @@
               "items": [
                 {
                   "label": "App so pin",
-                  "detail": "SHA-256 của public key"
+                  "detail": "Tới đây mới: băm public key trong certificate đó rồi tìm trong danh sách của app"
                 }
               ]
             },
@@ -59,11 +59,11 @@
               "items": [
                 {
                   "label": "Khớp → đi tiếp",
-                  "detail": "Request được gửi"
+                  "detail": "Đầu kia đang giữ đúng key bạn ship, nên request mới được gửi đi"
                 },
                 {
                   "label": "Lệch → huỷ",
-                  "detail": "Không gì rời khỏi app"
+                  "detail": "Certificate hợp lệ nhưng sai key — kết nối đóng trước khi gửi bất kỳ dữ liệu nào"
                 }
               ]
             }
@@ -93,7 +93,7 @@
               "items": [
                 {
                   "label": "Free_Airport_WiFi",
-                  "detail": "Điểm phát do kẻ tấn công dựng"
+                  "detail": "Một mạng đặt tên trông bình thường, do người muốn xem traffic của bạn dựng"
                 }
               ]
             },
@@ -101,7 +101,7 @@
               "items": [
                 {
                   "label": "Trang đăng nhập mời cài profile",
-                  "detail": "CA của nó vào kho tin cậy của máy"
+                  "detail": "Trang trông như bước đăng nhập bình thường, nhưng cài vào là thêm CA của kẻ tấn công"
                 }
               ]
             },
@@ -109,7 +109,7 @@
               "items": [
                 {
                   "label": "App gọi api.example.com",
-                  "detail": "Traffic đi qua proxy của kẻ tấn công"
+                  "detail": "Proxy trả lời thay cho server của bạn, cầm certificate mà chính nó tự cấp"
                 }
               ]
             },
@@ -117,7 +117,7 @@
               "items": [
                 {
                   "label": "Chain trông vẫn hợp lệ",
-                  "detail": "Được ký bởi CA mà máy vừa tin"
+                  "detail": "Mọi bước kiểm thông thường đều qua, vì máy vừa được bảo là hãy tin CA đó"
                 }
               ]
             },
@@ -125,11 +125,11 @@
               "items": [
                 {
                   "label": "Không pin → đọc được",
-                  "detail": "Token, body request, và response sửa được"
+                  "detail": "Proxy đọc và sửa được mọi thứ: token, body request, response"
                 },
                 {
                   "label": "Có pin → cắt kết nối",
-                  "detail": "Key không phải cái ship trong app"
+                  "detail": "Key trong certificate đó không phải key gắn trong app, nên không gửi gì cả"
                 }
               ]
             }
@@ -210,11 +210,11 @@
               "items": [
                 {
                   "label": "Lúc build",
-                  "detail": "Bạn đọc key từ server của chính mình"
+                  "detail": "Bạn đọc key từ server của mình một lần, rồi biên dịch hash đó vào app"
                 },
                 {
                   "label": "Lúc chạy",
-                  "detail": "Certificate mà đầu bên kia vừa gửi"
+                  "detail": "Certificate mà đầu bên kia vừa đưa ra, dù hoá ra đầu đó là ai"
                 }
               ]
             },
@@ -222,7 +222,7 @@
               "items": [
                 {
                   "label": "SPKI → SHA-256 → base64",
-                  "detail": "Cùng một phép rút gọn cho cả hai bên"
+                  "detail": "Cắt lấy key, băm rồi mã hoá — cùng các bước, nên cùng một key sẽ ra cùng một chuỗi"
                 }
               ]
             },
@@ -230,11 +230,11 @@
               "items": [
                 {
                   "label": "Bằng nhau",
-                  "detail": "Đầu kia đang giữ key bạn đã ghim"
+                  "detail": "Đầu kia đã chứng minh giữ key này ngay trong handshake, nên đó đúng là server của bạn"
                 },
                 {
                   "label": "Khác nhau",
-                  "detail": "Cắt kết nối"
+                  "detail": "Một key khác, ai ký cũng vậy — kết nối đóng lại, không gửi gì"
                 }
               ]
             }
@@ -261,10 +261,130 @@
           ]
         },
         {
+          "type": "heading",
+          "text": "Nhưng public key ai cũng lấy được, sao không copy được?"
+        },
+        {
+          "type": "list",
+          "items": [
+            "Copy được thật. Ai cũng tải certificate của bạn về và đọc key trong đó.",
+            "Bản copy vô dụng: TLS bắt server ký handshake bằng private key, thứ không bao giờ rời server.",
+            "Nên kẻ tấn công đưa ra certificate của bạn sẽ bị cắt ngay ở bước ký, trước khi có dữ liệu nào chạy — chưa tới lượt so pin.",
+            "Dùng cặp key của chính họ thì hỏng theo kiểu ngược lại: handshake hợp lệ, nhưng pin sai, cắt kết nối.",
+            "Pin nói key nào mới đúng; TLS chứng minh đầu kia đang giữ key đó. Thiếu nửa nào cũng không đủ."
+          ]
+        },
+        {
           "type": "note",
           "tone": "warning",
           "body": [
             "Băm cả certificate thay vì băm SubjectPublicKeyInfo là lỗi kinh điển: khi đó mỗi lần gia hạn là digest đổi, dù key không hề đổi."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "handshake",
+      "title": "Toàn bộ handshake",
+      "summary": "Bước so pin nằm ở đâu trong một phiên TLS 1.3 thật.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "TLS 1.3. Ở 1.2 các thông điệp khác đi, nhưng bước so pin vẫn nằm đúng chỗ đó.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "1. ClientHello",
+                  "detail": "App → server: phiên bản, cipher, key share của mình, tên miền trong SNI"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "2. ServerHello",
+                  "detail": "Server → app: cipher đã chọn và key share của server"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "3. Khoá chung",
+                  "detail": "Hai bên tự suy ra từ hai key share. Từ đây trở xuống đã mã hoá"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "4. Certificate",
+                  "detail": "Server → app: certificate leaf kèm các intermediate"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "5. CertificateVerify",
+                  "detail": "Server ký bản ghi phiên bằng private key — bước mà certificate copy không giả được"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "6. Finished",
+                  "detail": "Một MAC trên toàn bộ bản ghi phiên, chứng minh hai bên suy ra cùng bộ khoá"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "7a. Chain",
+                  "detail": "Mỗi certificate được cái kế tiếp ký, lên tới một root mà máy vốn đã tin"
+                },
+                {
+                  "label": "7b. Tên miền",
+                  "detail": "Certificate phải liệt kê đúng tên miền bạn gọi, trong trường SAN"
+                },
+                {
+                  "label": "7c. Hiệu lực",
+                  "detail": "Còn trong hạn, và không nằm trong danh sách thu hồi mà máy tra được"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "8. So pin",
+                  "detail": "SPKI → SHA-256 → base64, đem so với các pin trong app"
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Qua hết",
+                  "detail": "Client gửi Finished, rồi request đầu tiên mới đi"
+                },
+                {
+                  "label": "Trượt một bước",
+                  "detail": "Gửi alert, đóng kết nối, không gửi gì cả"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Bước 4 đến 8 đã nằm trong mã hoá; người đứng ngoài chỉ thấy ClientHello và tên miền trong SNI.",
+            "Bước 5 là thứ làm bản sao certificate của bạn trở nên vô dụng — muốn ký phải có private key.",
+            "Bước 8 mới là phần thư viện thêm vào. Bước 7a đến 7c vẫn chạy dù có pinning hay không.",
+            "Pin được kiểm trước khi byte đầu tiên của request rời máy, không phải sau khi có phản hồi."
           ]
         }
       ]
@@ -282,11 +402,11 @@
               "items": [
                 {
                   "label": "Pin A",
-                  "detail": "Key đang dùng hôm nay"
+                  "detail": "Hash của key mà server đang thực sự dùng hôm nay"
                 },
                 {
                   "label": "Pin B",
-                  "detail": "Key kế tiếp, tạo sẵn, cất offline"
+                  "detail": "Hash của một key bạn tạo sẵn rồi cất kỹ, chưa đưa vào dùng"
                 }
               ]
             },
@@ -294,7 +414,7 @@
               "items": [
                 {
                   "label": "Cả hai đi cùng bản release",
-                  "detail": "App chấp nhận cái nào cũng được"
+                  "detail": "App chấp nhận cả hai, nên sẵn sàng cho lần chuyển từ nhiều tháng trước"
                 }
               ]
             },
@@ -302,7 +422,7 @@
               "items": [
                 {
                   "label": "Server chuyển sang key B",
-                  "detail": "App đã cài vẫn chạy"
+                  "detail": "App đã cài vẫn chạy, vì pin B vốn đã nằm sẵn trong danh sách của chúng"
                 }
               ]
             },
@@ -310,7 +430,7 @@
               "items": [
                 {
                   "label": "Bản sau thêm pin C",
-                  "detail": "Rồi lặp lại vòng đó"
+                  "detail": "Pin C thay chỗ cái vừa nghỉ, để lúc nào cũng còn một cái dự phòng"
                 }
               ]
             }
