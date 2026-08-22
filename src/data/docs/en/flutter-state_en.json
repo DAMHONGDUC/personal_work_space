@@ -1,0 +1,514 @@
+{
+  "title": "Flutter state: Provider and Bloc",
+  "tagline": "Who holds the value, and who rebuilds when it changes.",
+  "icon": "🧊",
+  "tags": [
+    "Flutter",
+    "Provider",
+    "Bloc"
+  ],
+  "readingTime": "9 min",
+  "effectiveDate": "2026-08-22",
+  "lastUpdated": "2026-08-22",
+  "intro": [
+    "Both packages solve the same two problems: reading a value from anywhere in the tree, and rebuilding only the widgets that care. The difference is how much structure they ask for in return."
+  ],
+  "sections": [
+    {
+      "id": "overview",
+      "title": "What state management is for",
+      "summary": "Not storing values — deciding who rebuilds when one changes.",
+      "blocks": [
+        {
+          "type": "text",
+          "body": [
+            "setState already stores state perfectly well. What it cannot do is share a value with a screen three routes away, or rebuild one widget instead of a whole subtree. Every package here exists for those two problems."
+          ]
+        },
+        {
+          "type": "flow",
+          "caption": "The same tap, with and without something listening.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "setState in a StatefulWidget",
+                  "detail": "Marks this element dirty, so build() runs again for it and for everything below it",
+                  "explain": [
+                    "setState is not slow, it is coarse: the whole subtree under that widget is rebuilt, however small the value that changed was.",
+                    "For a checkbox or an expanded card that is exactly right, and reaching for a package there is more machinery than the problem deserves.",
+                    "const constructors are what limit the damage: an identical const widget is reused rather than rebuilt, so the cost stops at the first non-const node."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Then a second screen needs it",
+                  "detail": "The same value has to be read somewhere else, and passing it down six constructors starts to hurt",
+                  "explain": [
+                    "Passing a value through widgets that do not use it is prop drilling, and every one of those constructors has to change when the value does.",
+                    "Lifting the state to a common ancestor solves the reading, and makes the rebuilding worse: now the ancestor rebuilds, so both branches do.",
+                    "The real requirement is two things at once — read it from anywhere, and rebuild only the widgets that care."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "InheritedWidget underneath",
+                  "detail": "Flutter's own answer: read a value from an ancestor in constant time, and be told when it changes",
+                  "explain": [
+                    "Theme.of(context) and MediaQuery.of(context) are this mechanism. Provider, Riverpod and Bloc are all wrappers over the same thing.",
+                    "The lookup is O(1): each element keeps a map of inherited widgets by type, so walking the tree is not part of the cost.",
+                    "Calling .of(context) registers this element as a dependent, and that registration is what makes the next step possible."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "The widget subscribes",
+                  "detail": "Reading through context registers a dependency, so this widget alone is scheduled when the value changes",
+                  "explain": [
+                    "context.watch in Provider and BlocBuilder in Bloc both come down to this registration — the API differs, the mechanism does not.",
+                    "The subscription is per element, so two widgets reading the same object are notified independently of each other."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "One widget rebuilds",
+                  "detail": "Its parents do not, its siblings do not, and the rest of the frame costs nothing",
+                  "explain": [
+                    "This is the whole win: the same value change costs one build method instead of a subtree of them.",
+                    "It also explains why 'my whole screen rebuilds' is almost always a subscription placed too high, not a slow framework."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "And the state outlives the build",
+                  "detail": "It lives in an object above the widget, so a rebuild — or a route change — does not lose it",
+                  "explain": [
+                    "A StatefulWidget's State survives rebuilds but not the route being popped, and it is invisible to any other screen.",
+                    "Moving the value into a notifier or a bloc held above the route is what makes it survivable and shareable at the same time."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Ask two questions: who else reads this, and how much of the screen may rebuild when it changes.",
+            "If the answers are 'nobody' and 'this widget', setState is the right answer and needs no defending.",
+            "Everything below is the same idea with different ergonomics: a value above the tree, and a subscription per widget."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "provider",
+      "title": "Provider and ChangeNotifier",
+      "summary": "The smallest step up from setState, and the three ways to read.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Adding an item to the cart, and who hears about it.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "ChangeNotifier",
+                  "detail": "A plain Dart class with a list of listeners and one method to call when something changed",
+                  "explain": [
+                    "It is not magic: mixin ChangeNotifier gives you addListener, removeListener and notifyListeners, and nothing else.",
+                    "Your model owns the data and the methods that change it, so the widget layer never mutates a field directly.",
+                    "Expose the list as unmodifiable. A caller that can add to it directly can change state without anyone being notified."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "ChangeNotifierProvider",
+                  "detail": "Creates the notifier above the tree, hands it down through context, and disposes it on removal",
+                  "explain": [
+                    "Use create: to build it, never a value: with a newly constructed object — a rebuild of the parent would silently make a second one.",
+                    "Disposal is handled for you, which is the main reason to use the package instead of an InheritedWidget you wrote yourself.",
+                    "MultiProvider is the same thing for several models, and it keeps the tree from turning into a staircase of nested providers."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "context.watch<CartModel>()",
+                  "detail": "Read the model and subscribe: this widget rebuilds on every notifyListeners()",
+                  "explain": [
+                    "Every call to notifyListeners rebuilds every watcher, whatever changed — that is the coarse edge of Provider.",
+                    "So watch as low in the tree as you can. A watch in the screen's build method is the usual reason a whole page rebuilds."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "context.read<CartModel>()",
+                  "detail": "Read once without subscribing — what you call inside onPressed and other callbacks",
+                  "explain": [
+                    "Using watch inside a callback subscribes the widget for no reason; using read inside build gives you a stale value on the next change.",
+                    "The rule of thumb: read in callbacks, watch in build, and let the analyzer's provider lint catch the ones you get backwards."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "context.select",
+                  "detail": "Subscribe to one derived value, and rebuild only when that value changes",
+                  "explain": [
+                    "select<CartModel, int>((c) => c.items.length) rebuilds when the count changes, and not when an item's title is edited.",
+                    "It compares with ==, so the value you select must be something comparable — an int, a String, a value object, not a fresh List each time.",
+                    "This is the fix for 'everything rebuilds' that does not require restructuring the widget tree."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Consumer<CartModel>",
+                  "detail": "Narrow the rebuild to a builder, and pass the expensive part in as a child that is never rebuilt",
+                  "explain": [
+                    "Consumer's builder receives a child argument: whatever you pass there is built once and reused on every rebuild.",
+                    "It exists for the case where you cannot move the subscription down, because the widget that needs the value is deep inside a const-heavy tree."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "dart",
+          "caption": "The whole of Provider in one screen: a model that notifies, a provider that owns it, and a select that narrows the rebuild.",
+          "code": [
+            "class CartModel extends ChangeNotifier {",
+            "  final _items = <Item>[];",
+            "  List<Item> get items => List.unmodifiable(_items);",
+            "",
+            "  void add(Item item) {",
+            "    _items.add(item);",
+            "    notifyListeners();",
+            "  }",
+            "}",
+            "",
+            "ChangeNotifierProvider(",
+            "  create: (_) => CartModel(),",
+            "  child: const CartScreen(),",
+            ")",
+            "",
+            "final count = context.select<CartModel, int>((c) => c.items.length);"
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "notifyListeners() is all-or-nothing: it wakes every watcher of that model. A model that holds the whole screen's state will rebuild the whole screen — split the model, or use select."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bloc",
+      "title": "Bloc and Cubit",
+      "summary": "Events in, states out, and nothing mutated on the way through.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Pull to refresh, as an event and the states it produces.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "The widget adds an event",
+                  "detail": "context.read<ProfileBloc>().add(ProfileRefreshed()) — a value naming what happened, not what to do",
+                  "explain": [
+                    "An event is a class, so it is comparable, loggable and replayable: the whole history of a screen is a list of these objects.",
+                    "The widget never calls the repository and never decides anything. It reports the gesture and waits for a state.",
+                    "Use read here, not watch — adding an event is a callback, and subscribing in a callback is the classic mistake."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "on<Event> handles it",
+                  "detail": "The registered handler runs, calls whatever it needs, and emits states as it goes",
+                  "explain": [
+                    "Handlers are async, and events are processed one at a time by default, so two taps cannot interleave halfway through.",
+                    "Transformers change that when you need it: droppable() ignores taps while one is in flight, restartable() cancels the previous.",
+                    "This is where the screen's logic lives, and it is testable with no widgets at all — feed events in, assert the states that come out."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "emit(ProfileLoading())",
+                  "detail": "Each emit pushes an immutable state onto the stream; nothing is mutated in place",
+                  "explain": [
+                    "States are separate classes or a sealed hierarchy, so 'loading with old data' and 'loaded' cannot quietly be true at once.",
+                    "Bloc drops an emit equal to the current state, which is why states need == — Equatable or a data-class-like override.",
+                    "Emitting after the handler completes throws. If work continues past the handler, it belongs in a stream the bloc listens to."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "BlocBuilder rebuilds",
+                  "detail": "The widget under it rebuilds once per state, and buildWhen filters the states it should ignore",
+                  "explain": [
+                    "BlocBuilder subscribes to the stream and nothing above it rebuilds — the same narrow subscription Provider gets from select.",
+                    "BlocSelector is the finer version: rebuild only when one field of the state changes, for the same reason select exists."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "BlocListener for one-off effects",
+                  "detail": "Snackbars, navigation, dialogs — things that must happen once per state, not once per build",
+                  "explain": [
+                    "A build method can run many times for the same state, so showing a snackbar there gives you three snackbars.",
+                    "BlocConsumer is the two combined when a widget genuinely needs to rebuild and to fire an effect from the same state."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Cubit, when events are ceremony",
+                  "detail": "The same states and the same stream, but with methods instead of an event class per action",
+                  "explain": [
+                    "cubit.refresh() calls emit directly. You lose the recorded event objects and the transformers, and you keep everything else.",
+                    "Start with Cubit and move to Bloc when you need the event log, debouncing, or a handler that has to cancel the previous one."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "dart",
+          "caption": "A sealed state hierarchy and one handler — the shape a bloc keeps however big the screen gets.",
+          "code": [
+            "sealed class ProfileState {}",
+            "class ProfileLoading extends ProfileState {}",
+            "class ProfileLoaded extends ProfileState {",
+            "  ProfileLoaded(this.profile);",
+            "  final Profile profile;",
+            "}",
+            "",
+            "class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {",
+            "  ProfileBloc(this._repo) : super(ProfileLoading()) {",
+            "    on<ProfileRefreshed>((event, emit) async {",
+            "      emit(ProfileLoading());",
+            "      emit(ProfileLoaded(await _repo.profile()));",
+            "    });",
+            "  }",
+            "",
+            "  final ProfileRepository _repo;",
+            "}"
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "One bloc per screen or per feature, not one per app: a bloc that knows everything is a ViewModel with extra steps.",
+            "bloc_test drives the whole thing without a widget tree — act, then assert the exact list of emitted states.",
+            "BlocProvider owns the lifetime, and closes the bloc when the route goes."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "choosing",
+      "title": "Which one to reach for",
+      "summary": "Four answers, and the question that separates them.",
+      "blocks": [
+        {
+          "type": "table",
+          "columns": [
+            "Approach",
+            "Good at",
+            "Costs you"
+          ],
+          "rows": [
+            [
+              "setState",
+              "State one widget owns",
+              "Nothing to share, coarse rebuilds"
+            ],
+            [
+              "Provider",
+              "Sharing an object, small apps",
+              "notifyListeners is all-or-nothing"
+            ],
+            [
+              "Riverpod",
+              "Compile-safe providers, no context",
+              "A second set of concepts to learn"
+            ],
+            [
+              "Bloc",
+              "Traceable logic, big teams",
+              "Boilerplate on every small screen"
+            ]
+          ]
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Does only this widget read it? Use setState and stop.",
+            "Does another screen read it, and is the logic thin? Provider with select is enough.",
+            "Is the screen a sequence of states you would draw on a whiteboard? That is a bloc, and the events are already named.",
+            "Is the value derived from other values, or scoped per item? Riverpod's providers do that without a widget in the tree."
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "info",
+          "body": [
+            "Mixing them is normal and not a failure: a bloc for the checkout flow, a Provider for the cart, setState for a dropdown on one screen. What is not normal is two packages owning the same value."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pitfalls",
+      "title": "Where it goes wrong",
+      "summary": "The four bugs every Flutter codebase writes at least once.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "A rebuild storm, and where to cut it.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "One model holds the screen",
+                  "detail": "Every field of the page lives in a single ChangeNotifier, and every change calls notifyListeners()",
+                  "explain": [
+                    "Editing a search box then notifies the list, the header, the filter chips and the footer — none of which read that field.",
+                    "The fix is either smaller models, one per concern, or select so each widget subscribes to the value it actually uses."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "The subscription sits too high",
+                  "detail": "context.watch in the screen's build method, so the whole page rebuilds for any change at all",
+                  "explain": [
+                    "Every widget below is rebuilt because its parent was, and the const constructors that would have stopped it are usually missing too.",
+                    "Move the watch down to the widget that displays the value, even if that means extracting a small widget to hold it."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "BuildContext across an async gap",
+                  "detail": "await, then use context — by then the widget may be gone and the Navigator call throws",
+                  "explain": [
+                    "The analyzer's use_build_context_synchronously lint flags it, and the fix is to check mounted after every await before touching context.",
+                    "Capture what you need before the await instead: a Navigator or a ScaffoldMessenger taken beforehand does not need the context afterwards."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Effects in build",
+                  "detail": "Showing a snackbar, navigating or firing analytics from a build method that runs many times",
+                  "explain": [
+                    "Build must be free of side effects, because Flutter may call it again for reasons that have nothing to do with your state.",
+                    "BlocListener, or a one-shot flag in the state, is where those belong — anything that must happen once per event rather than once per frame."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Nothing is disposed",
+                  "detail": "A controller, a stream subscription or a timer created in the widget and never cancelled",
+                  "explain": [
+                    "Providers dispose the objects they create; anything you construct yourself in initState you have to cancel in dispose.",
+                    "The symptom is a callback firing after the screen is gone, usually surfacing as a setState on an unmounted widget."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "Symptom",
+            "Usual cause",
+            "Fix"
+          ],
+          "rows": [
+            [
+              "Whole page rebuilds",
+              "watch at the top of build",
+              "Move it down, or select"
+            ],
+            [
+              "Three snackbars at once",
+              "Effect inside build",
+              "BlocListener or a one-shot flag"
+            ],
+            [
+              "Crash after await",
+              "context used when unmounted",
+              "Check mounted, or capture early"
+            ],
+            [
+              "List stutters",
+              "Rebuilding every row",
+              "const rows, keys, itemBuilder"
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

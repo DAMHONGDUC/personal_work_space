@@ -1,0 +1,514 @@
+{
+  "title": "State trong Flutter: Provider và Bloc",
+  "tagline": "Ai giữ giá trị, và ai phải dựng lại khi nó đổi.",
+  "icon": "🧊",
+  "tags": [
+    "Flutter",
+    "Provider",
+    "Bloc"
+  ],
+  "readingTime": "9 phút",
+  "effectiveDate": "2026-08-22",
+  "lastUpdated": "2026-08-22",
+  "intro": [
+    "Cả hai package đều giải cùng hai bài toán: đọc một giá trị từ bất cứ đâu trong cây, và chỉ dựng lại đúng những widget quan tâm. Khác nhau là chúng đòi bạn dựng sẵn bao nhiêu cấu trúc."
+  ],
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Quản lý state để làm gì",
+      "summary": "Không phải để chứa giá trị — mà để quyết định ai phải dựng lại khi giá trị đổi.",
+      "blocks": [
+        {
+          "type": "text",
+          "body": [
+            "setState vốn đã chứa state rất tốt. Thứ nó không làm được là chia sẻ một giá trị cho màn hình cách đó ba route, hay dựng lại đúng một widget thay vì cả một nhánh. Mọi package ở đây sinh ra vì hai chuyện đó."
+          ]
+        },
+        {
+          "type": "flow",
+          "caption": "Cùng một cú chạm, khi có và khi không có ai đang lắng nghe.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "setState trong StatefulWidget",
+                  "detail": "Đánh dấu element này bẩn, nên build() chạy lại cho nó và cho mọi thứ bên dưới",
+                  "explain": [
+                    "setState không chậm, nó thô: cả nhánh dưới widget đó bị dựng lại, dù giá trị vừa đổi có nhỏ tới đâu.",
+                    "Với một checkbox hay một thẻ mở rộng thì thế là chuẩn, và lôi cả package vào đó là dựng máy móc to hơn vấn đề.",
+                    "const constructor là thứ chặn thiệt hại: một widget const y hệt sẽ được dùng lại chứ không dựng lại, nên cái giá dừng ở nút không-const đầu tiên."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Rồi màn hình thứ hai cũng cần",
+                  "detail": "Cùng giá trị đó phải đọc được ở chỗ khác, và truyền qua sáu constructor bắt đầu thấy mệt",
+                  "explain": [
+                    "Truyền một giá trị xuyên qua các widget không dùng tới nó là prop drilling, và mỗi constructor đó phải sửa mỗi khi giá trị đổi.",
+                    "Đẩy state lên tổ tiên chung giải quyết được chuyện đọc, và làm chuyện dựng lại tệ hơn: giờ tổ tiên dựng lại, nên cả hai nhánh cùng dựng.",
+                    "Yêu cầu thật sự là hai thứ cùng lúc — đọc được từ bất cứ đâu, và chỉ dựng lại đúng widget nào quan tâm."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "InheritedWidget nằm bên dưới",
+                  "detail": "Câu trả lời sẵn có của Flutter: đọc giá trị từ tổ tiên trong thời gian hằng số, và được báo khi nó đổi",
+                  "explain": [
+                    "Theme.of(context) và MediaQuery.of(context) chính là cơ chế này. Provider, Riverpod và Bloc đều là lớp bọc quanh cùng một thứ.",
+                    "Việc tra là O(1): mỗi element giữ sẵn một map các inherited widget theo kiểu, nên đi ngược cây không nằm trong cái giá phải trả.",
+                    "Gọi .of(context) là đăng ký element này thành bên phụ thuộc, và chính đăng ký đó khiến bước sau khả thi."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Widget đăng ký lắng nghe",
+                  "detail": "Đọc qua context là đăng ký một phụ thuộc, nên chỉ mình widget đó được xếp lịch khi giá trị đổi",
+                  "explain": [
+                    "context.watch bên Provider và BlocBuilder bên Bloc rốt cuộc đều quy về đăng ký này — khác nhau ở API, không khác ở cơ chế.",
+                    "Đăng ký là theo từng element, nên hai widget cùng đọc một object được báo độc lập với nhau."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Một widget dựng lại",
+                  "detail": "Cha của nó thì không, anh em của nó cũng không, và phần còn lại của khung hình chẳng tốn gì",
+                  "explain": [
+                    "Đó là toàn bộ cái được: cùng một thay đổi giá trị mà chỉ tốn một hàm build thay vì cả một nhánh.",
+                    "Nó cũng giải thích vì sao 'cả màn hình em dựng lại' gần như luôn là đăng ký đặt quá cao, chứ không phải framework chậm."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Và state sống lâu hơn lần build",
+                  "detail": "Nó nằm trong một object phía trên widget, nên dựng lại — hay đổi route — cũng không mất",
+                  "explain": [
+                    "State của StatefulWidget sống qua các lần dựng lại nhưng không sống qua lần pop route, và màn hình khác thì không thấy nó.",
+                    "Dời giá trị vào một notifier hay một bloc giữ ở phía trên route là thứ khiến nó vừa sống dai vừa chia sẻ được."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Hãy hỏi hai câu: còn ai đọc cái này nữa, và bao nhiêu phần màn hình được phép dựng lại khi nó đổi.",
+            "Nếu câu trả lời là 'không ai' và 'đúng widget này', thì setState là đáp án đúng và chẳng cần biện minh gì.",
+            "Mọi thứ bên dưới đều là cùng một ý với vẻ ngoài khác nhau: một giá trị nằm trên cây, và mỗi widget một đăng ký."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "provider",
+      "title": "Provider và ChangeNotifier",
+      "summary": "Bước nhỏ nhất so với setState, và ba cách đọc.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Thêm một món vào giỏ, và ai nghe thấy chuyện đó.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "ChangeNotifier",
+                  "detail": "Một class Dart thường, có danh sách listener và một hàm để gọi khi có gì đó thay đổi",
+                  "explain": [
+                    "Không có phép màu nào: mixin ChangeNotifier cho bạn addListener, removeListener và notifyListeners, hết.",
+                    "Model của bạn giữ dữ liệu cùng những hàm làm nó đổi, nên tầng widget không bao giờ sửa thẳng một trường nào.",
+                    "Hãy phơi danh sách ra dạng không sửa được. Ai thêm thẳng vào được là đổi được state mà chẳng ai hay."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "ChangeNotifierProvider",
+                  "detail": "Tạo notifier ở phía trên cây, đưa xuống qua context, và tự dispose khi bị gỡ",
+                  "explain": [
+                    "Hãy dùng create: để dựng nó, đừng dùng value: với một object vừa khởi tạo — cha dựng lại một cái là lặng lẽ có cái thứ hai.",
+                    "Phần dispose được lo sẵn, và đó là lý do chính để dùng package thay vì tự viết một InheritedWidget.",
+                    "MultiProvider cũng là thứ đó cho nhiều model, và nó giữ cho cây không biến thành cầu thang provider lồng nhau."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "context.watch<CartModel>()",
+                  "detail": "Đọc model và đăng ký: widget này dựng lại sau mỗi lần notifyListeners()",
+                  "explain": [
+                    "Mỗi lần gọi notifyListeners là mọi bên đang watch đều dựng lại, bất kể thứ gì vừa đổi — đó là chỗ thô của Provider.",
+                    "Nên hãy watch ở càng thấp càng tốt. Một lệnh watch trong hàm build của màn hình là lý do quen thuộc khiến cả trang dựng lại."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "context.read<CartModel>()",
+                  "detail": "Đọc một lần không đăng ký — thứ bạn gọi bên trong onPressed và các callback khác",
+                  "explain": [
+                    "Dùng watch trong callback là đăng ký vô cớ; dùng read trong build là lần đổi sau bạn cầm một giá trị cũ.",
+                    "Mẹo nhớ: read trong callback, watch trong build, và để lint của provider bắt những chỗ bạn làm ngược."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "context.select",
+                  "detail": "Đăng ký đúng một giá trị suy ra, và chỉ dựng lại khi giá trị đó đổi",
+                  "explain": [
+                    "select<CartModel, int>((c) => c.items.length) dựng lại khi số lượng đổi, và không dựng lại khi ai đó sửa tên một món.",
+                    "Nó so bằng ==, nên thứ bạn select phải so sánh được — một int, một String, một value object, chứ không phải một List mới toanh mỗi lần.",
+                    "Đây là cách chữa 'cái gì cũng dựng lại' mà không phải sắp xếp lại cả cây widget."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Consumer<CartModel>",
+                  "detail": "Thu hẹp phần dựng lại vào một builder, và đưa phần đắt tiền vào child để nó không bị dựng lại",
+                  "explain": [
+                    "Builder của Consumer nhận một tham số child: thứ bạn truyền vào đó được dựng một lần và dùng lại ở mọi lần dựng sau.",
+                    "Nó sinh ra cho trường hợp bạn không hạ được đăng ký xuống, vì widget cần giá trị nằm sâu trong một nhánh toàn const."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "dart",
+          "caption": "Toàn bộ Provider gói trong một màn hình: một model biết báo, một provider giữ nó, và một select thu hẹp phần dựng lại.",
+          "code": [
+            "class CartModel extends ChangeNotifier {",
+            "  final _items = <Item>[];",
+            "  List<Item> get items => List.unmodifiable(_items);",
+            "",
+            "  void add(Item item) {",
+            "    _items.add(item);",
+            "    notifyListeners();",
+            "  }",
+            "}",
+            "",
+            "ChangeNotifierProvider(",
+            "  create: (_) => CartModel(),",
+            "  child: const CartScreen(),",
+            ")",
+            "",
+            "final count = context.select<CartModel, int>((c) => c.items.length);"
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "notifyListeners() là được ăn cả ngã về không: nó đánh thức mọi bên đang watch model đó. Một model ôm state của cả màn hình sẽ dựng lại cả màn hình — hãy tách model ra, hoặc dùng select."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bloc",
+      "title": "Bloc và Cubit",
+      "summary": "Sự kiện vào, state ra, và trên đường đi không có gì bị sửa tại chỗ.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Kéo để làm mới, dưới dạng một sự kiện và những state nó sinh ra.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Widget thêm một sự kiện",
+                  "detail": "context.read<ProfileBloc>().add(ProfileRefreshed()) — một giá trị gọi tên chuyện vừa xảy ra",
+                  "explain": [
+                    "Sự kiện là một class, nên nó so sánh được, log được và phát lại được: cả lịch sử một màn hình chỉ là một danh sách các object này.",
+                    "Widget không bao giờ gọi repository và cũng không quyết định gì. Nó báo cử chỉ vừa xảy ra rồi chờ một state.",
+                    "Ở đây dùng read chứ đừng dùng watch — thêm sự kiện là một callback, và đăng ký trong callback là cái sai kinh điển."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "on<Event> xử lý nó",
+                  "detail": "Handler đã đăng ký chạy, gọi những gì nó cần, và phát ra state dọc đường",
+                  "explain": [
+                    "Handler là bất đồng bộ, và mặc định sự kiện được xử lý lần lượt từng cái, nên hai cú chạm không thể xen vào giữa nhau.",
+                    "Transformer đổi được điều đó khi cần: droppable() bỏ qua cú chạm khi còn cái đang chạy, restartable() huỷ cái trước đó.",
+                    "Đây là chỗ logic của màn hình sống, và test được mà chẳng cần widget nào — bơm sự kiện vào, rồi khẳng định các state đi ra."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "emit(ProfileLoading())",
+                  "detail": "Mỗi lần emit đẩy một state bất biến lên dòng chảy; không có gì bị sửa tại chỗ",
+                  "explain": [
+                    "State là các class riêng hoặc một cây sealed, nên 'đang tải mà vẫn còn dữ liệu cũ' và 'đã tải xong' không thể lặng lẽ đúng cùng lúc.",
+                    "Bloc bỏ qua một emit bằng đúng state hiện tại, nên state cần có == — bằng Equatable hoặc tự override như một data class.",
+                    "Emit sau khi handler kết thúc sẽ ném lỗi. Nếu việc còn chạy tiếp sau handler thì nó thuộc về một stream mà bloc lắng nghe."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "BlocBuilder dựng lại",
+                  "detail": "Widget bên dưới nó dựng lại mỗi state một lần, và buildWhen lọc bớt những state cần bỏ qua",
+                  "explain": [
+                    "BlocBuilder đăng ký vào dòng chảy và không có gì phía trên nó dựng lại — đúng kiểu đăng ký hẹp mà Provider có được nhờ select.",
+                    "BlocSelector là bản mịn hơn: chỉ dựng lại khi một trường của state đổi, vì đúng lý do mà select tồn tại."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "BlocListener cho việc chỉ làm một lần",
+                  "detail": "Snackbar, điều hướng, hộp thoại — thứ phải xảy ra một lần mỗi state, không phải mỗi lần build",
+                  "explain": [
+                    "Hàm build có thể chạy nhiều lần cho cùng một state, nên hiện snackbar ở đó là bạn nhận về ba cái snackbar.",
+                    "BlocConsumer là hai thứ gộp lại, cho widget thật sự vừa phải dựng lại vừa phải bắn ra một hiệu ứng từ cùng một state."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Cubit, khi sự kiện là thừa thãi",
+                  "detail": "Vẫn state đó và dòng chảy đó, nhưng dùng phương thức thay vì mỗi hành động một class sự kiện",
+                  "explain": [
+                    "cubit.refresh() gọi emit thẳng. Bạn mất đám object sự kiện được ghi lại và mất transformer, còn lại thì giữ nguyên.",
+                    "Hãy bắt đầu bằng Cubit và chuyển sang Bloc khi cần nhật ký sự kiện, cần debounce, hay cần một handler biết huỷ cái trước đó."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "dart",
+          "caption": "Một cây state sealed và một handler — cái dáng mà bloc giữ nguyên dù màn hình có lớn tới đâu.",
+          "code": [
+            "sealed class ProfileState {}",
+            "class ProfileLoading extends ProfileState {}",
+            "class ProfileLoaded extends ProfileState {",
+            "  ProfileLoaded(this.profile);",
+            "  final Profile profile;",
+            "}",
+            "",
+            "class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {",
+            "  ProfileBloc(this._repo) : super(ProfileLoading()) {",
+            "    on<ProfileRefreshed>((event, emit) async {",
+            "      emit(ProfileLoading());",
+            "      emit(ProfileLoaded(await _repo.profile()));",
+            "    });",
+            "  }",
+            "",
+            "  final ProfileRepository _repo;",
+            "}"
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Mỗi màn hình hay mỗi tính năng một bloc, đừng một bloc cho cả app: một bloc biết mọi thứ là ViewModel với thêm mấy bước thủ tục.",
+            "bloc_test chạy toàn bộ chuyện đó mà không cần cây widget — tác động vào, rồi khẳng định đúng danh sách state phát ra.",
+            "BlocProvider giữ vòng đời, và đóng bloc lại khi route ra đi."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "choosing",
+      "title": "Nên chọn cái nào",
+      "summary": "Bốn câu trả lời, và câu hỏi phân biệt chúng.",
+      "blocks": [
+        {
+          "type": "table",
+          "columns": [
+            "Cách làm",
+            "Mạnh ở",
+            "Cái giá"
+          ],
+          "rows": [
+            [
+              "setState",
+              "State do một widget sở hữu",
+              "Không chia sẻ được, dựng lại thô"
+            ],
+            [
+              "Provider",
+              "Chia sẻ một object, app nhỏ",
+              "notifyListeners được ăn cả ngã về không"
+            ],
+            [
+              "Riverpod",
+              "Provider an toàn kiểu, không cần context",
+              "Thêm một bộ khái niệm phải học"
+            ],
+            [
+              "Bloc",
+              "Logic lần được dấu vết, đội đông",
+              "Lắm thủ tục cho mỗi màn hình nhỏ"
+            ]
+          ]
+        },
+        {
+          "type": "steps",
+          "items": [
+            "Chỉ mỗi widget này đọc nó? Dùng setState rồi dừng ở đó.",
+            "Màn hình khác cũng đọc, mà logic thì mỏng? Provider kèm select là đủ.",
+            "Màn hình là một chuỗi trạng thái mà bạn sẽ vẽ lên bảng? Đó là một bloc, và các sự kiện thì đã có sẵn tên.",
+            "Giá trị suy ra từ giá trị khác, hoặc phải tách riêng theo từng món? Provider của Riverpod làm được mà không cần widget nào trong cây."
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "info",
+          "body": [
+            "Trộn chúng với nhau là bình thường chứ không phải thất bại: một bloc cho luồng thanh toán, một Provider cho giỏ hàng, setState cho cái dropdown ở một màn hình. Cái không bình thường là hai package cùng sở hữu một giá trị."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pitfalls",
+      "title": "Chỗ hay hỏng",
+      "summary": "Bốn cái bug mà codebase Flutter nào cũng viết ít nhất một lần.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Một cơn bão dựng lại, và chỗ nên cắt.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Một model ôm cả màn hình",
+                  "detail": "Mọi trường của trang nằm trong một ChangeNotifier, và thay đổi nào cũng gọi notifyListeners()",
+                  "explain": [
+                    "Gõ vào ô tìm kiếm là báo luôn cho danh sách, header, đám chip lọc và footer — chẳng cái nào đọc cái trường đó cả.",
+                    "Cách chữa là chia nhỏ model theo từng mối quan tâm, hoặc dùng select để mỗi widget đăng ký đúng giá trị nó dùng."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Đăng ký đặt quá cao",
+                  "detail": "context.watch nằm trong hàm build của màn hình, nên đổi gì cũng dựng lại cả trang",
+                  "explain": [
+                    "Mọi widget bên dưới dựng lại chỉ vì cha nó dựng lại, và đám const constructor lẽ ra chặn được thì thường cũng không có.",
+                    "Hãy hạ lệnh watch xuống đúng widget hiển thị giá trị đó, kể cả khi phải tách ra một widget nhỏ để chứa nó."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "BuildContext sau một await",
+                  "detail": "await xong rồi mới dùng context — lúc đó widget có thể đã đi, và lệnh Navigator sẽ ném lỗi",
+                  "explain": [
+                    "Lint use_build_context_synchronously bắt được chuyện này, và cách chữa là kiểm mounted sau mỗi await trước khi đụng vào context.",
+                    "Hoặc lấy sẵn thứ cần trước khi await: một Navigator hay ScaffoldMessenger cầm từ trước thì sau đó không cần context nữa."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Hiệu ứng đặt trong build",
+                  "detail": "Hiện snackbar, điều hướng hay bắn analytics từ một hàm build vốn chạy rất nhiều lần",
+                  "explain": [
+                    "Build phải sạch tác dụng phụ, vì Flutter có thể gọi lại nó vì những lý do chẳng liên quan gì tới state của bạn.",
+                    "BlocListener, hoặc một cờ dùng một lần trong state, mới là chỗ của chúng — thứ phải xảy ra mỗi sự kiện một lần chứ không phải mỗi khung hình."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Không dispose gì cả",
+                  "detail": "Một controller, một đăng ký stream hay một timer tạo trong widget rồi chẳng bao giờ huỷ",
+                  "explain": [
+                    "Provider tự dispose những object nó tạo ra; thứ gì bạn tự dựng trong initState thì bạn phải tự huỷ trong dispose.",
+                    "Triệu chứng là một callback nổ sau khi màn hình đã đi, thường lộ ra thành một lệnh setState trên widget đã unmount."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "Triệu chứng",
+            "Nguyên nhân quen thuộc",
+            "Cách chữa"
+          ],
+          "rows": [
+            [
+              "Cả trang dựng lại",
+              "watch nằm đầu hàm build",
+              "Hạ xuống, hoặc dùng select"
+            ],
+            [
+              "Ba snackbar cùng lúc",
+              "Hiệu ứng nằm trong build",
+              "BlocListener hoặc cờ một lần"
+            ],
+            [
+              "Crash sau await",
+              "Dùng context khi đã unmount",
+              "Kiểm mounted, hoặc lấy sẵn trước"
+            ],
+            [
+              "Danh sách giật",
+              "Dựng lại mọi dòng",
+              "Dòng const, key, itemBuilder"
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}
