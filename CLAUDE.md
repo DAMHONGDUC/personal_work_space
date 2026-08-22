@@ -140,6 +140,10 @@
   refresh to the current path. Do not delete them.
 - An app slug may not collide with a top-level section; `RESERVED_SLUGS` guards
   this and a test enforces it.
+- **Back returns to where you were.** `ScrollMemory` in the root layout keeps
+  each path's scroll offset for the tab and restores it on a back or forward
+  navigation, correcting for a few frames while the page finishes growing. A
+  fresh navigation still starts at the top, and an anchored url is left alone.
 
 ## Commands
 

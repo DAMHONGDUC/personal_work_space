@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ScrollMemory } from "@/components/ScrollMemory";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { site } from "@/lib/apps";
@@ -44,6 +45,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           pinning <html> to the viewport height, which would break the document
           scroll the sticky header and reading progress depend on. */}
       <body className="flex min-h-screen flex-col font-sans">
+        {/* Renders nothing: it puts you back where you were on Back. */}
+        <ScrollMemory />
+
         <SiteHeader publisher={site.publisher} contactEmail={site.contactEmail} />
 
         <div className="flex-1">{children}</div>
