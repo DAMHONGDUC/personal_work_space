@@ -1,0 +1,539 @@
+{
+  "title": "React Native state, sorted",
+  "tagline": "Local, server, global, navigation — and the tool each one asks for.",
+  "icon": "⚛️",
+  "tags": [
+    "React Native",
+    "Redux",
+    "TanStack Query"
+  ],
+  "readingTime": "9 min",
+  "effectiveDate": "2026-08-22",
+  "lastUpdated": "2026-08-22",
+  "intro": [
+    "Choosing a state library is the second question. The first is which of four kinds of state you are holding, because three of them have an answer that is not a store at all."
+  ],
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Four kinds of state",
+      "summary": "Sort the value first; the library follows from the answer.",
+      "blocks": [
+        {
+          "type": "text",
+          "body": [
+            "Most state arguments are really a sorting problem. A screen holds four different kinds of value, and putting one of them in the wrong place is what turns a small app into a synchronisation problem."
+          ]
+        },
+        {
+          "type": "flow",
+          "caption": "One profile screen, and where each value belongs.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Ask who owns the truth",
+                  "detail": "The server, the app, the navigator, or this one component — every value has exactly one owner",
+                  "explain": [
+                    "Owning means being allowed to change it. A copy that someone else keeps in sync by hand is not an owner, it is a bug waiting for a race.",
+                    "The tools below map one-to-one onto the four answers, so the sorting is the decision and the library is a consequence."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Local UI state",
+                  "detail": "Is the sheet open, what has been typed — nobody outside the screen reads it, and it dies with the screen",
+                  "explain": [
+                    "useState and useReducer, and nothing else. Reaching for a store here adds an import, a selector and a re-render for no gain.",
+                    "The test is whether losing it on navigating away would even be noticed. If not, it belongs in the component."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Server state",
+                  "detail": "A copy of data the server owns: it goes stale, it can be refetched, and several screens read it",
+                  "explain": [
+                    "It is the only kind with a lifetime you do not control, which is why it needs caching, invalidation and a refetch policy.",
+                    "Putting it in Redux means writing those three by hand. TanStack Query or RTK Query is that code, already written and tested."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Global client state",
+                  "detail": "Session, theme, cart, feature flags — owned by the app, read across screens, never stale on its own",
+                  "explain": [
+                    "This is what a store is genuinely for, and in most apps it is smaller than people expect: a token, a few settings, a draft or two.",
+                    "It has no server to disagree with, so it needs no cache — only a single writer and, sometimes, persistence between launches."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Navigation state",
+                  "detail": "Which screen is showing and with which params — the navigator already stores this",
+                  "explain": [
+                    "React Navigation keeps the route params, so copying the selected id into a store gives you two answers that can disagree.",
+                    "Read it with useRoute or a selector on the navigation state, and let deep links keep working for free."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "One owner, one copy",
+                  "detail": "The usual failure is server data copied into a global store, then kept in sync by hand",
+                  "explain": [
+                    "The symptom is a screen showing an old value after another screen refreshed it, and a growing set of manual sync calls.",
+                    "The fix is not more syncing. It is deciding which of the two is the owner, and having the other read from it."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Sort first, install second. Most 'which state library' questions dissolve once the four kinds are separated.",
+            "Server state is the majority of what a typical app displays, and the kind least suited to a plain store.",
+            "Global client state that is honestly global is usually a handful of values."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "local",
+      "title": "Local state, and the cost of Context",
+      "summary": "useState, useReducer, and the trap that looks like a store.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Where a value goes as more of the screen needs it.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "useState",
+                  "detail": "One value and its setter, kept per component instance and gone when the component unmounts",
+                  "explain": [
+                    "Batched since React 18: two setState calls in one handler produce one render, and reading the value right after setting it gives the old one.",
+                    "Pass a function when the next value depends on the last — setCount(c => c + 1) — or two quick taps can end up counted as one."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "useReducer",
+                  "detail": "One state object and a dispatch, for when the transitions matter more than the values",
+                  "explain": [
+                    "Right when several fields change together, or when the same event means different things depending on the current state.",
+                    "It also moves the logic out of the component into a pure function, which is testable without rendering anything."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Lift it to the parent",
+                  "detail": "Two siblings need the same value, so the nearest common parent owns it and passes it down",
+                  "explain": [
+                    "This is the correct first move, and it stays correct for a level or two — beyond that, props travel through components that ignore them.",
+                    "Lifting also widens the re-render: the parent renders, so both branches do. That is the cost that pushes people towards a store."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Context for ambient values",
+                  "detail": "Theme, locale, the current user — read in many places and changed almost never",
+                  "explain": [
+                    "Context is a delivery mechanism, not a state manager: no selectors, no equality checks, no way to subscribe to part of a value.",
+                    "That is fine precisely when the value rarely changes, which is what ambient means here."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Every consumer re-renders",
+                  "detail": "Any change to the context value re-renders every component reading it, with no way to narrow it",
+                  "explain": [
+                    "Putting a text field's value, a timer or an animation in context re-renders half the app on every keystroke or every frame.",
+                    "Memoise the value object too — a fresh {user, setUser} on each render is a new value, so consumers re-render even when nothing changed."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Split it, or use a store",
+                  "detail": "Two contexts — one for the value, one for the setters — or a store with real selectors",
+                  "explain": [
+                    "Splitting works because setters are stable: components that only dispatch stop re-rendering when the value changes.",
+                    "When you find yourself splitting a third context, that is the signal to reach for Zustand or Redux and get selectors properly."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "Context is the most common accidental performance bug in React Native: it looks like global state, and it behaves like a prop handed to everyone at once."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "server-state",
+      "title": "Server state belongs in a cache",
+      "summary": "Fetching is the easy half; staleness, retries and invalidation are the rest.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "One profile request, and everything the cache does around it.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "useQuery(['profile', id])",
+                  "detail": "The key is the identity of the data: same key, same cache entry, wherever in the app it is used",
+                  "explain": [
+                    "Two screens calling useQuery with the same key share one entry, so the second one renders instantly and no second request goes out.",
+                    "Keys are arrays so they can be structured — ['profile', id] is invalidated by ['profile'] as a prefix, which is how a whole family is refreshed at once.",
+                    "The key replaces the variable you would otherwise keep in a store, and the cache replaces the reducer that kept it in sync."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Cached data first, then a refetch",
+                  "detail": "The stale entry is returned immediately and the request runs in the background — stale-while-revalidate",
+                  "explain": [
+                    "The user sees content on the first frame instead of a spinner, and the fresh copy replaces it when it lands.",
+                    "isPending means there is nothing cached at all; isFetching means a request is in flight over data you already have. Using the wrong one is what causes flickering spinners."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "staleTime and gcTime",
+                  "detail": "How long data counts as fresh, and how long an unused entry survives before it is dropped",
+                  "explain": [
+                    "staleTime is the interesting one: it is zero by default, so every mount refetches. A few seconds removes most duplicate requests on a busy screen.",
+                    "gcTime is about memory, not correctness — an entry nobody is subscribed to is dropped after it, and the next mount refetches from nothing."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Mutations, then invalidate",
+                  "detail": "A write goes through useMutation, and the keys it affected are marked stale rather than patched by hand",
+                  "explain": [
+                    "invalidateQueries is the one line that keeps every screen consistent: they refetch on their own, and nothing has to know who else displayed the value.",
+                    "Optimistic updates are the extra step when a change must feel instant — write the cache, keep the old value, and roll back if the request fails."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Refetch on focus and reconnect",
+                  "detail": "AppState and NetInfo tell the cache when the phone came back, so a backgrounded app is not showing yesterday",
+                  "explain": [
+                    "In React Native this is wiring you have to do once: a focusManager hook on AppState, and an onlineManager hook on NetInfo.",
+                    "Without it, the web defaults do nothing on a phone — window focus and the browser's online event do not exist here."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Persist for offline",
+                  "detail": "The cache is written to MMKV or AsyncStorage and restored at launch, so a cold start has content",
+                  "explain": [
+                    "This is what makes an app usable on a train: the last known data is on screen before any request finishes, or without one at all.",
+                    "Persist the queries you actually want offline, not the whole cache — and version the persisted shape so an app update does not restore something it can no longer read."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "ts",
+          "caption": "A query keyed by user, and a mutation that invalidates it — the pattern almost every screen reduces to.",
+          "code": [
+            "const { data, isPending, refetch } = useQuery({",
+            "  queryKey: ['profile', userId],",
+            "  queryFn: () => api.profile(userId),",
+            "  staleTime: 30_000,",
+            "});",
+            "",
+            "const save = useMutation({",
+            "  mutationFn: api.updateProfile,",
+            "  onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profile', userId] }),",
+            "});"
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "RTK Query is the same model inside Redux Toolkit, and is the better fit when a store is already there.",
+            "Once server state lives in a cache, what is left for the store is genuinely small.",
+            "Never mirror query data into a store 'so it is easier to read'. That is the synchronisation problem coming back."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "global",
+      "title": "The store, once it is small",
+      "summary": "Redux Toolkit, Zustand, Jotai — the same subscription with different ergonomics.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "A token changes, and who hears about it.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "One store, one writer",
+                  "detail": "Session, theme, cart — held outside the component tree so no screen owns it and every screen can read it",
+                  "explain": [
+                    "Outside the tree is the point: unmounting a screen cannot lose the value, and two screens read the same object rather than two copies.",
+                    "Keep it small. Once server data is in a query cache and route params are in the navigator, what is left is usually a handful of fields."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Redux Toolkit: slices",
+                  "detail": "createSlice generates the actions and the reducer, and Immer lets you write the update as a mutation",
+                  "explain": [
+                    "state.items.push(item) inside a reducer is safe: Immer records the change and produces a new immutable state from it.",
+                    "The value of the ceremony is traceability — every change is a named action, visible in the devtools timeline with the state before and after.",
+                    "Worth it on a large app with several people in it, and heavy for a screen with a toggle."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Selectors keep renders narrow",
+                  "detail": "useSelector(s => s.cart.count) re-renders only when that value changes, not on every dispatch",
+                  "explain": [
+                    "Selecting an object or a mapped array returns a new reference every time, so the component re-renders on every action — the classic Redux performance bug.",
+                    "createSelector memoises the derived value, and useShallowEqualSelector compares field by field when you genuinely need several at once."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Zustand: the store is a hook",
+                  "detail": "create() returns a hook you call with a selector — no provider, no actions, no boilerplate",
+                  "explain": [
+                    "useStore(s => s.token) subscribes to that slice of state alone, so the selector story is the same as Redux with a tenth of the setup.",
+                    "State and the functions that change it live in the same object, which reads closer to a small class than to a reducer."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Jotai: atoms, bottom-up",
+                  "detail": "Many small pieces of state that compose, rather than one tree that everything reads from",
+                  "explain": [
+                    "An atom is a unit of state; a derived atom is computed from others and re-renders only its own subscribers.",
+                    "It suits a screen made of many independent values better than one object, and it needs no selector because the atom is the selector."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Persistence, deliberately",
+                  "detail": "MMKV or AsyncStorage keeps chosen slices across launches — and hydration is a state of its own",
+                  "explain": [
+                    "MMKV is synchronous and much faster, which matters at startup: an async read means the first frame renders before the stored value arrives.",
+                    "Persist a whitelist, never everything, and give the stored shape a version with a migration — an old payload restored into new code is a crash on launch."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "Library",
+            "Reach for it when",
+            "Cost"
+          ],
+          "rows": [
+            [
+              "Redux Toolkit",
+              "Big app, many people, audit trail",
+              "Boilerplate, a learning curve"
+            ],
+            [
+              "Zustand",
+              "A few global values, little ceremony",
+              "Fewer guardrails by design"
+            ],
+            [
+              "Jotai",
+              "Many small, derived values",
+              "Atoms sprawl if left unstructured"
+            ],
+            [
+              "Context",
+              "Ambient, almost-never-changing",
+              "No selectors, re-renders all"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pitfalls",
+      "title": "Where it goes wrong",
+      "summary": "Five habits that cost frames, and what to do instead.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Why a list stutters when one row changes.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "A new object every render",
+                  "detail": "style={{flex: 1}} or data={items.map(...)} builds a fresh reference each time, so memo never helps",
+                  "explain": [
+                    "React.memo compares props by reference. An inline object or array is a new reference on every render, so the comparison always fails.",
+                    "Hoist static styles with StyleSheet.create, and wrap derived arrays in useMemo with the inputs they depend on."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "An inline callback per row",
+                  "detail": "onPress={() => select(item.id)} is a new function for every row, on every render of the list",
+                  "explain": [
+                    "It defeats memo on the row component, so a thousand rows re-render because one of them changed.",
+                    "useCallback on a renderItem that reads the id from its argument fixes it, and keeps one function for the whole list."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Context in the render path",
+                  "detail": "A value that changes per frame or per keystroke, read by components all over the screen",
+                  "explain": [
+                    "Animated values belong in Reanimated's shared values, which update on the UI thread without a React render at all.",
+                    "For anything else, move the fast-changing value into a store with selectors, so only the components that display it re-render."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Server data mirrored into a store",
+                  "detail": "The query cache has it, and a slice keeps a copy that some screens read and others do not",
+                  "explain": [
+                    "Two owners means one of them is eventually wrong, usually the one a colleague forgot to update after a mutation.",
+                    "Delete the copy and read from the cache. If a screen needs a transformed shape, derive it in a selector rather than storing it."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Persisted state that outlives its shape",
+                  "detail": "An old payload restored into new code, with a field that changed type or vanished",
+                  "explain": [
+                    "The crash lands on launch, before any screen renders, and it is invisible in development because your device has the new shape already.",
+                    "Version the persisted state and write a migration, or at minimum wrap the restore in a try and fall back to defaults."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "Symptom",
+            "Usual cause",
+            "Fix"
+          ],
+          "rows": [
+            [
+              "List stutters on tap",
+              "Inline callbacks or styles",
+              "useCallback, StyleSheet.create"
+            ],
+            [
+              "Whole screen re-renders",
+              "Context or a broad selector",
+              "Narrow the selector, split context"
+            ],
+            [
+              "Stale data after a save",
+              "Mirrored server state",
+              "One owner, invalidate the query"
+            ],
+            [
+              "Crash right after update",
+              "Persisted shape changed",
+              "Version it, migrate on restore"
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

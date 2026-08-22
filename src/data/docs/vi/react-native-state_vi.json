@@ -1,0 +1,539 @@
+{
+  "title": "State trong React Native, phân cho rõ",
+  "tagline": "Cục bộ, server, toàn cục, điều hướng — và công cụ mà mỗi loại đòi hỏi.",
+  "icon": "⚛️",
+  "tags": [
+    "React Native",
+    "Redux",
+    "TanStack Query"
+  ],
+  "readingTime": "9 phút",
+  "effectiveDate": "2026-08-22",
+  "lastUpdated": "2026-08-22",
+  "intro": [
+    "Chọn thư viện state là câu hỏi thứ hai. Câu đầu tiên là bạn đang giữ loại state nào trong bốn loại, vì ba trong số đó có câu trả lời chẳng phải là một store."
+  ],
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Bốn loại state",
+      "summary": "Hãy phân loại giá trị trước; chọn thư viện chỉ là hệ quả.",
+      "blocks": [
+        {
+          "type": "text",
+          "body": [
+            "Phần lớn tranh cãi về state thật ra là bài toán phân loại. Một màn hình giữ bốn loại giá trị khác nhau, và đặt nhầm một loại chính là thứ biến app nhỏ thành bài toán đồng bộ."
+          ]
+        },
+        {
+          "type": "flow",
+          "caption": "Một màn hình hồ sơ, và mỗi giá trị thuộc về đâu.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Hỏi ai là chủ của sự thật",
+                  "detail": "Server, app, bộ điều hướng, hay đúng component này — mỗi giá trị có đúng một chủ",
+                  "explain": [
+                    "Làm chủ nghĩa là được quyền đổi nó. Một bản sao mà người khác phải đồng bộ bằng tay thì không phải chủ, đó là cái bug đang chờ tranh chấp.",
+                    "Các công cụ bên dưới ứng một-một với bốn câu trả lời, nên phân loại mới là quyết định, còn thư viện chỉ là hệ quả."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "State giao diện cục bộ",
+                  "detail": "Sheet có đang mở không, vừa gõ gì — ngoài màn hình chẳng ai đọc, và nó chết cùng màn hình",
+                  "explain": [
+                    "useState và useReducer, hết. Lôi store vào đây chỉ thêm một import, một selector và một lần render lại mà chẳng được gì.",
+                    "Phép thử là: mất nó khi rời màn hình thì có ai nhận ra không. Không thì nó thuộc về component."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "State của server",
+                  "detail": "Bản sao dữ liệu do server làm chủ: nó cũ đi, tải lại được, và nhiều màn hình cùng đọc",
+                  "explain": [
+                    "Đây là loại duy nhất có vòng đời bạn không kiểm soát, nên nó cần cache, cần vô hiệu hoá và cần chính sách tải lại.",
+                    "Nhét nó vào Redux nghĩa là tự viết ba thứ đó bằng tay. TanStack Query hay RTK Query chính là đoạn code ấy, viết sẵn và đã được test."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "State toàn cục của app",
+                  "detail": "Phiên đăng nhập, giao diện, giỏ hàng, cờ tính năng — app làm chủ, nhiều màn hình đọc, và tự nó không cũ đi",
+                  "explain": [
+                    "Đây mới đúng là chỗ dùng store, và ở phần lớn app thì nó nhỏ hơn người ta tưởng: một cái token, vài thiết lập, một hai bản nháp.",
+                    "Nó không có server nào để mà bất đồng, nên chẳng cần cache — chỉ cần một người ghi, và đôi khi cần lưu lại giữa các lần mở app."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "State điều hướng",
+                  "detail": "Đang ở màn hình nào với tham số gì — bộ điều hướng vốn đã lưu sẵn",
+                  "explain": [
+                    "React Navigation giữ tham số route, nên chép cái id đang chọn vào store là bạn có hai câu trả lời và chúng cãi nhau được.",
+                    "Hãy đọc bằng useRoute hoặc một selector trên navigation state, và deep link vẫn chạy mà chẳng phải làm gì thêm."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Một chủ, một bản",
+                  "detail": "Kiểu hỏng quen thuộc là chép dữ liệu server vào store toàn cục rồi đồng bộ bằng tay",
+                  "explain": [
+                    "Triệu chứng là một màn hình hiện giá trị cũ sau khi màn hình khác vừa làm mới, kèm một mớ lệnh đồng bộ ngày càng nhiều.",
+                    "Cách chữa không phải đồng bộ thêm. Là chọn ra ai trong hai bên là chủ, và bên kia đọc từ đó."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Phân loại trước, cài thư viện sau. Phần lớn câu hỏi 'nên dùng thư viện state nào' tự tan khi tách được bốn loại.",
+            "State của server chiếm phần lớn thứ mà một app điển hình hiển thị, và là loại ít hợp với một store thuần nhất.",
+            "State toàn cục mà thật sự toàn cục thì thường chỉ vài giá trị."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "local",
+      "title": "State cục bộ, và cái giá của Context",
+      "summary": "useState, useReducer, và cái bẫy trông giống một store.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Một giá trị đi đâu khi ngày càng nhiều phần màn hình cần tới nó.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "useState",
+                  "detail": "Một giá trị và hàm set của nó, giữ theo từng instance và mất khi component unmount",
+                  "explain": [
+                    "Từ React 18 thì gộp lô: hai lần setState trong một handler chỉ ra một lần render, và đọc giá trị ngay sau khi set vẫn ra giá trị cũ.",
+                    "Hãy truyền một hàm khi giá trị mới phụ thuộc giá trị cũ — setCount(c => c + 1) — không thì hai cú chạm nhanh có thể bị tính thành một."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "useReducer",
+                  "detail": "Một object state và một dispatch, cho lúc phần chuyển trạng thái quan trọng hơn bản thân giá trị",
+                  "explain": [
+                    "Hợp khi nhiều trường đổi cùng lúc, hoặc khi cùng một sự kiện lại mang nghĩa khác nhau tuỳ trạng thái hiện tại.",
+                    "Nó cũng đẩy logic ra khỏi component vào một hàm thuần, thứ test được mà chẳng phải render gì."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Đẩy lên component cha",
+                  "detail": "Hai anh em cần cùng một giá trị, nên cha chung gần nhất giữ nó và truyền xuống",
+                  "explain": [
+                    "Đây là nước đi đầu tiên đúng đắn, và vẫn đúng ở một hai tầng — xa hơn thì props đi xuyên qua những component chẳng dùng tới chúng.",
+                    "Đẩy lên cũng làm phần render lại rộng ra: cha render thì cả hai nhánh cùng render. Đó là cái giá đẩy người ta tới một store."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Context cho giá trị nền",
+                  "detail": "Giao diện, ngôn ngữ, người dùng hiện tại — đọc ở nhiều nơi và gần như không đổi",
+                  "explain": [
+                    "Context là cơ chế phân phát chứ không phải bộ quản lý state: không selector, không so sánh bằng, không đăng ký một phần giá trị được.",
+                    "Điều đó chỉ ổn khi giá trị hiếm khi đổi, và đó đúng là ý của chữ 'nền' ở đây."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Mọi bên tiêu thụ đều render lại",
+                  "detail": "Giá trị context đổi là mọi component đọc nó đều render lại, không cách nào thu hẹp",
+                  "explain": [
+                    "Nhét giá trị của một ô nhập, một timer hay một animation vào context là render lại nửa app sau mỗi phím gõ hay mỗi khung hình.",
+                    "Nhớ memo hoá cả object giá trị — một {user, setUser} mới toanh mỗi lần render là một giá trị mới, nên bên tiêu thụ vẫn render lại dù chẳng có gì đổi."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Tách ra, hoặc dùng store",
+                  "detail": "Hai context — một cho giá trị, một cho các hàm set — hoặc một store có selector thật sự",
+                  "explain": [
+                    "Tách được là nhờ các hàm set vốn ổn định: component nào chỉ dispatch sẽ thôi render lại mỗi khi giá trị đổi.",
+                    "Khi thấy mình đang tách tới cái context thứ ba, đó là tín hiệu nên lấy Zustand hay Redux để có selector cho tử tế."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "Context là cái bug hiệu năng vô tình phổ biến nhất trong React Native: nó trông như state toàn cục, mà hành xử như một prop trao cho tất cả mọi người cùng lúc."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "server-state",
+      "title": "State của server thuộc về một cache",
+      "summary": "Gọi API là nửa dễ; cũ đi, thử lại và vô hiệu hoá mới là phần còn lại.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Một request hồ sơ, và mọi việc cái cache làm quanh nó.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "useQuery(['profile', id])",
+                  "detail": "Key chính là danh tính của dữ liệu: cùng key là cùng một mục cache, dùng ở đâu trong app cũng vậy",
+                  "explain": [
+                    "Hai màn hình gọi useQuery cùng key thì dùng chung một mục, nên màn hình thứ hai hiện ra ngay và không có request thứ hai nào đi ra.",
+                    "Key là mảng nên có cấu trúc — ['profile', id] bị ['profile'] vô hiệu hoá theo tiền tố, và đó là cách làm mới cả một họ cùng lúc.",
+                    "Key thay cho biến mà lẽ ra bạn phải giữ trong store, còn cache thay cho cái reducer vốn phải đồng bộ nó."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Trả dữ liệu cũ trước, rồi tải lại",
+                  "detail": "Mục dữ liệu cũ được trả ngay lập tức còn request chạy ngầm — stale-while-revalidate",
+                  "explain": [
+                    "Người dùng thấy nội dung ngay khung hình đầu thay vì thấy spinner, và bản mới thay chỗ khi nó về tới.",
+                    "isPending nghĩa là chưa có gì trong cache; isFetching nghĩa là đang có request chạy trên dữ liệu bạn đã có. Dùng nhầm cái nào là sinh ra spinner nhấp nháy."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "staleTime và gcTime",
+                  "detail": "Dữ liệu được tính là còn tươi bao lâu, và một mục không ai dùng sống thêm bao lâu trước khi bị dọn",
+                  "explain": [
+                    "staleTime mới là cái đáng chú ý: mặc định bằng 0, nên cứ mount là tải lại. Đặt vài giây là bỏ được phần lớn request trùng trên một màn hình bận rộn.",
+                    "gcTime nói về bộ nhớ chứ không phải tính đúng — một mục không còn ai đăng ký sẽ bị dọn sau khoảng đó, và lần mount sau phải tải lại từ đầu."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Ghi xong thì vô hiệu hoá",
+                  "detail": "Một lần ghi đi qua useMutation, và những key nó ảnh hưởng bị đánh dấu cũ chứ không vá bằng tay",
+                  "explain": [
+                    "invalidateQueries là một dòng giữ mọi màn hình nhất quán: chúng tự tải lại, và không ai cần biết những ai khác đang hiển thị giá trị đó.",
+                    "Cập nhật lạc quan là bước thêm khi thay đổi phải thấy tức thì — ghi vào cache, giữ giá trị cũ, và hoàn tác nếu request hỏng."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Tải lại khi quay lại và khi có mạng",
+                  "detail": "AppState và NetInfo báo cho cache biết lúc máy trở lại, để app từ nền lên không hiện dữ liệu hôm qua",
+                  "explain": [
+                    "Trong React Native đây là phần nối dây phải làm một lần: một hook focusManager theo AppState, và một hook onlineManager theo NetInfo.",
+                    "Thiếu nó thì mặc định của web chẳng làm gì trên điện thoại — không có window focus và cũng không có sự kiện online của trình duyệt ở đây."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Lưu lại để dùng offline",
+                  "detail": "Cache được ghi vào MMKV hay AsyncStorage và khôi phục lúc mở app, nên khởi động nguội vẫn có nội dung",
+                  "explain": [
+                    "Đây là thứ khiến app dùng được trên tàu điện: dữ liệu biết được lần cuối đã nằm trên màn hình trước khi có request nào xong, hoặc chẳng cần request nào.",
+                    "Hãy lưu đúng những query bạn thật sự cần offline, đừng lưu cả cache — và đánh phiên bản cho dữ liệu lưu, để bản app mới không khôi phục thứ nó không còn đọc được."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "ts",
+          "caption": "Một query khoá theo người dùng, và một mutation vô hiệu hoá nó — cái khuôn mà gần như màn hình nào rồi cũng quy về.",
+          "code": [
+            "const { data, isPending, refetch } = useQuery({",
+            "  queryKey: ['profile', userId],",
+            "  queryFn: () => api.profile(userId),",
+            "  staleTime: 30_000,",
+            "});",
+            "",
+            "const save = useMutation({",
+            "  mutationFn: api.updateProfile,",
+            "  onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profile', userId] }),",
+            "});"
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "RTK Query cũng đúng mô hình đó nhưng nằm trong Redux Toolkit, và hợp hơn khi trong app đã có sẵn một store.",
+            "Khi state của server đã nằm trong cache, phần còn lại cho store thật sự nhỏ.",
+            "Đừng bao giờ chép dữ liệu query vào store 'cho dễ đọc'. Đó chính là bài toán đồng bộ quay trở lại."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "global",
+      "title": "Cái store, một khi nó đã nhỏ",
+      "summary": "Redux Toolkit, Zustand, Jotai — cùng một kiểu đăng ký, khác nhau ở cách dùng.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Một cái token đổi, và ai nghe thấy chuyện đó.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Một store, một người ghi",
+                  "detail": "Phiên đăng nhập, giao diện, giỏ hàng — giữ ngoài cây component nên màn hình nào cũng đọc được",
+                  "explain": [
+                    "Nằm ngoài cây mới là điểm chính: unmount một màn hình không làm mất giá trị, và hai màn hình đọc cùng một object chứ không phải hai bản sao.",
+                    "Hãy giữ nó nhỏ. Khi dữ liệu server đã nằm trong cache query và tham số route đã nằm ở navigator, phần còn lại thường chỉ vài trường."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Redux Toolkit: slice",
+                  "detail": "createSlice sinh sẵn action và reducer, còn Immer cho viết phần cập nhật như đang sửa tại chỗ",
+                  "explain": [
+                    "state.items.push(item) bên trong reducer là an toàn: Immer ghi lại thay đổi rồi tạo ra một state bất biến mới từ đó.",
+                    "Cái được của đám thủ tục là lần được dấu vết — mọi thay đổi là một action có tên, hiện trên timeline devtools kèm state trước và sau.",
+                    "Đáng dùng với app lớn có nhiều người, và quá nặng cho một màn hình chỉ có một cái công tắc."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Selector giữ phần render lại thật hẹp",
+                  "detail": "useSelector(s => s.cart.count) chỉ render lại khi giá trị đó đổi, không phải mỗi lần dispatch",
+                  "explain": [
+                    "Select ra một object hay một mảng đã map thì lần nào cũng trả tham chiếu mới, nên component render lại sau mọi action — đúng cái bug hiệu năng kinh điển của Redux.",
+                    "createSelector memo hoá giá trị suy ra, còn selector so sánh nông thì so từng trường khi bạn thật sự cần nhiều giá trị cùng lúc."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Zustand: store chính là một hook",
+                  "detail": "create() trả về một hook mà bạn gọi kèm selector — không provider, không action, không thủ tục",
+                  "explain": [
+                    "useStore(s => s.token) chỉ đăng ký đúng mẩu state đó, nên câu chuyện selector y như Redux mà setup chỉ bằng một phần mười.",
+                    "State và những hàm làm nó đổi nằm chung một object, đọc lên gần giống một class nhỏ hơn là một reducer."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Jotai: atom, dựng từ dưới lên",
+                  "detail": "Nhiều mẩu state nhỏ ghép lại, thay vì một cái cây mà mọi thứ đều đọc từ đó",
+                  "explain": [
+                    "Một atom là một đơn vị state; một atom suy ra được tính từ những atom khác và chỉ render lại đúng người đăng ký nó.",
+                    "Nó hợp với màn hình gồm nhiều giá trị độc lập hơn là một object lớn, và chẳng cần selector vì bản thân atom đã là selector."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Lưu trữ, có chủ đích",
+                  "detail": "MMKV hay AsyncStorage giữ lại phần được chọn qua các lần mở app — và khôi phục là một trạng thái riêng",
+                  "explain": [
+                    "MMKV là đồng bộ và nhanh hơn nhiều, điều đó quan trọng lúc khởi động: đọc bất đồng bộ nghĩa là khung hình đầu tiên vẽ xong trước khi giá trị lưu về tới.",
+                    "Hãy lưu theo danh sách chọn sẵn, đừng lưu tất cả — và đánh phiên bản kèm bước chuyển đổi, vì dữ liệu cũ khôi phục vào code mới là một cú crash ngay lúc mở app."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "Thư viện",
+            "Dùng khi",
+            "Cái giá"
+          ],
+          "rows": [
+            [
+              "Redux Toolkit",
+              "App lớn, nhiều người, cần dấu vết",
+              "Nhiều thủ tục, phải học"
+            ],
+            [
+              "Zustand",
+              "Vài giá trị toàn cục, ít nghi thức",
+              "Cố tình ít rào chắn"
+            ],
+            [
+              "Jotai",
+              "Nhiều giá trị nhỏ và suy ra được",
+              "Atom lan man nếu không sắp xếp"
+            ],
+            [
+              "Context",
+              "Giá trị nền, gần như không đổi",
+              "Không selector, render lại tất"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pitfalls",
+      "title": "Chỗ hay hỏng",
+      "summary": "Năm thói quen ăn mất khung hình, và nên làm gì thay vào đó.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Vì sao danh sách giật khi chỉ một dòng thay đổi.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Object mới sau mỗi lần render",
+                  "detail": "style={{flex: 1}} hay data={items.map(...)} tạo tham chiếu mới mỗi lần, nên memo chẳng giúp được gì",
+                  "explain": [
+                    "React.memo so props theo tham chiếu. Một object hay mảng viết thẳng trong JSX là tham chiếu mới ở mỗi lần render, nên phép so luôn trượt.",
+                    "Hãy đưa style tĩnh ra StyleSheet.create, và bọc các mảng suy ra trong useMemo kèm đúng những đầu vào của nó."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Mỗi dòng một callback viết thẳng",
+                  "detail": "onPress={() => select(item.id)} là một hàm mới cho từng dòng, ở mỗi lần render của danh sách",
+                  "explain": [
+                    "Nó phá luôn memo trên component dòng, nên một nghìn dòng render lại chỉ vì một dòng thay đổi.",
+                    "useCallback cho renderItem rồi đọc id từ tham số của nó là chữa được, và cả danh sách chỉ còn một hàm duy nhất."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Context nằm trên đường render",
+                  "detail": "Một giá trị đổi theo từng khung hình hay từng phím gõ, lại được đọc bởi component khắp màn hình",
+                  "explain": [
+                    "Giá trị animation thuộc về shared value của Reanimated, thứ cập nhật trên luồng UI mà không cần React render lần nào.",
+                    "Còn lại thì hãy dời giá trị đổi nhanh đó vào một store có selector, để chỉ những component hiển thị nó mới render lại."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Dữ liệu server bị chép vào store",
+                  "detail": "Cache query đã có nó, mà một slice vẫn giữ một bản, rồi màn hình này đọc bản kia không đọc",
+                  "explain": [
+                    "Hai chủ nghĩa là sớm muộn một bên sai, thường là bên mà đồng nghiệp quên cập nhật sau một lần ghi.",
+                    "Hãy xoá bản sao đi và đọc từ cache. Màn hình cần hình dạng khác thì suy ra trong selector, đừng lưu thêm một bản."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "State đã lưu sống lâu hơn hình dạng của nó",
+                  "detail": "Dữ liệu cũ khôi phục vào code mới, với một trường đổi kiểu hoặc biến mất",
+                  "explain": [
+                    "Cú crash rơi ngay lúc mở app, trước khi màn hình nào kịp render, và nó vô hình khi phát triển vì máy bạn vốn đã có hình dạng mới.",
+                    "Hãy đánh phiên bản cho state đã lưu và viết bước chuyển đổi, hoặc chí ít bọc phần khôi phục trong try rồi quay về giá trị mặc định."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "Triệu chứng",
+            "Nguyên nhân quen thuộc",
+            "Cách chữa"
+          ],
+          "rows": [
+            [
+              "Danh sách giật khi chạm",
+              "Callback hay style viết thẳng",
+              "useCallback, StyleSheet.create"
+            ],
+            [
+              "Cả màn hình render lại",
+              "Context hoặc selector quá rộng",
+              "Thu hẹp selector, tách context"
+            ],
+            [
+              "Dữ liệu cũ sau khi lưu",
+              "Chép state của server",
+              "Một chủ, vô hiệu hoá query"
+            ],
+            [
+              "Crash ngay sau khi update",
+              "Hình dạng state lưu đã đổi",
+              "Đánh phiên bản, chuyển đổi khi khôi phục"
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}
