@@ -42,6 +42,18 @@
     matters, in one plain phrase. A diagram has to make sense to someone who
     has not read the text around it, so a detail that only restates the label
     is a bug. Roughly 30–110 characters, and a test holds that line.
+  - **Every diagram box opens.** A box is a button, and clicking it opens a
+    dialog holding `explain` — the long version of that one step, for the
+    reader who stops there. Two to six points, in points and not paragraphs
+    like everything else, each a whole thought rather than the `detail` typed
+    out again. Anything the box names — SNI, SPKI, a cipher suite — is defined
+    there, and at least one point walks a concrete case through with real
+    values (`cert_A` holds `pub_key_A`, the pin is `sha256/…`), because the
+    reader we are writing for is a student meeting the term for the first time.
+    It is required too: a box the reader can click has to have something
+    waiting behind it. `FlowDiagram` owns one dialog for the whole
+    diagram, and the counts are compared across languages, so a point added to
+    the English side only fails the suite.
   - **One colour.** The whole section uses `DOCS_ACCENT`; a guide has no colour
     of its own, so the set reads as one body of work. (App policies are the
     other way round — there the colour belongs to the app.)
@@ -73,6 +85,10 @@
 
 ## shadcn/ui
 
+- **This project uses shadcn/ui** — <https://github.com/shadcn-ui/ui>. Anything
+  the registry ships, we take from the registry: `npx shadcn@latest add
+  <component>`, never a hand-rolled substitute for a component that already
+  exists there, and never a second component library alongside it.
 - Components come from the shadcn registry on Radix (`components.json`, style
   `radix-nova`) and live in `src/components/ui`. They are ours once generated —
   edit them in place.
@@ -86,8 +102,9 @@
   components at the OS setting, so a statically exported page is correct in its
   first paint. Do not replace this with a `.dark` class and a toggle.
 - Add a component only where it earns its place. Buttons, badges, inputs,
-  tables and alerts are shadcn; the heroes, cards, diagrams and the table of
-  contents are hand-written because their design is specific to this site.
+  tables, alerts and the dialog behind a diagram box are shadcn; the heroes,
+  cards, diagrams and the table of contents are hand-written because their
+  design is specific to this site.
 
 ## Paths live in ResourceConstant
 

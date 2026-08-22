@@ -27,7 +27,12 @@
               "items": [
                 {
                   "label": "Create the key",
-                  "detail": "ssh-keygen writes two files: the secret half, and the .pub half you may share"
+                  "detail": "ssh-keygen writes two files: the secret half, and the .pub half you may share",
+                  "explain": [
+                    "ssh-keygen -t ed25519 writes id_ed25519 and id_ed25519.pub side by side in ~/.ssh. The comment is only a label, so put the machine's name in it rather than yours.",
+                    "The passphrase encrypts the private key on disk, which is what makes a stolen laptop harmless; the agent is what saves you from typing it all day.",
+                    "Ed25519 over RSA: shorter, faster, and accepted by GitHub everywhere. Reach for RSA only when some older server refuses it."
+                  ]
                 }
               ]
             },
@@ -35,7 +40,12 @@
               "items": [
                 {
                   "label": "ssh-agent",
-                  "detail": "Keeps the key unlocked in memory, so git never stops to ask for the passphrase"
+                  "detail": "Keeps the key unlocked in memory, so git never stops to ask for the passphrase",
+                  "explain": [
+                    "ssh-add hands the unlocked key to a process that holds it in memory, so the passphrase is asked once per login instead of once per push.",
+                    "On macOS, --apple-use-keychain saves the passphrase in the Keychain, and the key is back in the agent by itself after a restart.",
+                    "ssh-add -l lists what the agent is holding. An empty list is the usual reason git has suddenly started asking for a password again."
+                  ]
                 }
               ]
             },
@@ -43,7 +53,12 @@
               "items": [
                 {
                   "label": "GitHub",
-                  "detail": "Paste only the .pub half. GitHub uses it to recognise you and never needs the secret one"
+                  "detail": "Paste only the .pub half. GitHub uses it to recognise you and never needs the secret one",
+                  "explain": [
+                    "Settings → SSH and GPG keys → New SSH key, then paste the whole .pub file including the ssh-ed25519 prefix and the trailing comment.",
+                    "GitHub only ever sees the public half. It proves you hold the private one by asking you to sign a challenge, never by receiving the key itself.",
+                    "One public key cannot sit on two GitHub accounts — the second upload is refused, and that single rule is what forces the two-key setup below."
+                  ]
                 }
               ]
             },
@@ -51,7 +66,11 @@
               "items": [
                 {
                   "label": "Test",
-                  "detail": "ssh -T greets you by name once the agent and GitHub hold the matching halves"
+                  "detail": "ssh -T greets you by name once the agent and GitHub hold the matching halves",
+                  "explain": [
+                    "ssh -T git@github.com answers with your username and says shell access is not provided. That message is the success case, not an error.",
+                    "ssh -vT git@github.com prints which key files were offered and in what order — the fastest way to find out the agent is answering with the wrong one."
+                  ]
                 }
               ]
             },
@@ -59,7 +78,11 @@
               "items": [
                 {
                   "label": "SSH remote",
-                  "detail": "A repo cloned over HTTPS keeps asking for a token until its remote url is switched"
+                  "detail": "A repo cloned over HTTPS keeps asking for a token until its remote url is switched",
+                  "explain": [
+                    "git remote set-url origin git@github.com:owner/repo.git switches an existing clone over; nothing else in the repository changes.",
+                    "git remote -v is the check. A url that still starts with https:// goes through a token no matter how well the key is set up."
+                  ]
                 }
               ]
             }
@@ -233,11 +256,19 @@
               "items": [
                 {
                   "label": "git@github-work:…",
-                  "detail": "A made-up host name that exists only in your config and in work remote urls"
+                  "detail": "A made-up host name that exists only in your config and in work remote urls",
+                  "explain": [
+                    "github-work is not a domain and resolves nowhere. ssh looks it up in ~/.ssh/config, reads the real HostName from that entry, and connects to github.com as usual.",
+                    "Putting it in the remote url of every work repository makes the choice of key part of the clone, rather than a setting you have to remember to flip."
+                  ]
                 },
                 {
                   "label": "git@github.com:…",
-                  "detail": "The real host name, left alone so personal repos keep working unchanged"
+                  "detail": "The real host name, left alone so personal repos keep working unchanged",
+                  "explain": [
+                    "Personal repositories keep the real host name, so they match the default entry in the config and go on using the default key.",
+                    "Nothing in those clones has to change — which is the reason to alias the work side rather than the other way round."
+                  ]
                 }
               ]
             },
@@ -245,7 +276,11 @@
               "items": [
                 {
                   "label": "~/.ssh/config",
-                  "detail": "Matches the host name in the url, then hands ssh the key named on that entry"
+                  "detail": "Matches the host name in the url, then hands ssh the key named on that entry",
+                  "explain": [
+                    "One Host block per account: HostName github.com, User git, an IdentityFile pointing at that account's key, and IdentitiesOnly yes.",
+                    "IdentitiesOnly yes matters more than it looks. Without it, ssh offers every key in the agent, GitHub accepts the first one that works, and you push as the wrong account."
+                  ]
                 }
               ]
             },
@@ -253,11 +288,19 @@
               "items": [
                 {
                   "label": "id_work",
-                  "detail": "Uploaded to the work account. GitHub allows one key on one account only"
+                  "detail": "Uploaded to the work account. GitHub allows one key on one account only",
+                  "explain": [
+                    "Generate it under its own name — ssh-keygen -f ~/.ssh/id_work — so it never quietly overwrites the key that is already in ~/.ssh.",
+                    "It is uploaded to the work account and only there. GitHub rejects the same public key on a second account, which is why a second key exists at all."
+                  ]
                 },
                 {
                   "label": "id_ed25519",
-                  "detail": "Uploaded to the personal account — which is the reason two keys are needed at all"
+                  "detail": "Uploaded to the personal account — which is the reason two keys are needed at all",
+                  "explain": [
+                    "The default key stays exactly where it is and keeps serving the personal account, so nothing that already worked stops working.",
+                    "Which of the two is used is decided by the host name in the url, never by which key happened to be added to the agent first."
+                  ]
                 }
               ]
             }

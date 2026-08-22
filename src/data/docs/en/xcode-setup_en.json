@@ -28,7 +28,11 @@
               "items": [
                 {
                   "label": "Prepare",
-                  "detail": "Sign in, free up about 60 GB, and update macOS first — Xcode refuses an older one"
+                  "detail": "Sign in, free up about 60 GB, and update macOS first — Xcode refuses an older one",
+                  "explain": [
+                    "Xcode is about 20 GB on its own, and simulator runtimes, device support files and derived data pile up on top — 60 GB free is where the install stops failing half way through.",
+                    "Every Xcode names the oldest macOS it will run on and refuses to install below it, so updating the OS first saves downloading those 20 GB twice."
+                  ]
                 }
               ]
             },
@@ -36,7 +40,12 @@
               "items": [
                 {
                   "label": "Install Xcode",
-                  "detail": "App Store for the latest; a .xip or the xcodes CLI when you need one exact version"
+                  "detail": "App Store for the latest; a .xip or the xcodes CLI when you need one exact version",
+                  "explain": [
+                    "The App Store only ever offers the newest Xcode, which is what you want unless a project pins an older toolchain or a CI image you have to match.",
+                    "A .xip from Apple's developer downloads, or the xcodes CLI, gets you one exact version — and several versions can sit side by side in /Applications.",
+                    "However it arrives, open it once by hand: the first launch installs the extra components, and nothing built from the terminal works until it has."
+                  ]
                 }
               ]
             },
@@ -44,7 +53,12 @@
               "items": [
                 {
                   "label": "Toolchain",
-                  "detail": "Point xcode-select at Xcode, accept the licence, then install Homebrew and the project tools"
+                  "detail": "Point xcode-select at Xcode, accept the licence, then install Homebrew and the project tools",
+                  "explain": [
+                    "xcode-select points every command line tool at one Xcode. With two versions installed, it is the switch that decides which one xcodebuild and swift actually use.",
+                    "The licence is accepted once per Xcode, and a CI build that fails with nothing but a licence message is almost always this step.",
+                    "Homebrew then carries the rest — CocoaPods, fastlane, whatever the project's README asks for — so the toolchain is reproducible instead of remembered."
+                  ]
                 }
               ]
             },
@@ -52,7 +66,11 @@
               "items": [
                 {
                   "label": "Signing",
-                  "detail": "Add your Apple ID so Xcode can issue a certificate and fetch the profile a device needs"
+                  "detail": "Add your Apple ID so Xcode can issue a certificate and fetch the profile a device needs",
+                  "explain": [
+                    "Adding the Apple ID under Settings → Accounts lets Xcode issue a development certificate and drop its private key straight into this Mac's Keychain.",
+                    "Automatic signing then fetches, and re-fetches, the provisioning profile whenever the bundle id, the capabilities or the list of devices changes."
+                  ]
                 }
               ]
             },
@@ -60,7 +78,11 @@
               "items": [
                 {
                   "label": "Ship",
-                  "detail": "Run on a real iPhone to prove signing works, then archive and upload to TestFlight"
+                  "detail": "Run on a real iPhone to prove signing works, then archive and upload to TestFlight",
+                  "explain": [
+                    "A run on a real iPhone is the proof that signing works: the simulator never checks a certificate, so it happily runs an app that could not be installed anywhere.",
+                    "Archive builds the Release configuration and hands it to the Organizer, which is where the upload to App Store Connect and TestFlight starts."
+                  ]
                 }
               ]
             }
@@ -242,15 +264,28 @@
               "items": [
                 {
                   "label": "Certificate",
-                  "detail": "Your identity with Apple. Useless without the private key, which lives only in this Mac's Keychain"
+                  "detail": "Your identity with Apple. Useless without the private key, which lives only in this Mac's Keychain",
+                  "explain": [
+                    "The certificate is the public half; the private key beside it in the Keychain is what actually signs. Apple keeps no copy, so a lost key cannot be downloaded again.",
+                    "Moving to another Mac means exporting both halves as a .p12 — or revoking the certificate and issuing a new one, which invalidates what the old one signed.",
+                    "A development certificate signs builds for registered devices; a distribution certificate signs what goes to TestFlight and the store."
+                  ]
                 },
                 {
                   "label": "App ID",
-                  "detail": "The bundle id plus the capabilities the app may use, such as push or App Groups"
+                  "detail": "The bundle id plus the capabilities the app may use, such as push or App Groups",
+                  "explain": [
+                    "The bundle id has to match the project character for character. A wildcard App ID exists, but it cannot carry push, App Groups or anything else that needs an entitlement.",
+                    "Turning a capability on in Xcode edits the App ID at Apple's end too, which is why the profile has to be re-issued immediately after."
+                  ]
                 },
                 {
                   "label": "Devices",
-                  "detail": "UDIDs of the phones allowed to run the build. Not needed once the app ships through the store"
+                  "detail": "UDIDs of the phones allowed to run the build. Not needed once the app ships through the store",
+                  "explain": [
+                    "A development profile lists the UDIDs it covers, so a phone registered after the profile was issued needs that profile downloading again.",
+                    "The account has a device limit per year, and removing a device only frees the slot when the membership renews."
+                  ]
                 }
               ]
             },
@@ -258,7 +293,11 @@
               "items": [
                 {
                   "label": "Provisioning profile",
-                  "detail": "Apple's signed statement tying those three together. Xcode downloads it and embeds it in the app"
+                  "detail": "Apple's signed statement tying those three together. Xcode downloads it and embeds it in the app",
+                  "explain": [
+                    "It is a signed file holding your certificate, the App ID with its entitlements, and the device list — sealed by Apple so the phone can check the app is allowed to run.",
+                    "It ships inside the .app as embedded.mobileprovision, and it expires — a year for development — which is why an old build stops launching one day for no visible reason."
+                  ]
                 }
               ]
             },
@@ -266,7 +305,11 @@
               "items": [
                 {
                   "label": "Signed app",
-                  "detail": "Runs on the registered devices, and is the only form App Store Connect will accept"
+                  "detail": "Runs on the registered devices, and is the only form App Store Connect will accept",
+                  "explain": [
+                    "iOS checks the signature at install and at every launch: every entitlement in the binary has to be covered by the profile, or the app is refused.",
+                    "App Store Connect rejects an unsigned or wrongly signed upload before processing even starts, which is the error most pipelines meet first."
+                  ]
                 }
               ]
             }
@@ -355,15 +398,27 @@
               "items": [
                 {
                   "label": ".p8 key file",
-                  "detail": "The private key file. It downloads exactly once — lose it and the only fix is a new key"
+                  "detail": "The private key file. It downloads exactly once — lose it and the only fix is a new key",
+                  "explain": [
+                    "Keep it in the CI secret store, never in the repository: anyone holding the file and the two ids can upload builds as your team.",
+                    "Apple offers the download exactly once. If it is lost, revoke that key and create another — nothing brings the file itself back."
+                  ]
                 },
                 {
                   "label": "Key ID",
-                  "detail": "Short id shown beside the key, telling Apple which of your keys is signing"
+                  "detail": "Short id shown beside the key, telling Apple which of your keys is signing",
+                  "explain": [
+                    "It is not a secret, only a name: it travels in the token header so Apple knows which public key to check the signature against.",
+                    "Keys are revoked one at a time, so giving CI its own key keeps a colleague's laptop out of the blast radius."
+                  ]
                 },
                 {
                   "label": "Issuer ID",
-                  "detail": "Identifies your team. The same value for every key the account creates"
+                  "detail": "Identifies your team. The same value for every key the account creates",
+                  "explain": [
+                    "Read it once from the top of the Keys page in App Store Connect; every key the team ever creates carries the same one.",
+                    "It names the team the token speaks for, which starts to matter the moment your Apple ID belongs to more than one."
+                  ]
                 }
               ]
             },
@@ -371,7 +426,11 @@
               "items": [
                 {
                   "label": "fastlane / altool",
-                  "detail": "Signs a short-lived token from those three values, so nobody has to type a 2FA code"
+                  "detail": "Signs a short-lived token from those three values, so nobody has to type a 2FA code",
+                  "explain": [
+                    "The three values become a short-lived JWT, signed locally. It expires in minutes, so a leaked token is worth far less than the key that made it.",
+                    "This is the whole reason a pipeline can upload at three in the morning: no password, no 2FA prompt, nothing waiting on a human with a phone."
+                  ]
                 }
               ]
             },
@@ -379,7 +438,11 @@
               "items": [
                 {
                   "label": "TestFlight",
-                  "detail": "The build lands here and can go to testers, with nothing interactive in the pipeline"
+                  "detail": "The build lands here and can go to testers, with nothing interactive in the pipeline",
+                  "explain": [
+                    "Processing takes a few minutes after the upload, and a build is only installable once it finishes and the export compliance question is answered.",
+                    "Internal testers get the build straight away; an external group waits for a review, so leave a day for the first one."
+                  ]
                 }
               ]
             }

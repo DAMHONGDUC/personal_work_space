@@ -27,7 +27,13 @@
               "items": [
                 {
                   "label": "App connects",
-                  "detail": "The app opens a TLS connection. Nothing has been trusted yet"
+                  "detail": "The app opens a TLS connection. Nothing has been trusted yet",
+                  "explain": [
+                    "TLS (Transport Layer Security) is the S in HTTPS: a handshake that agrees on keys first, then encrypts everything after it. TLS 1.3 is the version in use today.",
+                    "At this instant the app holds one hostname, api.example.com, and an open socket. It has no idea whether the machine answering is your server or a laptop in the same café.",
+                    "Concretely: URLSession or OkHttp calls connect(), the TCP three-way handshake finishes, and the first TLS message is about to be written.",
+                    "Pinning is not a different protocol. It is one extra comparison the app runs later, after everything the OS normally checks has already passed."
+                  ]
                 }
               ]
             },
@@ -35,7 +41,14 @@
               "items": [
                 {
                   "label": "Server sends its chain",
-                  "detail": "The leaf certificate for the domain, plus the intermediates linking it up to a root"
+                  "detail": "The leaf certificate for the domain, plus the intermediates linking it up to a root",
+                  "explain": [
+                    "A certificate is three things: a public key, a name, and a signature from whoever vouches for the pair. None of it is secret — it is designed to be handed to strangers.",
+                    "Call your server's one cert_A. It holds pub_key_A, the public half of a key pair whose private half, priv_key_A, never leaves your server.",
+                    "The chain is cert_A signed by an intermediate (say R3), and R3 signed by a root CA (say ISRG Root X1) that shipped inside the phone years ago.",
+                    "Chains exist so the root's private key can stay offline in a vault: it signs a handful of intermediates, and those intermediates sign millions of leaf certificates.",
+                    "Anyone can send a chain. The proxy in the next section sends cert_X holding pub_key_X, chained to a CA it talked you into installing — same structure, different key."
+                  ]
                 }
               ]
             },
@@ -43,7 +56,14 @@
               "items": [
                 {
                   "label": "OS validates the chain",
-                  "detail": "The device checks the signatures up to a CA in its own trust store, and the dates"
+                  "detail": "The device checks the signatures up to a CA in its own trust store, and the dates",
+                  "explain": [
+                    "Check one, signatures: cert_A must verify against R3's public key, and R3 against a root already in the device's trust store. Break the chain anywhere and it fails.",
+                    "Check two, the name: the hostname you dialled must appear in cert_A's SAN list (Subject Alternative Name), the modern replacement for the old CN field.",
+                    "Check three, the dates: notBefore ≤ now ≤ notAfter, measured against the device clock — which is why a phone set to 2019 fails every HTTPS request at once.",
+                    "A trust store is just a list of root certificates. iOS ships around 150 of them, and a profile you install adds one more with exactly the same authority.",
+                    "That is the hole the next section walks through: an attacker's CA sits in that list by your own consent, so cert_X passes all three checks. Nothing is broken — it is working as designed."
+                  ]
                 }
               ]
             },
@@ -51,7 +71,13 @@
               "items": [
                 {
                   "label": "App compares the pin",
-                  "detail": "Only now: hash the public key out of that certificate and look for it in the app's list"
+                  "detail": "Only now: hash the public key out of that certificate and look for it in the app's list",
+                  "explain": [
+                    "SPKI (SubjectPublicKeyInfo) is the field inside a certificate holding the public key together with its algorithm: 'this is an RSA-2048 key, and here are its bytes'.",
+                    "The app takes SPKI(pub_key_A), hashes it with SHA-256, base64-encodes the 32 bytes, and ends up with a 44-character string — call it pin_A, written sha256/AAAA1111…=.",
+                    "pin_A was compiled into the app at build time. The comparison itself is ordinary string equality; nothing clever happens at this step.",
+                    "Pinning the key rather than the certificate is what survives renewal: reissue cert_A as cert_A2 with the same key pair and pin_A does not change by one character."
+                  ]
                 }
               ]
             },
@@ -59,11 +85,23 @@
               "items": [
                 {
                   "label": "Match → continue",
-                  "detail": "The peer holds the exact key you shipped, so the request finally goes out"
+                  "detail": "The peer holds the exact key you shipped, so the request finally goes out",
+                  "explain": [
+                    "A match means SHA-256(SPKI) of the certificate that just arrived equals pin_A, so the peer is presenting pub_key_A.",
+                    "Earlier in the handshake, CertificateVerify proved the peer also holds priv_key_A. Copying cert_A off a public website gets an attacker nothing without that private half.",
+                    "Together the two say: this is the machine holding your key, not merely a machine holding a certificate some CA was willing to sign.",
+                    "Only now is application data written to the socket — the Authorization header, the cookies, the request body."
+                  ]
                 },
                 {
                   "label": "Mismatch → abort",
-                  "detail": "Valid certificate, wrong key — the connection closes before any data is sent"
+                  "detail": "Valid certificate, wrong key — the connection closes before any data is sent",
+                  "explain": [
+                    "A mismatch means the hash of the key that arrived, pin_X, is in no entry of the app's pin list, however impeccable the chain around it looked.",
+                    "The client sends a TLS alert and closes the socket. iOS surfaces NSURLErrorServerCertificateUntrusted (-1202); OkHttp throws SSLPeerUnverifiedException with the offending pin printed.",
+                    "Nothing left the device: the abort happens before the first byte of the HTTP request, so no token, cookie or body was ever exposed.",
+                    "Log the pin that was presented. A rotation you got wrong looks identical to an attack from the outside, and that log line is the only thing that tells them apart."
+                  ]
                 }
               ]
             }
@@ -93,7 +131,13 @@
               "items": [
                 {
                   "label": "Free_Airport_WiFi",
-                  "detail": "A network named to look ordinary, run by someone who wants your traffic"
+                  "detail": "A network named to look ordinary, run by someone who wants your traffic",
+                  "explain": [
+                    "An access point is a name (the SSID) plus a DHCP server. A laptop with internet sharing on, or a cheap travel router, is both of those in two minutes.",
+                    "Whoever runs it also runs DNS: the phone asks 'where is api.example.com?' and believes the answer, say 192.168.4.2 — the attacker's own machine.",
+                    "Phones re-join networks whose name they have seen before, so an SSID copied from a chain of cafés is joined with nobody tapping anything at all.",
+                    "None of this is exotic; it is the standard first lab in a security course. Proxyman in the next section is the same setup with your own consent."
+                  ]
                 }
               ]
             },
@@ -101,7 +145,13 @@
               "items": [
                 {
                   "label": "A portal asks to install a profile",
-                  "detail": "The page looks like a normal login step, but installing it adds the attacker's CA"
+                  "detail": "The page looks like a normal login step, but installing it adds the attacker's CA",
+                  "explain": [
+                    "A captive portal is the page a network shows before it lets you out to the internet, and everyone has been trained to tap through whatever it asks.",
+                    "What downloads is a .mobileconfig: a signed bundle of settings that can add a root CA — call it Airport_CA — to the device's trust store.",
+                    "iOS wants two steps: install it under Settings → Profile Downloaded, then switch it on under General → About → Certificate Trust Settings. Two taps each.",
+                    "From that moment, whoever holds Airport_CA's private key can sign a certificate for any hostname in the world and this phone will accept it."
+                  ]
                 }
               ]
             },
@@ -109,7 +159,13 @@
               "items": [
                 {
                   "label": "The app calls api.example.com",
-                  "detail": "The proxy answers instead of your server, holding a certificate it issued itself"
+                  "detail": "The proxy answers instead of your server, holding a certificate it issued itself",
+                  "explain": [
+                    "DNS is answered by the attacker, so the connection lands on their proxy — mitmproxy, Burp or Proxyman: a program that speaks TLS on both sides at once.",
+                    "SNI (Server Name Indication) is the hostname the client sends in the clear inside ClientHello, so that one IP address can host many sites. It is also what tells the proxy which name to forge.",
+                    "The proxy reads api.example.com from SNI, generates cert_X for that exact name on the spot, signs it with Airport_CA, and presents it holding pub_key_X.",
+                    "It also opens its own connection onward to the real api.example.com, so replies are genuine and the app keeps working. Nothing looks wrong to the person holding the phone."
+                  ]
                 }
               ]
             },
@@ -117,7 +173,13 @@
               "items": [
                 {
                   "label": "The chain looks valid",
-                  "detail": "Every normal check passes, because the device was just told to trust that CA"
+                  "detail": "Every normal check passes, because the device was just told to trust that CA",
+                  "explain": [
+                    "cert_X is signed by Airport_CA, and Airport_CA is in the trust store because you put it there. Signature check: passes.",
+                    "cert_X's SAN list says api.example.com, because the proxy copied the name straight out of SNI. Hostname check: passes.",
+                    "cert_X was issued seconds ago and is valid for a year. Date check: passes.",
+                    "All three OS checks pass and the padlock is drawn. This is precisely why 'HTTPS with a padlock' and 'talking to your server' are two different statements."
+                  ]
                 }
               ]
             },
@@ -125,11 +187,23 @@
               "items": [
                 {
                   "label": "No pin → readable",
-                  "detail": "The proxy reads and rewrites everything: tokens, request bodies, responses"
+                  "detail": "The proxy reads and rewrites everything: tokens, request bodies, responses",
+                  "explain": [
+                    "The proxy holds priv_key_X, so it decrypts everything the app sends: Authorization: Bearer eyJhbGciOi…, the JSON body, the cookies, all of it.",
+                    "It can rewrite as easily as read — change a price, flip isPremium to true, delay or drop a response — and the app cannot tell, because the bytes arrive over a perfectly valid TLS session.",
+                    "Refresh tokens are the real prize. An access token expires in an hour; a refresh token keeps someone inside the account for weeks.",
+                    "This is the same tooling you use to debug your own app. The only difference between that and this is who installed the CA, and whether you agreed to it."
+                  ]
                 },
                 {
                   "label": "Pin → dropped",
-                  "detail": "The key in that certificate is not the one built into the app, so nothing is sent"
+                  "detail": "The key in that certificate is not the one built into the app, so nothing is sent",
+                  "explain": [
+                    "The app computes SHA-256(SPKI(pub_key_X)) = pin_X and compares it with its list, which contains only pin_A. Not equal, so the handshake is aborted.",
+                    "It makes no difference that Airport_CA is trusted: pinning skips the question 'who signed this?' entirely and asks 'is this my key?'.",
+                    "The abort lands before any request is written, so the attacker is left with a TLS alert and nothing else — no token, no headers, no body.",
+                    "That is the whole value of pinning, and it comes down to comparing two 44-character strings."
+                  ]
                 }
               ]
             }
@@ -210,11 +284,24 @@
               "items": [
                 {
                   "label": "Build time",
-                  "detail": "You read the key off your own server once, and compile the hash into the app"
+                  "detail": "You read the key off your own server once, and compile the hash into the app",
+                  "explain": [
+                    "One command prints it: openssl s_client -connect api.example.com:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64",
+                    "Run it from a network you trust. A pin read over café Wi-Fi may be the attacker's key, and you would be compiling their key into your app.",
+                    "The output is pin_A: 44 base64 characters ending in '=', for example sha256/AAAA1111BBBB2222CCCC3333DDDD4444EEEE5555FF=.",
+                    "Where it goes depends on the platform: NSPinnedDomains in Info.plist on iOS, network_security_config.xml on Android, or a CertificatePinner if you use OkHttp.",
+                    "A pin is not a secret — it is the hash of a public key. Publishing it costs nothing, which is why the web once sent pins in an HPKP response header."
+                  ]
                 },
                 {
                   "label": "Runtime",
-                  "detail": "The certificate the peer presented a moment ago, whoever that peer turns out to be"
+                  "detail": "The certificate the peer presented a moment ago, whoever that peer turns out to be",
+                  "explain": [
+                    "This is whatever the peer presented in this handshake, seconds ago: cert_A from your server, or cert_X from a proxy sitting in the middle.",
+                    "The app cannot tell which by looking at the chain, because a valid-looking chain is exactly what an attacker with a trusted CA can produce on demand.",
+                    "So the comparison is against a key, never against a name or an issuer: the key is the one field an attacker cannot usefully copy.",
+                    "The same code runs in both cases. Only the 44-character string that falls out of it is different."
+                  ]
                 }
               ]
             },
@@ -222,7 +309,14 @@
               "items": [
                 {
                   "label": "SPKI → SHA-256 → base64",
-                  "detail": "The key is cut out, hashed and encoded — same steps, so the same key gives the same string"
+                  "detail": "The key is cut out, hashed and encoded — same steps, so the same key gives the same string",
+                  "explain": [
+                    "Step one, SPKI: take the SubjectPublicKeyInfo block out of the certificate — the algorithm identifier plus the key bits, in DER encoding.",
+                    "Step two, SHA-256: hash those bytes down to 32 bytes. The same input always gives the same output, and no other input realistically gives this one.",
+                    "Step three, base64: turn the 32 bytes into 44 printable characters, so the value can live in a plist, an XML file or a Kotlin string literal.",
+                    "Why SPKI and not the whole certificate: a certificate changes at every renewal — new dates, new serial number — while the SPKI is identical as long as you keep the key.",
+                    "Worked example: cert_A holds pub_key_A → SPKI → SHA-256 → sha256/AAAA1111…=. Renew it next year as cert_A2 with the same key pair and the string is unchanged."
+                  ]
                 }
               ]
             },
@@ -230,11 +324,23 @@
               "items": [
                 {
                   "label": "Equal",
-                  "detail": "The peer already proved it holds this key during the handshake, so it is your server"
+                  "detail": "The peer already proved it holds this key during the handshake, so it is your server",
+                  "explain": [
+                    "Equal means the peer's certificate contains pub_key_A — the public half of a key pair whose private half you generated on your own server.",
+                    "Together with CertificateVerify, where the server signed the handshake transcript with priv_key_A, this rules out a copied or replayed certificate.",
+                    "Note what it does not check: whether the CA is reputable, or whether the certificate was issued last week. Those remain the OS's job, and pinning does not replace them.",
+                    "The code path, concretely: chain valid → hash matches an entry in the list → return true → URLSession resumes → the request finally goes out."
+                  ]
                 },
                 {
                   "label": "Different",
-                  "detail": "Some other key, no matter who signed it — the connection closes with nothing sent"
+                  "detail": "Some other key, no matter who signed it — the connection closes with nothing sent",
+                  "explain": [
+                    "Different means SHA-256(SPKI) of the presented key matches none of the pins the app holds. Why it differs makes no difference to the outcome.",
+                    "It covers every case at once: an attacker's CA, a corporate TLS-inspecting proxy, and your own colleague's Proxyman on a debug build.",
+                    "It also covers your own mistake — a certificate reissued with a fresh key and no release to match. That is the accident the rotation section exists to prevent.",
+                    "The cost of being wrong here is a failed request; the cost of not checking at all is a stolen refresh token. That trade is what the whole guide is about."
+                  ]
                 }
               ]
             }
@@ -296,7 +402,14 @@
               "items": [
                 {
                   "label": "1. ClientHello",
-                  "detail": "App → server: versions, ciphers, its key share, the hostname in SNI"
+                  "detail": "App → server: versions, ciphers, its key share, the hostname in SNI",
+                  "explain": [
+                    "The first message on the connection, sent in the clear: nothing is encrypted yet, so anyone on the path reads all of it.",
+                    "'Versions' is the list of TLS versions the app can speak, say 1.3 and 1.2. The server picks the highest both sides know.",
+                    "A cipher suite is the named recipe for the session: TLS_AES_128_GCM_SHA256 means AES-128 in GCM mode for the data and SHA-256 for the hashing. The client sends the ones it supports.",
+                    "A key share is a temporary public key generated for this session only, usually X25519. Temporary is the point — it is thrown away afterwards, so a key stolen next year cannot decrypt today's recording.",
+                    "SNI (Server Name Indication) carries the hostname in plaintext, because one IP address may serve thousands of sites. It is also the field a proxy reads to know which name to forge."
+                  ]
                 }
               ]
             },
@@ -304,7 +417,13 @@
               "items": [
                 {
                   "label": "2. ServerHello",
-                  "detail": "Server → app: chosen cipher and the server key share"
+                  "detail": "Server → app: chosen cipher and the server key share",
+                  "explain": [
+                    "The server answers with exactly one of each: one version, one cipher suite, one key share — chosen out of the lists it was offered.",
+                    "For example TLS 1.3 with TLS_AES_128_GCM_SHA256 and a key share over X25519. Both sides are now committed to that recipe.",
+                    "Everything after this message is encrypted with keys derived from the two key shares, the certificate in message 4 included.",
+                    "There is still no proof of identity here. A proxy answers this message exactly the way your server does; identity only arrives in message 5."
+                  ]
                 }
               ]
             },
@@ -312,7 +431,13 @@
               "items": [
                 {
                   "label": "3. Shared secret",
-                  "detail": "Both sides derive it from the two key shares. Everything below is encrypted"
+                  "detail": "Both sides derive it from the two key shares. Everything below is encrypted",
+                  "explain": [
+                    "Diffie–Hellman: each side combines its own private value with the other side's public key share, and both land on the same secret without it ever crossing the wire.",
+                    "So an eavesdropper who captured every single byte still cannot compute it, because neither private half was ever sent.",
+                    "From that secret, both derive the real session keys — one per direction — and the rest of the handshake is already encrypted.",
+                    "This is forward secrecy: the key pair in cert_A is used for signing only, never to encrypt the session, so stealing priv_key_A later does not unlock a recording made today."
+                  ]
                 }
               ]
             },
@@ -320,7 +445,13 @@
               "items": [
                 {
                   "label": "4. Certificate",
-                  "detail": "Server → app: the leaf certificate and its intermediates"
+                  "detail": "Server → app: the leaf certificate and its intermediates",
+                  "explain": [
+                    "The server sends cert_A and the intermediates above it — the leaf holding pub_key_A, then R3. The root is not sent, because the device already has it.",
+                    "The contents are public information; they are encrypted here only so an eavesdropper cannot see which site you are visiting.",
+                    "This is the exact message pinning inspects. The hash the app compares is taken from the SPKI field of the leaf certificate in this message.",
+                    "Note how much has been proved at this point: nothing. Anyone can download cert_A from your public server, so this message is worth nothing without the next one."
+                  ]
                 }
               ]
             },
@@ -328,7 +459,13 @@
               "items": [
                 {
                   "label": "5. CertificateVerify",
-                  "detail": "Server signs the transcript with its private key — the step a copied certificate cannot fake"
+                  "detail": "Server signs the transcript with its private key — the step a copied certificate cannot fake",
+                  "explain": [
+                    "The server signs a hash of the entire handshake so far — every byte of every message — using priv_key_A, the private half of the key inside cert_A.",
+                    "The client verifies that signature with pub_key_A, taken from the certificate it received a moment ago. A peer without the private half cannot produce it.",
+                    "This is why copying cert_A off a public website gets an attacker nowhere: no priv_key_A, no valid CertificateVerify, no connection.",
+                    "And it is why pinning a key means something. The pin says 'this exact key'; CertificateVerify says 'and I hold its private half'."
+                  ]
                 }
               ]
             },
@@ -336,7 +473,13 @@
               "items": [
                 {
                   "label": "6. Finished",
-                  "detail": "A MAC over the whole transcript, proving both sides derived the same keys"
+                  "detail": "A MAC over the whole transcript, proving both sides derived the same keys",
+                  "explain": [
+                    "Each side sends a MAC — a keyed hash — computed over the whole transcript of the handshake, with keys derived from the shared secret.",
+                    "If anything on the path altered an earlier message, say deleting TLS 1.3 from the client's list to force a weaker version, the two transcripts differ and this check fails.",
+                    "That is downgrade protection: the negotiation cannot be rewritten in flight without both sides noticing right here.",
+                    "Once Finished is exchanged, the connection is established and application data may start flowing."
+                  ]
                 }
               ]
             },
@@ -344,15 +487,33 @@
               "items": [
                 {
                   "label": "7a. Chain",
-                  "detail": "Each certificate signed by the next, up to a root the device already trusts"
+                  "detail": "Each certificate signed by the next, up to a root the device already trusts",
+                  "explain": [
+                    "Verification walks upward: cert_A must be signed by R3's key, R3 by the root's key, and that root must already sit in the device's trust store.",
+                    "The trust store is the fixed list shipped with the OS, plus whatever a configuration profile or an MDM added later — which is exactly how a corporate or attacker CA gets in.",
+                    "The most common real failure here is a missing intermediate: the server never sent R3, so a device that has not cached it cannot complete the chain, while other devices work fine.",
+                    "Passing this step says only that some trusted CA vouched for some key. It does not say which key, and that gap is the whole reason pinning exists."
+                  ]
                 },
                 {
                   "label": "7b. Hostname",
-                  "detail": "The certificate must list the domain you asked for in its SAN field"
+                  "detail": "The certificate must list the domain you asked for in its SAN field",
+                  "explain": [
+                    "The client checks that api.example.com appears in the certificate's SAN list — Subject Alternative Name, which can hold several names and wildcards such as *.example.com.",
+                    "The old Common Name field is ignored by iOS and Android today, so a certificate carrying only a CN fails on any modern device.",
+                    "Without this check, a certificate legitimately issued for evil.example could be used to answer for your domain — the CA did nothing wrong, the client just failed to look.",
+                    "The name checked is the one from the URL, not the one in SNI, so an attacker cannot slip through by lying in the hello."
+                  ]
                 },
                 {
                   "label": "7c. Validity",
-                  "detail": "Inside its dates, and not on a revocation list the device can reach"
+                  "detail": "Inside its dates, and not on a revocation list the device can reach",
+                  "explain": [
+                    "notBefore and notAfter are compared against the device clock. Public certificates now last 90 days or less, so this is a live constraint rather than a formality.",
+                    "A phone with the wrong date fails every HTTPS connection at once — the classic 'nothing works since the battery died' bug.",
+                    "Revocation is the weak half: OCSP or a CRL says whether a certificate was cancelled early, but the check is often unreachable and most clients continue anyway.",
+                    "Pinning does not depend on revocation, which is part of its value: a compromised key stops working the moment you stop pinning it, not when a CA gets round to it."
+                  ]
                 }
               ]
             },
@@ -360,7 +521,13 @@
               "items": [
                 {
                   "label": "8. Pin check",
-                  "detail": "SPKI → SHA-256 → base64, compared with the pins in the app"
+                  "detail": "SPKI → SHA-256 → base64, compared with the pins in the app",
+                  "explain": [
+                    "The app's own step, run after the OS is satisfied: didReceiveChallenge in URLSession, CertificatePinner in OkHttp, badCertificateCallback or a Dio adapter in Flutter.",
+                    "It takes the leaf from message 4, extracts SPKI, hashes it to sha256/…, and compares against the pins compiled into the build: pin_A, and ideally pin_B as the spare.",
+                    "Run it in addition to the OS checks, never instead of them — replacing them means accepting an expired certificate, or the wrong hostname, as long as the key matches.",
+                    "Compare against a list and accept the first match, so the day the server moves to key_B nothing in the app has to change."
+                  ]
                 }
               ]
             },
@@ -368,11 +535,22 @@
               "items": [
                 {
                   "label": "All pass",
-                  "detail": "Client Finished, then the first request is sent"
+                  "detail": "Client Finished, then the first request is sent",
+                  "explain": [
+                    "The client sends its own Finished and the handshake is complete — one round trip, in the common TLS 1.3 case.",
+                    "Only now does the first application byte leave the device: GET /v1/profile, with its Authorization header attached.",
+                    "The session is then reused for the rest of the connection, so the pin is checked once per connection rather than once per request."
+                  ]
                 },
                 {
                   "label": "Any fails",
-                  "detail": "Alert, connection closed, nothing sent"
+                  "detail": "Alert, connection closed, nothing sent",
+                  "explain": [
+                    "The client sends a TLS alert — bad_certificate, certificate_expired or unknown_ca — and closes the socket immediately.",
+                    "In the app it surfaces as a transport error: -1202 on iOS, SSLPeerUnverifiedException on Android, HandshakeException in Dart.",
+                    "No part of the request was written, so a failed check costs a retry and never a leaked token, cookie or body.",
+                    "Log which of the four checks failed and what pin was presented. Without that line, a rotation mistake and a real attack look identical in your crash reports."
+                  ]
                 }
               ]
             }
@@ -402,11 +580,23 @@
               "items": [
                 {
                   "label": "Pin A",
-                  "detail": "The hash of the key the server is actually serving today"
+                  "detail": "The hash of the key the server is actually serving today",
+                  "explain": [
+                    "pin_A is SHA-256(SPKI(pub_key_A)): the hash of the key inside the certificate your server is serving right now.",
+                    "Renewing that certificate — cert_A becomes cert_A2 next quarter — leaves pin_A untouched, as long as the CSR reuses the same key pair.",
+                    "That has to be a deliberate decision on the server side: certbot and most ACME clients generate a fresh key on every renewal unless you tell them not to.",
+                    "If a renewal quietly rotates the key while pin_A is the only pin in the app, every installed copy stops working the minute the new certificate goes live."
+                  ]
                 },
                 {
                   "label": "Pin B",
-                  "detail": "The hash of a key you generated early and locked away, not in use yet"
+                  "detail": "The hash of a key you generated early and locked away, not in use yet",
+                  "explain": [
+                    "Generate key_B now, keep it offline — a password manager, an HSM, a sealed envelope — and pin its hash even though no certificate uses it yet.",
+                    "You do not need a certificate to compute it: openssl pkey -in key_B.pem -pubout -outform der | openssl dgst -sha256 -binary | openssl enc -base64.",
+                    "This is the difference between an incident you fix on the server in an hour, and one that needs an emergency release plus a week of review.",
+                    "Store key_B somewhere priv_key_A is not, or one break takes both halves of the plan at the same time."
+                  ]
                 }
               ]
             },
@@ -414,7 +604,12 @@
               "items": [
                 {
                   "label": "Both ship in the release",
-                  "detail": "The app accepts either, so it is ready for the switch months before it happens"
+                  "detail": "The app accepts either, so it is ready for the switch months before it happens",
+                  "explain": [
+                    "The app's pin set is [pin_A, pin_B] and the check passes if either matches — the normal behaviour of NSPinnedDomains and CertificatePinner alike.",
+                    "Users update when they feel like it, so the spare has to be in the field long before the switch. Assume months, not days.",
+                    "Shipping pin_B leaks nothing: a pin is a hash of a public key, and the private half of key_B is still in your safe."
+                  ]
                 }
               ]
             },
@@ -422,7 +617,12 @@
               "items": [
                 {
                   "label": "Server moves to key B",
-                  "detail": "Installed apps keep working, because pin B was already in their list"
+                  "detail": "Installed apps keep working, because pin B was already in their list",
+                  "explain": [
+                    "The switch is server-side only: issue a certificate for key_B, deploy it, and every installed app that holds pin_B carries on through the change.",
+                    "No release, no review queue, no message to users — which is the entire reason the spare was shipped months earlier.",
+                    "Do it deliberately once in a while even without an incident: a rotation path you have never exercised is a rotation path you do not know works."
+                  ]
                 }
               ]
             },
@@ -430,7 +630,12 @@
               "items": [
                 {
                   "label": "Next release adds pin C",
-                  "detail": "Pin C replaces the one just retired, so there is always a spare in hand"
+                  "detail": "Pin C replaces the one just retired, so there is always a spare in hand",
+                  "explain": [
+                    "After the switch, key_B is the live one and pin_A points at a retired key, so the next release ships [pin_B, pin_C] with key_C generated and locked away.",
+                    "Keep the retired pin for one more release while old versions drain out of the field, then drop it.",
+                    "The invariant to hold: at every moment, every installed version accepts the key in use plus exactly one key that is not in use yet."
+                  ]
                 }
               ]
             }

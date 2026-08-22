@@ -52,6 +52,19 @@ const MIN_DETAIL_LENGTH = 30;
 const MAX_DETAIL_LENGTH = 110;
 
 /**
+ * And behind the box, the long version the dialog opens on: enough points to be
+ * worth the click, few enough to read in one dialog, and each one a whole
+ * thought rather than the detail typed out a second time.
+ *
+ * The ceiling is six because a box that names a term — SNI, SPKI, a cipher
+ * suite — owes the reader the definition and a worked example with real values,
+ * not just the sentence it was already printed with.
+ */
+const MIN_EXPLAIN_POINTS = 2;
+const MAX_EXPLAIN_POINTS = 6;
+const MIN_EXPLAIN_LENGTH = 60;
+
+/**
  * A guide with the translated words taken out.
  *
  * The two language files are separate documents now, so nothing but a test
@@ -101,8 +114,10 @@ function blockSkeleton(block: Block) {
       return {
         type: block.type,
         hasCaption: block.caption !== undefined,
+        // Counted down to the box: a point added to one language's dialog and
+        // not the other is drift that a count of the boxes alone would miss.
         stages: block.stages.map((stage) =>
-          stage.items.map((item) => item.detail !== undefined),
+          stage.items.map((item) => item.explain.length),
         ),
       };
   }
@@ -338,16 +353,6 @@ describe.each(bundles.map((bundle) => [bundle.slug, bundle] as const))(
         }
       });
 
-      it("labels every box in a diagram", () => {
-        for (const block of blocks) {
-          if (block.type !== "flow") continue;
-
-          for (const stage of block.stages) {
-            expect(stage.items.length).toBeGreaterThan(0);
-          }
-        }
-      });
-
       it("explains every box in a diagram", () => {
         // A diagram is read on its own, so a label that only names a step is
         // not enough — and an explanation that runs long stops being scannable.
@@ -364,6 +369,41 @@ describe.each(bundles.map((bundle) => [bundle.slug, bundle] as const))(
 
               if (length < MIN_DETAIL_LENGTH || length > MAX_DETAIL_LENGTH) {
                 bad.push(`${item.label}: ${length} chars`);
+              }
+            }
+          }
+        }
+
+        expect(bad).toEqual([]);
+      });
+
+      it("has the long version behind every diagram box", () => {
+        // Every box opens a dialog, so every box owes the reader more than the
+        // phrase already printed on it — and owes it in points, not one lump.
+        const bad: string[] = [];
+
+        for (const block of blocks) {
+          if (block.type !== "flow") continue;
+
+          for (const stage of block.stages) {
+            for (const item of stage.items) {
+              const points = item.explain.map((point) => point.trim());
+
+              if (
+                points.length < MIN_EXPLAIN_POINTS ||
+                points.length > MAX_EXPLAIN_POINTS
+              ) {
+                bad.push(`${item.label}: ${points.length} points`);
+              }
+
+              for (const point of points) {
+                if (point.length < MIN_EXPLAIN_LENGTH) {
+                  bad.push(`${item.label}: a point of ${point.length} chars`);
+                }
+
+                if (point === item.detail.trim()) {
+                  bad.push(`${item.label}: a point repeating the detail`);
+                }
               }
             }
           }

@@ -27,7 +27,13 @@
               "items": [
                 {
                   "label": "App mở kết nối",
-                  "detail": "App mở kết nối TLS. Chưa có gì được tin cả"
+                  "detail": "App mở kết nối TLS. Chưa có gì được tin cả",
+                  "explain": [
+                    "TLS (Transport Layer Security) chính là chữ S trong HTTPS: một phiên bắt tay thoả thuận khoá trước, rồi mã hoá mọi thứ sau đó. Bản đang dùng hiện nay là TLS 1.3.",
+                    "Ngay lúc này app chỉ có một tên miền, api.example.com, và một socket đã mở. Nó chưa biết máy đang trả lời là server của bạn hay cái laptop ngồi cùng quán cà phê.",
+                    "Cụ thể: URLSession hay OkHttp gọi connect(), bắt tay ba bước của TCP xong, và thông điệp TLS đầu tiên chuẩn bị được ghi ra.",
+                    "Pinning không phải một giao thức khác. Nó chỉ là một phép so sánh gắn thêm, chạy sau khi mọi thứ hệ điều hành vẫn kiểm đã qua hết."
+                  ]
                 }
               ]
             },
@@ -35,7 +41,14 @@
               "items": [
                 {
                   "label": "Server gửi chain",
-                  "detail": "Certificate leaf của tên miền, kèm các intermediate nối nó lên tới root"
+                  "detail": "Certificate leaf của tên miền, kèm các intermediate nối nó lên tới root",
+                  "explain": [
+                    "Một certificate gồm ba thứ: một public key, một cái tên, và chữ ký của bên đứng ra bảo đảm cho cặp đó. Không có gì bí mật cả — nó sinh ra để đưa cho người lạ.",
+                    "Gọi cái của server bạn là cert_A. Nó chứa pub_key_A, nửa công khai của một cặp khoá mà nửa bí mật, priv_key_A, không bao giờ rời khỏi server.",
+                    "Chain là cert_A được một intermediate ký (ví dụ R3), rồi R3 lại được một root CA ký (ví dụ ISRG Root X1) — cái root đó đã nằm sẵn trong máy từ nhiều năm trước.",
+                    "Chain tồn tại để private key của root nằm yên offline trong két: nó chỉ ký vài cái intermediate, còn intermediate mới ký hàng triệu certificate leaf.",
+                    "Ai cũng gửi được một chain. Con proxy ở phần sau gửi cert_X chứa pub_key_X, nối lên cái CA nó dụ bạn cài — cùng cấu trúc, khác cái key."
+                  ]
                 }
               ]
             },
@@ -43,7 +56,14 @@
               "items": [
                 {
                   "label": "Hệ điều hành kiểm tra chain",
-                  "detail": "Máy kiểm chữ ký lên tới một CA trong kho tin cậy của nó, và kiểm cả hạn"
+                  "detail": "Máy kiểm chữ ký lên tới một CA trong kho tin cậy của nó, và kiểm cả hạn",
+                  "explain": [
+                    "Kiểm thứ nhất, chữ ký: cert_A phải khớp với public key của R3, và R3 phải khớp với một root vốn đã nằm trong kho tin cậy của máy. Đứt ở đâu là hỏng ở đó.",
+                    "Kiểm thứ hai, cái tên: tên miền bạn gọi phải nằm trong danh sách SAN (Subject Alternative Name) của cert_A — thứ thay thế cho trường CN kiểu cũ.",
+                    "Kiểm thứ ba, thời hạn: notBefore ≤ bây giờ ≤ notAfter, đo bằng đồng hồ của máy — nên một chiếc điện thoại chỉnh về 2019 sẽ hỏng mọi request HTTPS cùng lúc.",
+                    "Kho tin cậy chỉ là một danh sách certificate gốc. iOS mang sẵn khoảng 150 cái, và một profile bạn cài vào sẽ thêm một cái nữa với đúng quyền lực như thế.",
+                    "Đó chính là cái lỗ mà phần sau đi qua: CA của kẻ tấn công nằm trong danh sách đó do chính bạn đồng ý, nên cert_X qua sạch ba bước kiểm. Không có gì hỏng — nó chạy đúng thiết kế."
+                  ]
                 }
               ]
             },
@@ -51,7 +71,13 @@
               "items": [
                 {
                   "label": "App so pin",
-                  "detail": "Tới đây mới: băm public key trong certificate đó rồi tìm trong danh sách của app"
+                  "detail": "Tới đây mới: băm public key trong certificate đó rồi tìm trong danh sách của app",
+                  "explain": [
+                    "SPKI (SubjectPublicKeyInfo) là trường bên trong certificate chứa public key kèm thuật toán của nó: 'đây là khoá RSA-2048, và đây là các byte của nó'.",
+                    "App lấy SPKI(pub_key_A), băm bằng SHA-256, mã base64 32 byte kết quả, và ra một chuỗi 44 ký tự — gọi là pin_A, viết dạng sha256/AAAA1111…=.",
+                    "pin_A đã được biên dịch vào app từ lúc build. Bản thân phép so sánh chỉ là so hai chuỗi bằng nhau; không có gì cao siêu ở bước này.",
+                    "Ghim theo key thay vì theo certificate là thứ sống sót qua lần gia hạn: cấp lại cert_A thành cert_A2 mà giữ nguyên cặp khoá thì pin_A không đổi một ký tự nào."
+                  ]
                 }
               ]
             },
@@ -59,11 +85,23 @@
               "items": [
                 {
                   "label": "Khớp → đi tiếp",
-                  "detail": "Đầu kia đang giữ đúng key bạn ship, nên request mới được gửi đi"
+                  "detail": "Đầu kia đang giữ đúng key bạn ship, nên request mới được gửi đi",
+                  "explain": [
+                    "Khớp nghĩa là SHA-256(SPKI) của certificate vừa nhận bằng đúng pin_A, tức đầu kia đang đưa ra pub_key_A.",
+                    "Trước đó trong handshake, bước CertificateVerify đã chứng minh đầu kia còn giữ cả priv_key_A. Chép cert_A từ một trang web công khai không đem lại gì nếu thiếu nửa bí mật đó.",
+                    "Hai điều đó cộng lại nói rằng: đây là cái máy đang giữ key của bạn, chứ không chỉ là một cái máy cầm certificate mà CA nào đó chịu ký cho.",
+                    "Tới lúc này dữ liệu ứng dụng mới được ghi vào socket — header Authorization, cookie, và body của request."
+                  ]
                 },
                 {
                   "label": "Lệch → huỷ",
-                  "detail": "Certificate hợp lệ nhưng sai key — kết nối đóng trước khi gửi bất kỳ dữ liệu nào"
+                  "detail": "Certificate hợp lệ nhưng sai key — kết nối đóng trước khi gửi bất kỳ dữ liệu nào",
+                  "explain": [
+                    "Lệch nghĩa là hash của key vừa nhận, pin_X, không trùng mục nào trong danh sách pin của app, dù cái chain quanh nó có đẹp tới đâu.",
+                    "Client gửi một alert TLS rồi đóng socket. iOS báo NSURLErrorServerCertificateUntrusted (-1202); OkHttp ném SSLPeerUnverifiedException kèm luôn cái pin sai in ra.",
+                    "Không có gì rời khỏi máy: việc huỷ xảy ra trước byte đầu tiên của request HTTP, nên token, cookie hay body chưa từng bị lộ.",
+                    "Hãy log lại cái pin vừa nhận. Nhìn từ bên ngoài, xoay key sai và bị tấn công trông y hệt nhau, và dòng log đó là thứ duy nhất phân biệt được."
+                  ]
                 }
               ]
             }
@@ -93,7 +131,13 @@
               "items": [
                 {
                   "label": "Free_Airport_WiFi",
-                  "detail": "Một mạng đặt tên trông bình thường, do người muốn xem traffic của bạn dựng"
+                  "detail": "Một mạng đặt tên trông bình thường, do người muốn xem traffic của bạn dựng",
+                  "explain": [
+                    "Một điểm phát wifi chỉ gồm một cái tên (SSID) và một server DHCP. Một cái laptop bật chia sẻ mạng, hay một router du lịch rẻ tiền, là đủ cả hai trong hai phút.",
+                    "Người dựng mạng cũng chạy luôn DNS: điện thoại hỏi 'api.example.com ở đâu?' và tin ngay câu trả lời, ví dụ 192.168.4.2 — chính là máy của kẻ tấn công.",
+                    "Điện thoại tự nối lại những mạng có tên nó từng thấy, nên một SSID chép theo tên chuỗi quán cà phê sẽ được nối vào mà không ai phải bấm gì cả.",
+                    "Chẳng có gì cao siêu ở đây; đó là bài lab đầu tiên trong mọi khoá bảo mật. Proxyman ở phần sau cũng đúng bộ đồ nghề đó, chỉ khác là do bạn tự dựng."
+                  ]
                 }
               ]
             },
@@ -101,7 +145,13 @@
               "items": [
                 {
                   "label": "Trang đăng nhập mời cài profile",
-                  "detail": "Trang trông như bước đăng nhập bình thường, nhưng cài vào là thêm CA của kẻ tấn công"
+                  "detail": "Trang trông như bước đăng nhập bình thường, nhưng cài vào là thêm CA của kẻ tấn công",
+                  "explain": [
+                    "Captive portal là trang mà mạng bắt xem trước khi cho bạn ra internet, và ai cũng đã quen bấm đồng ý với bất cứ thứ gì nó hỏi.",
+                    "Thứ tải về là một file .mobileconfig: một gói thiết lập có chữ ký, và nó thêm được một root CA — gọi là Airport_CA — vào kho tin cậy của máy.",
+                    "iOS đòi hai bước: cài ở Settings → Profile Downloaded, rồi bật ở General → About → Certificate Trust Settings. Mỗi bước hai cú chạm.",
+                    "Từ giây đó, ai giữ private key của Airport_CA đều ký được certificate cho bất kỳ tên miền nào trên đời và chiếc điện thoại này sẽ nhận."
+                  ]
                 }
               ]
             },
@@ -109,7 +159,13 @@
               "items": [
                 {
                   "label": "App gọi api.example.com",
-                  "detail": "Proxy trả lời thay cho server của bạn, cầm certificate mà chính nó tự cấp"
+                  "detail": "Proxy trả lời thay cho server của bạn, cầm certificate mà chính nó tự cấp",
+                  "explain": [
+                    "DNS do kẻ tấn công trả lời, nên kết nối rơi vào proxy của họ — mitmproxy, Burp hay Proxyman: một chương trình nói TLS ở cả hai đầu cùng lúc.",
+                    "SNI (Server Name Indication) là tên miền client gửi ở dạng rõ ngay trong ClientHello, để một địa chỉ IP phục vụ được nhiều site. Nó cũng chính là thứ mách proxy phải giả cái tên nào.",
+                    "Proxy đọc api.example.com từ SNI, tạo ngay tại chỗ cert_X cho đúng cái tên đó, ký bằng Airport_CA, rồi đưa ra kèm pub_key_X.",
+                    "Nó cũng tự mở một kết nối đi tiếp tới api.example.com thật, nên phản hồi là thật và app vẫn chạy. Người cầm điện thoại không thấy gì bất thường."
+                  ]
                 }
               ]
             },
@@ -117,7 +173,13 @@
               "items": [
                 {
                   "label": "Chain trông vẫn hợp lệ",
-                  "detail": "Mọi bước kiểm thông thường đều qua, vì máy vừa được bảo là hãy tin CA đó"
+                  "detail": "Mọi bước kiểm thông thường đều qua, vì máy vừa được bảo là hãy tin CA đó",
+                  "explain": [
+                    "cert_X được Airport_CA ký, mà Airport_CA nằm trong kho tin cậy vì chính bạn bỏ nó vào. Kiểm chữ ký: qua.",
+                    "Danh sách SAN của cert_X ghi api.example.com, vì proxy chép thẳng cái tên từ SNI ra. Kiểm tên miền: qua.",
+                    "cert_X vừa được cấp mấy giây trước và có hạn một năm. Kiểm thời hạn: qua.",
+                    "Cả ba bước kiểm của hệ điều hành đều qua và ổ khoá vẫn hiện. Đó đúng là lý do 'HTTPS có ổ khoá' và 'đang nói chuyện với server của mình' là hai câu khác nhau."
+                  ]
                 }
               ]
             },
@@ -125,11 +187,23 @@
               "items": [
                 {
                   "label": "Không pin → đọc được",
-                  "detail": "Proxy đọc và sửa được mọi thứ: token, body request, response"
+                  "detail": "Proxy đọc và sửa được mọi thứ: token, body request, response",
+                  "explain": [
+                    "Proxy giữ priv_key_X, nên nó giải mã được mọi thứ app gửi: Authorization: Bearer eyJhbGciOi…, body JSON, cookie, tất tần tật.",
+                    "Nó sửa cũng dễ như đọc — đổi một con giá, bật isPremium thành true, làm chậm hay nuốt một response — và app không nhận ra, vì các byte đó tới qua một phiên TLS hoàn toàn hợp lệ.",
+                    "Refresh token mới là món hời thật sự. Access token hết hạn sau một giờ; refresh token giữ kẻ kia ở trong tài khoản hàng tuần liền.",
+                    "Đây đúng là bộ đồ nghề bạn dùng để debug app của mình. Khác biệt duy nhất là ai đã cài cái CA đó, và bạn có đồng ý hay không."
+                  ]
                 },
                 {
                   "label": "Có pin → cắt kết nối",
-                  "detail": "Key trong certificate đó không phải key gắn trong app, nên không gửi gì cả"
+                  "detail": "Key trong certificate đó không phải key gắn trong app, nên không gửi gì cả",
+                  "explain": [
+                    "App tính SHA-256(SPKI(pub_key_X)) = pin_X rồi so với danh sách của nó, nơi chỉ có pin_A. Không bằng nhau, nên handshake bị huỷ.",
+                    "Airport_CA có được tin hay không cũng chẳng khác gì: pinning bỏ hẳn câu hỏi 'ai ký cái này?' và chỉ hỏi 'có đúng key của mình không?'.",
+                    "Việc huỷ rơi vào trước khi bất kỳ request nào được ghi, nên kẻ tấn công chỉ nhận được một alert TLS và không gì khác — không token, không header, không body.",
+                    "Đó là toàn bộ giá trị của pinning, và nó gói gọn trong việc so hai chuỗi 44 ký tự."
+                  ]
                 }
               ]
             }
@@ -210,11 +284,24 @@
               "items": [
                 {
                   "label": "Lúc build",
-                  "detail": "Bạn đọc key từ server của mình một lần, rồi biên dịch hash đó vào app"
+                  "detail": "Bạn đọc key từ server của mình một lần, rồi biên dịch hash đó vào app",
+                  "explain": [
+                    "Một câu lệnh in ra nó: openssl s_client -connect api.example.com:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64",
+                    "Hãy chạy nó từ một mạng bạn tin. Pin đọc qua wifi quán có thể chính là key của kẻ tấn công, và bạn sẽ biên dịch key của họ vào app mình.",
+                    "Kết quả là pin_A: 44 ký tự base64 kết thúc bằng '=', ví dụ sha256/AAAA1111BBBB2222CCCC3333DDDD4444EEEE5555FF=.",
+                    "Bỏ nó vào đâu thì tuỳ nền tảng: NSPinnedDomains trong Info.plist trên iOS, network_security_config.xml trên Android, hoặc CertificatePinner nếu bạn dùng OkHttp.",
+                    "Pin không phải bí mật — nó là hash của một public key. Công bố ra chẳng mất gì, và đó là lý do web từng gửi pin ngay trong header HPKP."
+                  ]
                 },
                 {
                   "label": "Lúc chạy",
-                  "detail": "Certificate mà đầu bên kia vừa đưa ra, dù hoá ra đầu đó là ai"
+                  "detail": "Certificate mà đầu bên kia vừa đưa ra, dù hoá ra đầu đó là ai",
+                  "explain": [
+                    "Đây là thứ đầu bên kia vừa đưa ra trong handshake này, mấy giây trước: cert_A từ server của bạn, hoặc cert_X từ một proxy đang ngồi giữa.",
+                    "Nhìn vào chain thì app không phân biệt được, vì một cái chain trông hợp lệ đúng là thứ kẻ tấn công có CA được tin tạo ra lúc nào cũng được.",
+                    "Nên phép so là so với một key, không bao giờ so với cái tên hay bên phát hành: key là trường duy nhất kẻ tấn công không copy để dùng được.",
+                    "Cùng một đoạn mã chạy cho cả hai trường hợp. Chỉ có chuỗi 44 ký tự rơi ra ở cuối là khác nhau."
+                  ]
                 }
               ]
             },
@@ -222,7 +309,14 @@
               "items": [
                 {
                   "label": "SPKI → SHA-256 → base64",
-                  "detail": "Cắt lấy key, băm rồi mã hoá — cùng các bước, nên cùng một key sẽ ra cùng một chuỗi"
+                  "detail": "Cắt lấy key, băm rồi mã hoá — cùng các bước, nên cùng một key sẽ ra cùng một chuỗi",
+                  "explain": [
+                    "Bước một, SPKI: lấy khối SubjectPublicKeyInfo ra khỏi certificate — phần định danh thuật toán cộng với các bit của key, ở dạng mã hoá DER.",
+                    "Bước hai, SHA-256: băm đống byte đó xuống còn 32 byte. Cùng đầu vào luôn ra cùng đầu ra, và trên thực tế không đầu vào nào khác cho ra đúng cái này.",
+                    "Bước ba, base64: biến 32 byte đó thành 44 ký tự in được, để giá trị này sống được trong plist, trong file XML hay trong một hằng chuỗi Kotlin.",
+                    "Vì sao lấy SPKI chứ không lấy cả certificate: certificate đổi sau mỗi lần gia hạn — ngày mới, số serial mới — còn SPKI thì y nguyên chừng nào bạn giữ key.",
+                    "Ví dụ chạy tay: cert_A chứa pub_key_A → SPKI → SHA-256 → sha256/AAAA1111…=. Sang năm gia hạn thành cert_A2 mà giữ cặp khoá cũ thì chuỗi đó không đổi."
+                  ]
                 }
               ]
             },
@@ -230,11 +324,23 @@
               "items": [
                 {
                   "label": "Bằng nhau",
-                  "detail": "Đầu kia đã chứng minh giữ key này ngay trong handshake, nên đó đúng là server của bạn"
+                  "detail": "Đầu kia đã chứng minh giữ key này ngay trong handshake, nên đó đúng là server của bạn",
+                  "explain": [
+                    "Bằng nhau nghĩa là certificate của đầu kia chứa pub_key_A — nửa công khai của cặp khoá mà nửa bí mật do chính bạn tạo trên server của mình.",
+                    "Cộng thêm bước CertificateVerify, nơi server ký bản ghi handshake bằng priv_key_A, điều này loại trừ một certificate bị copy hay phát lại.",
+                    "Chú ý nó không kiểm gì: không kiểm CA có uy tín không, cũng không kiểm certificate mới cấp tuần trước hay không. Đó vẫn là việc của hệ điều hành, pinning không thay thế.",
+                    "Đường đi của mã, cụ thể: chain hợp lệ → hash khớp một mục trong danh sách → trả về true → URLSession chạy tiếp → request mới thật sự đi ra."
+                  ]
                 },
                 {
                   "label": "Khác nhau",
-                  "detail": "Một key khác, ai ký cũng vậy — kết nối đóng lại, không gửi gì"
+                  "detail": "Một key khác, ai ký cũng vậy — kết nối đóng lại, không gửi gì",
+                  "explain": [
+                    "Khác nhau nghĩa là SHA-256(SPKI) của key vừa nhận không khớp pin nào app đang giữ. Khác vì lý do gì thì kết cục vẫn thế.",
+                    "Nó bao trọn mọi trường hợp cùng lúc: CA của kẻ tấn công, proxy soi TLS của công ty, và cả Proxyman của đồng nghiệp bạn trên một bản debug.",
+                    "Nó cũng bao luôn lỗi của chính bạn — cấp lại certificate bằng key mới mà không có bản app đi kèm. Đó đúng là tai nạn mà phần xoay key sinh ra để chặn.",
+                    "Sai ở đây thì trả giá bằng một request hỏng; không kiểm gì thì trả giá bằng một refresh token bị lấy mất. Cả bài này nói về đúng cái đánh đổi đó."
+                  ]
                 }
               ]
             }
@@ -296,7 +402,14 @@
               "items": [
                 {
                   "label": "1. ClientHello",
-                  "detail": "App → server: phiên bản, cipher, key share của mình, tên miền trong SNI"
+                  "detail": "App → server: phiên bản, cipher, key share của mình, tên miền trong SNI",
+                  "explain": [
+                    "Thông điệp đầu tiên trên kết nối, gửi ở dạng rõ: chưa có gì được mã hoá, nên ai nằm trên đường truyền cũng đọc được toàn bộ.",
+                    "'Phiên bản' là danh sách các bản TLS mà app nói được, ví dụ 1.3 và 1.2. Server chọn bản cao nhất mà cả hai bên đều biết.",
+                    "Cipher suite là công thức có tên cho phiên đó: TLS_AES_128_GCM_SHA256 nghĩa là mã hoá bằng AES-128 chế độ GCM và băm bằng SHA-256. Client gửi lên những cái nó làm được.",
+                    "Key share là một public key tạm, sinh ra chỉ cho phiên này, thường theo X25519. Chỗ 'tạm' mới là điểm chính — dùng xong vứt, nên key bị lấy sang năm cũng không giải mã được bản ghi hôm nay.",
+                    "SNI (Server Name Indication) mang tên miền ở dạng rõ, vì một địa chỉ IP có thể phục vụ hàng nghìn site. Nó cũng là trường mà proxy đọc để biết phải giả cái tên nào."
+                  ]
                 }
               ]
             },
@@ -304,7 +417,13 @@
               "items": [
                 {
                   "label": "2. ServerHello",
-                  "detail": "Server → app: cipher đã chọn và key share của server"
+                  "detail": "Server → app: cipher đã chọn và key share của server",
+                  "explain": [
+                    "Server trả lời đúng mỗi thứ một cái: một phiên bản, một cipher suite, một key share — chọn ra từ những danh sách vừa nhận.",
+                    "Ví dụ TLS 1.3 với TLS_AES_128_GCM_SHA256 và key share theo X25519. Từ đây hai bên đã chốt công thức đó.",
+                    "Mọi thứ sau thông điệp này đều mã hoá bằng khoá suy ra từ hai key share, kể cả certificate ở thông điệp số 4.",
+                    "Tới đây vẫn chưa có bằng chứng danh tính nào. Proxy trả lời thông điệp này y hệt server của bạn; danh tính mãi tới thông điệp số 5 mới xuất hiện."
+                  ]
                 }
               ]
             },
@@ -312,7 +431,13 @@
               "items": [
                 {
                   "label": "3. Khoá chung",
-                  "detail": "Hai bên tự suy ra từ hai key share. Từ đây trở xuống đã mã hoá"
+                  "detail": "Hai bên tự suy ra từ hai key share. Từ đây trở xuống đã mã hoá",
+                  "explain": [
+                    "Diffie–Hellman: mỗi bên ghép giá trị bí mật của mình với key share công khai của bên kia, và cả hai ra cùng một khoá chung mà khoá đó chưa từng đi qua đường truyền.",
+                    "Nên kẻ nghe lén dù bắt trọn từng byte cũng không tính ra được, vì hai nửa bí mật chưa bao giờ được gửi.",
+                    "Từ khoá chung đó, hai bên suy ra khoá phiên thật — mỗi chiều một khoá — và phần còn lại của handshake đã nằm trong lớp mã hoá.",
+                    "Đây chính là forward secrecy: cặp khoá trong cert_A chỉ dùng để ký, không dùng mã hoá phiên, nên lấy được priv_key_A sau này cũng không mở được bản ghi hôm nay."
+                  ]
                 }
               ]
             },
@@ -320,7 +445,13 @@
               "items": [
                 {
                   "label": "4. Certificate",
-                  "detail": "Server → app: certificate leaf kèm các intermediate"
+                  "detail": "Server → app: certificate leaf kèm các intermediate",
+                  "explain": [
+                    "Server gửi cert_A cùng các intermediate phía trên — cái leaf chứa pub_key_A, rồi tới R3. Root thì không gửi, vì máy vốn đã có sẵn.",
+                    "Nội dung này là thông tin công khai; nó được mã hoá ở đây chỉ để kẻ nghe lén không thấy bạn đang vào site nào.",
+                    "Đây đúng là thông điệp mà pinning soi vào. Cái hash app đem so được lấy từ trường SPKI của certificate leaf trong thông điệp này.",
+                    "Để ý xem tới đây đã chứng minh được gì: chưa gì cả. Ai cũng tải cert_A từ server công khai của bạn được, nên thông điệp này vô giá trị nếu thiếu thông điệp kế tiếp."
+                  ]
                 }
               ]
             },
@@ -328,7 +459,13 @@
               "items": [
                 {
                   "label": "5. CertificateVerify",
-                  "detail": "Server ký bản ghi phiên bằng private key — bước mà certificate copy không giả được"
+                  "detail": "Server ký bản ghi phiên bằng private key — bước mà certificate copy không giả được",
+                  "explain": [
+                    "Server ký một hash của toàn bộ handshake tính tới lúc đó — từng byte của từng thông điệp — bằng priv_key_A, nửa bí mật của cái key nằm trong cert_A.",
+                    "Client kiểm chữ ký đó bằng pub_key_A vừa lấy ra từ certificate nhận được. Đầu bên kia mà không giữ nửa bí mật thì không tạo ra chữ ký này được.",
+                    "Đó là lý do chép cert_A từ một trang web công khai chẳng giúp gì kẻ tấn công: không có priv_key_A thì không có CertificateVerify hợp lệ, và không có kết nối.",
+                    "Và cũng là lý do pin theo key mới có nghĩa. Pin nói 'đúng cái key này'; CertificateVerify nói 'và tôi đang giữ nửa bí mật của nó'."
+                  ]
                 }
               ]
             },
@@ -336,7 +473,13 @@
               "items": [
                 {
                   "label": "6. Finished",
-                  "detail": "Một MAC trên toàn bộ bản ghi phiên, chứng minh hai bên suy ra cùng bộ khoá"
+                  "detail": "Một MAC trên toàn bộ bản ghi phiên, chứng minh hai bên suy ra cùng bộ khoá",
+                  "explain": [
+                    "Mỗi bên gửi một MAC — một hash có khoá — tính trên toàn bộ bản ghi của handshake, bằng khoá suy ra từ khoá chung.",
+                    "Nếu có ai đó trên đường sửa một thông điệp trước đó, ví dụ xoá TLS 1.3 khỏi danh sách của client để ép xuống bản yếu hơn, hai bản ghi sẽ lệch và bước này hỏng.",
+                    "Đó là chống hạ cấp: không thể viết lại phần thương lượng giữa chừng mà cả hai bên không phát hiện ngay tại đây.",
+                    "Trao đổi Finished xong là kết nối đã dựng xong, và dữ liệu ứng dụng mới bắt đầu chảy được."
+                  ]
                 }
               ]
             },
@@ -344,15 +487,33 @@
               "items": [
                 {
                   "label": "7a. Chain",
-                  "detail": "Mỗi certificate được cái kế tiếp ký, lên tới một root mà máy vốn đã tin"
+                  "detail": "Mỗi certificate được cái kế tiếp ký, lên tới một root mà máy vốn đã tin",
+                  "explain": [
+                    "Việc kiểm đi ngược lên trên: cert_A phải do key của R3 ký, R3 phải do key của root ký, và cái root đó phải vốn nằm trong kho tin cậy của máy.",
+                    "Kho tin cậy là danh sách cố định đi kèm hệ điều hành, cộng thêm thứ gì mà configuration profile hay MDM cài vào sau — và đó đúng là cửa để CA công ty hoặc CA kẻ tấn công lọt vào.",
+                    "Lỗi thật hay gặp nhất ở đây là thiếu intermediate: server không gửi R3, nên máy nào chưa cache sẵn thì không nối được chain, trong khi máy khác vẫn chạy ngon.",
+                    "Qua được bước này chỉ nói rằng có một CA đáng tin bảo đảm cho một cái key nào đó. Nó không nói là key nào, và đúng khoảng trống đó là lý do pinning tồn tại."
+                  ]
                 },
                 {
                   "label": "7b. Tên miền",
-                  "detail": "Certificate phải liệt kê đúng tên miền bạn gọi, trong trường SAN"
+                  "detail": "Certificate phải liệt kê đúng tên miền bạn gọi, trong trường SAN",
+                  "explain": [
+                    "Client kiểm xem api.example.com có nằm trong danh sách SAN của certificate không — Subject Alternative Name, nơi chứa được nhiều tên và cả ký tự đại diện như *.example.com.",
+                    "Trường Common Name kiểu cũ nay bị iOS và Android bỏ qua, nên certificate chỉ có mỗi CN sẽ trượt trên mọi máy đời mới.",
+                    "Thiếu bước này thì một certificate được cấp hợp lệ cho evil.example cũng dùng để trả lời thay tên miền của bạn được — CA không làm gì sai, chỉ là client quên nhìn.",
+                    "Cái tên được đem kiểm là tên trong URL, không phải tên trong SNI, nên kẻ tấn công không thể lách bằng cách khai láo ở bước hello."
+                  ]
                 },
                 {
                   "label": "7c. Hiệu lực",
-                  "detail": "Còn trong hạn, và không nằm trong danh sách thu hồi mà máy tra được"
+                  "detail": "Còn trong hạn, và không nằm trong danh sách thu hồi mà máy tra được",
+                  "explain": [
+                    "notBefore và notAfter được so với đồng hồ của máy. Certificate công khai giờ chỉ sống 90 ngày hoặc ít hơn, nên đây là ràng buộc sống động chứ không phải thủ tục.",
+                    "Điện thoại sai ngày sẽ hỏng mọi kết nối HTTPS cùng lúc — đúng cái lỗi kinh điển 'từ hôm hết pin là chẳng vào được gì'.",
+                    "Phần yếu là kiểm thu hồi: OCSP hay CRL cho biết certificate có bị huỷ sớm không, nhưng thường không tra tới nơi được và phần lớn client vẫn đi tiếp.",
+                    "Pinning không dựa vào thu hồi, và đó là một phần giá trị của nó: một key bị lộ chết ngay khi bạn thôi pin nó, chứ không phải chờ CA rảnh tay xử lý."
+                  ]
                 }
               ]
             },
@@ -360,7 +521,13 @@
               "items": [
                 {
                   "label": "8. So pin",
-                  "detail": "SPKI → SHA-256 → base64, đem so với các pin trong app"
+                  "detail": "SPKI → SHA-256 → base64, đem so với các pin trong app",
+                  "explain": [
+                    "Bước của riêng app, chạy sau khi hệ điều hành đã xong: didReceiveChallenge trong URLSession, CertificatePinner trong OkHttp, badCertificateCallback hay adapter của Dio bên Flutter.",
+                    "Nó lấy cái leaf ở thông điệp 4, rút SPKI, băm thành sha256/…, rồi so với các pin đã biên dịch vào bản build: pin_A, và tốt nhất là có thêm pin_B dự phòng.",
+                    "Hãy chạy nó cộng thêm vào các bước của hệ điều hành, đừng bao giờ thay thế — thay thế nghĩa là bạn chấp nhận cả certificate hết hạn hay sai tên miền, miễn key khớp.",
+                    "So với một danh sách và nhận cái khớp đầu tiên, để hôm server chuyển sang key_B thì trong app không có gì phải sửa."
+                  ]
                 }
               ]
             },
@@ -368,11 +535,22 @@
               "items": [
                 {
                   "label": "Qua hết",
-                  "detail": "Client gửi Finished, rồi request đầu tiên mới đi"
+                  "detail": "Client gửi Finished, rồi request đầu tiên mới đi",
+                  "explain": [
+                    "Client gửi Finished của mình và handshake xong — thường chỉ một vòng đi về, trong trường hợp TLS 1.3 phổ biến.",
+                    "Tới lúc này byte ứng dụng đầu tiên mới rời khỏi máy: GET /v1/profile, kèm header Authorization của nó.",
+                    "Sau đó phiên được dùng lại cho cả kết nối, nên pin chỉ bị kiểm một lần mỗi kết nối, không phải mỗi request."
+                  ]
                 },
                 {
                   "label": "Trượt một bước",
-                  "detail": "Gửi alert, đóng kết nối, không gửi gì cả"
+                  "detail": "Gửi alert, đóng kết nối, không gửi gì cả",
+                  "explain": [
+                    "Client gửi một alert TLS — bad_certificate, certificate_expired hay unknown_ca — rồi đóng socket ngay lập tức.",
+                    "Trong app nó hiện ra dưới dạng lỗi tầng vận chuyển: -1202 trên iOS, SSLPeerUnverifiedException trên Android, HandshakeException trong Dart.",
+                    "Không phần nào của request được ghi ra, nên một lần kiểm trượt chỉ tốn một lần thử lại, không bao giờ tốn token, cookie hay body.",
+                    "Hãy log rõ bước nào trong bốn bước bị trượt và pin nào vừa nhận được. Thiếu dòng đó thì xoay key sai và bị tấn công thật trông y hệt nhau trong báo cáo lỗi."
+                  ]
                 }
               ]
             }
@@ -402,11 +580,23 @@
               "items": [
                 {
                   "label": "Pin A",
-                  "detail": "Hash của key mà server đang thực sự dùng hôm nay"
+                  "detail": "Hash của key mà server đang thực sự dùng hôm nay",
+                  "explain": [
+                    "pin_A là SHA-256(SPKI(pub_key_A)): hash của cái key nằm trong certificate mà server bạn đang phục vụ ngay lúc này.",
+                    "Gia hạn certificate đó — quý sau cert_A thành cert_A2 — vẫn giữ nguyên pin_A, miễn là CSR dùng lại đúng cặp khoá cũ.",
+                    "Chuyện đó phải là quyết định có chủ đích ở phía server: certbot và phần lớn client ACME tự sinh key mới mỗi lần gia hạn, trừ khi bạn bảo chúng đừng làm thế.",
+                    "Nếu một lần gia hạn lặng lẽ đổi key trong khi app chỉ có mỗi pin_A, thì mọi bản đã cài sẽ chết ngay phút certificate mới lên sóng."
+                  ]
                 },
                 {
                   "label": "Pin B",
-                  "detail": "Hash của một key bạn tạo sẵn rồi cất kỹ, chưa đưa vào dùng"
+                  "detail": "Hash của một key bạn tạo sẵn rồi cất kỹ, chưa đưa vào dùng",
+                  "explain": [
+                    "Hãy tạo key_B ngay bây giờ, cất offline — trong trình quản lý mật khẩu, trong HSM, trong một phong bì niêm phong — và pin hash của nó dù chưa certificate nào dùng tới.",
+                    "Không cần certificate mới tính được nó: openssl pkey -in key_B.pem -pubout -outform der | openssl dgst -sha256 -binary | openssl enc -base64.",
+                    "Đây là khác biệt giữa một sự cố bạn sửa trên server trong một giờ, và một sự cố cần bản release khẩn cấp cộng thêm một tuần chờ duyệt.",
+                    "Hãy cất key_B ở chỗ khác với priv_key_A, không thì một lần bị chọc thủng là mất luôn cả hai nửa của kế hoạch."
+                  ]
                 }
               ]
             },
@@ -414,7 +604,12 @@
               "items": [
                 {
                   "label": "Cả hai đi cùng bản release",
-                  "detail": "App chấp nhận cả hai, nên sẵn sàng cho lần chuyển từ nhiều tháng trước"
+                  "detail": "App chấp nhận cả hai, nên sẵn sàng cho lần chuyển từ nhiều tháng trước",
+                  "explain": [
+                    "Tập pin của app là [pin_A, pin_B] và bước kiểm qua nếu khớp một trong hai — đúng hành vi mặc định của cả NSPinnedDomains lẫn CertificatePinner.",
+                    "Người dùng thích thì mới update, nên cái dự phòng phải nằm ngoài kia từ rất lâu trước lúc chuyển. Cứ tính bằng tháng, đừng tính bằng ngày.",
+                    "Ship pin_B ra không lộ gì cả: pin chỉ là hash của một public key, còn nửa bí mật của key_B vẫn nằm trong két nhà bạn."
+                  ]
                 }
               ]
             },
@@ -422,7 +617,12 @@
               "items": [
                 {
                   "label": "Server chuyển sang key B",
-                  "detail": "App đã cài vẫn chạy, vì pin B vốn đã nằm sẵn trong danh sách của chúng"
+                  "detail": "App đã cài vẫn chạy, vì pin B vốn đã nằm sẵn trong danh sách của chúng",
+                  "explain": [
+                    "Việc chuyển chỉ diễn ra ở server: cấp certificate cho key_B, deploy lên, và mọi bản app đang cầm pin_B vẫn chạy xuyên qua lần đổi đó.",
+                    "Không release, không hàng đợi duyệt, không phải báo gì với người dùng — đúng lý do vì sao cái dự phòng được ship từ mấy tháng trước.",
+                    "Thỉnh thoảng hãy chủ động chuyển một lần dù chẳng có sự cố gì: một đường xoay key chưa bao giờ chạy thử là đường mà bạn không biết nó có chạy hay không."
+                  ]
                 }
               ]
             },
@@ -430,7 +630,12 @@
               "items": [
                 {
                   "label": "Bản sau thêm pin C",
-                  "detail": "Pin C thay chỗ cái vừa nghỉ, để lúc nào cũng còn một cái dự phòng"
+                  "detail": "Pin C thay chỗ cái vừa nghỉ, để lúc nào cũng còn một cái dự phòng",
+                  "explain": [
+                    "Sau lần chuyển, key_B là cái đang sống còn pin_A trỏ vào một key đã nghỉ, nên bản sau nên ship [pin_B, pin_C] với key_C đã tạo sẵn và cất kỹ.",
+                    "Giữ lại pin đã nghỉ thêm một bản nữa trong lúc các phiên bản cũ rút dần khỏi thị trường, rồi hãy bỏ.",
+                    "Bất biến cần giữ: ở mọi thời điểm, mọi phiên bản đã cài đều chấp nhận cái key đang dùng, cộng đúng một key chưa dùng tới."
+                  ]
                 }
               ]
             }

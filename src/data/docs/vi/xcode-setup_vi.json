@@ -28,7 +28,11 @@
               "items": [
                 {
                   "label": "Chuẩn bị",
-                  "detail": "Đăng nhập, chừa khoảng 60 GB trống, và update macOS trước — Xcode từ chối bản cũ hơn"
+                  "detail": "Đăng nhập, chừa khoảng 60 GB trống, và update macOS trước — Xcode từ chối bản cũ hơn",
+                  "explain": [
+                    "Riêng Xcode đã khoảng 20 GB, chưa kể simulator runtime, file device support và derived data chồng lên — 60 GB trống là mức mà bản cài không còn chết giữa chừng.",
+                    "Mỗi bản Xcode đều ghi rõ macOS cũ nhất nó chạy được và từ chối cài xuống dưới mức đó, nên update hệ điều hành trước sẽ đỡ phải tải 20 GB hai lần."
+                  ]
                 }
               ]
             },
@@ -36,7 +40,12 @@
               "items": [
                 {
                   "label": "Cài Xcode",
-                  "detail": "App Store nếu chỉ cần bản mới nhất; .xip hoặc xcodes CLI khi cần đúng một phiên bản"
+                  "detail": "App Store nếu chỉ cần bản mới nhất; .xip hoặc xcodes CLI khi cần đúng một phiên bản",
+                  "explain": [
+                    "App Store chỉ đưa bản Xcode mới nhất, và thường thế là đủ — trừ khi dự án ghim một toolchain cũ hơn, hoặc bạn phải khớp với image của CI.",
+                    "File .xip trên trang developer của Apple, hoặc xcodes CLI, cho bạn đúng một phiên bản — và nhiều phiên bản nằm cạnh nhau trong /Applications được.",
+                    "Cài kiểu nào cũng vậy, hãy mở tay một lần: lần mở đầu tiên mới cài các thành phần phụ, và trước đó thì build từ terminal không chạy."
+                  ]
                 }
               ]
             },
@@ -44,7 +53,12 @@
               "items": [
                 {
                   "label": "Toolchain",
-                  "detail": "Trỏ xcode-select vào Xcode, chấp nhận licence, rồi cài Homebrew và công cụ của dự án"
+                  "detail": "Trỏ xcode-select vào Xcode, chấp nhận licence, rồi cài Homebrew và công cụ của dự án",
+                  "explain": [
+                    "xcode-select trỏ toàn bộ công cụ dòng lệnh vào một bản Xcode. Khi máy có hai bản, đây chính là công tắc quyết định xcodebuild và swift dùng bản nào.",
+                    "Licence chỉ cần chấp nhận một lần cho mỗi bản Xcode, và một build hỏng trên CI chỉ kèm dòng nhắc licence gần như luôn là do bước này.",
+                    "Sau đó Homebrew lo phần còn lại — CocoaPods, fastlane, thứ gì README của dự án đòi — để toolchain tái lập được chứ không nằm trong trí nhớ ai đó."
+                  ]
                 }
               ]
             },
@@ -52,7 +66,11 @@
               "items": [
                 {
                   "label": "Ký ứng dụng",
-                  "detail": "Thêm Apple ID để Xcode cấp certificate và tải profile mà máy thật cần"
+                  "detail": "Thêm Apple ID để Xcode cấp certificate và tải profile mà máy thật cần",
+                  "explain": [
+                    "Thêm Apple ID trong Settings → Accounts để Xcode cấp certificate development và đặt private key thẳng vào Keychain của máy này.",
+                    "Sau đó automatic signing tự tải — và tải lại — provisioning profile mỗi khi bundle id, capability hay danh sách thiết bị thay đổi."
+                  ]
                 }
               ]
             },
@@ -60,7 +78,11 @@
               "items": [
                 {
                   "label": "Ship",
-                  "detail": "Chạy trên iPhone thật để chứng minh signing ổn, rồi archive và đẩy lên TestFlight"
+                  "detail": "Chạy trên iPhone thật để chứng minh signing ổn, rồi archive và đẩy lên TestFlight",
+                  "explain": [
+                    "Chạy được trên iPhone thật mới là bằng chứng phần signing ổn: simulator không kiểm certificate bao giờ, nên nó vẫn chạy vui vẻ một app không cài được ở đâu cả.",
+                    "Archive build cấu hình Release rồi đưa sang Organizer, và từ đó mới bắt đầu bước đẩy lên App Store Connect và TestFlight."
+                  ]
                 }
               ]
             }
@@ -242,15 +264,28 @@
               "items": [
                 {
                   "label": "Certificate",
-                  "detail": "Danh tính của bạn với Apple. Vô dụng nếu thiếu private key, thứ chỉ nằm trong Keychain máy này"
+                  "detail": "Danh tính của bạn với Apple. Vô dụng nếu thiếu private key, thứ chỉ nằm trong Keychain máy này",
+                  "explain": [
+                    "Certificate là nửa công khai; private key nằm cạnh nó trong Keychain mới là thứ thực sự ký. Apple không giữ bản sao, nên mất key là không tải lại được.",
+                    "Chuyển sang máy Mac khác nghĩa là export cả hai nửa ra file .p12 — hoặc thu hồi certificate rồi cấp cái mới, và mọi bản ký bằng cái cũ sẽ mất hiệu lực.",
+                    "Certificate development ký bản build cho máy đã đăng ký; certificate distribution ký thứ đi lên TestFlight và store."
+                  ]
                 },
                 {
                   "label": "App ID",
-                  "detail": "Bundle id kèm những capability app được phép dùng, ví dụ push hay App Groups"
+                  "detail": "Bundle id kèm những capability app được phép dùng, ví dụ push hay App Groups",
+                  "explain": [
+                    "Bundle id phải khớp với dự án đúng từng ký tự. Có loại App ID dùng ký tự đại diện, nhưng nó không mang được push, App Groups hay bất cứ thứ gì cần entitlement.",
+                    "Bật một capability trong Xcode là sửa luôn App ID ở phía Apple, nên ngay sau đó profile phải được cấp lại."
+                  ]
                 },
                 {
                   "label": "Devices",
-                  "detail": "UDID của những máy được phép chạy bản build. Lên store rồi thì không cần nữa"
+                  "detail": "UDID của những máy được phép chạy bản build. Lên store rồi thì không cần nữa",
+                  "explain": [
+                    "Profile development liệt kê sẵn các UDID mà nó bao, nên một máy đăng ký sau khi profile đã cấp thì phải tải lại profile đó.",
+                    "Tài khoản có giới hạn số thiết bị mỗi năm, và xoá một máy chỉ trả lại chỗ vào lúc gia hạn membership."
+                  ]
                 }
               ]
             },
@@ -258,7 +293,11 @@
               "items": [
                 {
                   "label": "Provisioning profile",
-                  "detail": "Giấy Apple ký, gắn ba thứ trên lại với nhau. Xcode tải về và nhúng vào app"
+                  "detail": "Giấy Apple ký, gắn ba thứ trên lại với nhau. Xcode tải về và nhúng vào app",
+                  "explain": [
+                    "Nó là một file có chữ ký, chứa certificate của bạn, App ID kèm entitlement và danh sách thiết bị — Apple niêm phong lại để máy kiểm được app này có quyền chạy không.",
+                    "Nó nằm trong .app dưới tên embedded.mobileprovision, và có hạn — bản development là một năm — nên một ngày nào đó bản build cũ tự nhiên không mở nữa."
+                  ]
                 }
               ]
             },
@@ -266,7 +305,11 @@
               "items": [
                 {
                   "label": "App đã ký",
-                  "detail": "Chạy được trên các máy đã đăng ký, và là dạng duy nhất App Store Connect chấp nhận"
+                  "detail": "Chạy được trên các máy đã đăng ký, và là dạng duy nhất App Store Connect chấp nhận",
+                  "explain": [
+                    "iOS kiểm chữ ký lúc cài và ở mỗi lần mở: mọi entitlement trong binary phải nằm trong phạm vi profile cho phép, không thì app bị từ chối.",
+                    "App Store Connect loại một bản upload chưa ký hoặc ký sai từ trước khi bắt đầu xử lý, và đó là lỗi phần lớn pipeline gặp đầu tiên."
+                  ]
                 }
               ]
             }
@@ -355,15 +398,27 @@
               "items": [
                 {
                   "label": "File .p8",
-                  "detail": "File private key. Chỉ tải được đúng một lần — mất là phải tạo key mới"
+                  "detail": "File private key. Chỉ tải được đúng một lần — mất là phải tạo key mới",
+                  "explain": [
+                    "Cất nó trong kho secret của CI, đừng bao giờ để trong repo: ai có file này cùng hai mã kia là upload build dưới danh nghĩa team của bạn được.",
+                    "Apple chỉ cho tải đúng một lần. Mất rồi thì thu hồi key đó và tạo cái khác — không cách nào lấy lại chính file ấy."
+                  ]
                 },
                 {
                   "label": "Key ID",
-                  "detail": "Mã ngắn hiện cạnh key, cho Apple biết key nào của bạn đang ký"
+                  "detail": "Mã ngắn hiện cạnh key, cho Apple biết key nào của bạn đang ký",
+                  "explain": [
+                    "Nó không phải bí mật, chỉ là một cái tên: mã này nằm trong header của token để Apple biết dùng public key nào mà kiểm chữ ký.",
+                    "Key được thu hồi từng cái một, nên để CI giữ key riêng thì máy của đồng nghiệp không bị vạ lây."
+                  ]
                 },
                 {
                   "label": "Issuer ID",
-                  "detail": "Định danh team của bạn. Mọi key tài khoản tạo ra đều dùng chung giá trị này"
+                  "detail": "Định danh team của bạn. Mọi key tài khoản tạo ra đều dùng chung giá trị này",
+                  "explain": [
+                    "Chỉ cần đọc một lần ở đầu trang Keys trong App Store Connect; mọi key team tạo ra về sau đều mang đúng giá trị đó.",
+                    "Nó cho biết token đang nói thay cho team nào, và điều đó thành quan trọng ngay khi Apple ID của bạn thuộc nhiều team."
+                  ]
                 }
               ]
             },
@@ -371,7 +426,11 @@
               "items": [
                 {
                   "label": "fastlane / altool",
-                  "detail": "Ký một token ngắn hạn từ ba giá trị đó, nên không ai phải gõ mã 2FA"
+                  "detail": "Ký một token ngắn hạn từ ba giá trị đó, nên không ai phải gõ mã 2FA",
+                  "explain": [
+                    "Ba giá trị đó tạo ra một JWT ngắn hạn, ký ngay tại chỗ. Nó hết hạn sau vài phút, nên token lỡ lộ vẫn ít giá trị hơn nhiều so với key sinh ra nó.",
+                    "Đây chính là lý do pipeline upload được lúc ba giờ sáng: không mật khẩu, không hỏi 2FA, không chờ ai cầm điện thoại cả."
+                  ]
                 }
               ]
             },
@@ -379,7 +438,11 @@
               "items": [
                 {
                   "label": "TestFlight",
-                  "detail": "Build về đây và gửi được cho tester, cả quy trình không cần thao tác tay"
+                  "detail": "Build về đây và gửi được cho tester, cả quy trình không cần thao tác tay",
+                  "explain": [
+                    "Sau khi upload, Apple xử lý mất vài phút, và bản build chỉ cài được khi xử lý xong và câu hỏi export compliance đã được trả lời.",
+                    "Tester nội bộ nhận được ngay; nhóm bên ngoài phải chờ duyệt, nên lần đầu hãy chừa ra một ngày."
+                  ]
                 }
               ]
             }

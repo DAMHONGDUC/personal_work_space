@@ -4,18 +4,24 @@ import { Callout } from "@/components/docs/Callout";
 import { CodeSample } from "@/components/docs/CodeSample";
 import { DocTable } from "@/components/docs/DocTable";
 import { FlowDiagram } from "@/components/docs/FlowDiagram";
-import type { Block } from "@/lib/doc-model";
+import type { Block, Lang } from "@/lib/doc-model";
 
 /**
  * Renders one section's blocks in order. Every block type in `Block` is handled
  * here, so a new type added to the union fails the build until it is drawn.
+ *
+ * `lang` is only here for the diagrams: the dialog behind a diagram box opens in
+ * a portal, outside the `main` that carries the language of the body, so it has
+ * to be told which language its text is in.
  */
 export function DocBlocks({
   blocks,
   accent,
+  lang,
 }: {
   blocks: Block[];
   accent: string;
+  lang: Lang;
 }) {
   return (
     <>
@@ -57,7 +63,9 @@ export function DocBlocks({
             return <Callout key={index} block={block} />;
 
           case "flow":
-            return <FlowDiagram key={index} block={block} accent={accent} />;
+            return (
+              <FlowDiagram key={index} block={block} accent={accent} lang={lang} />
+            );
         }
       })}
     </>

@@ -27,7 +27,12 @@
               "items": [
                 {
                   "label": "Tạo key",
-                  "detail": "ssh-keygen tạo hai file: nửa bí mật, và nửa .pub được phép chia sẻ"
+                  "detail": "ssh-keygen tạo hai file: nửa bí mật, và nửa .pub được phép chia sẻ",
+                  "explain": [
+                    "ssh-keygen -t ed25519 tạo id_ed25519 và id_ed25519.pub nằm cạnh nhau trong ~/.ssh. Phần comment chỉ là nhãn, nên hãy ghi tên máy thay vì tên bạn.",
+                    "Passphrase mã hoá private key trên đĩa, và đó là thứ khiến chiếc laptop bị mất trở nên vô hại; còn agent là thứ giúp bạn khỏi gõ nó cả ngày.",
+                    "Chọn Ed25519 thay RSA: ngắn hơn, nhanh hơn, và GitHub chấp nhận ở mọi nơi. Chỉ quay lại RSA khi gặp server cũ không nhận."
+                  ]
                 }
               ]
             },
@@ -35,7 +40,12 @@
               "items": [
                 {
                   "label": "ssh-agent",
-                  "detail": "Giữ key đã mở khoá trong bộ nhớ, để git không dừng lại hỏi passphrase"
+                  "detail": "Giữ key đã mở khoá trong bộ nhớ, để git không dừng lại hỏi passphrase",
+                  "explain": [
+                    "ssh-add đưa key đã mở khoá cho một tiến trình giữ nó trong bộ nhớ, nên passphrase chỉ bị hỏi một lần mỗi phiên đăng nhập, không phải mỗi lần push.",
+                    "Trên macOS, --apple-use-keychain lưu passphrase vào Keychain, và sau khi khởi động lại thì key tự quay vào agent.",
+                    "ssh-add -l liệt kê những gì agent đang giữ. Danh sách rỗng thường là lý do tự nhiên git hỏi mật khẩu trở lại."
+                  ]
                 }
               ]
             },
@@ -43,7 +53,12 @@
               "items": [
                 {
                   "label": "GitHub",
-                  "detail": "Chỉ dán nửa .pub. GitHub dùng nó để nhận ra bạn và không bao giờ cần nửa bí mật"
+                  "detail": "Chỉ dán nửa .pub. GitHub dùng nó để nhận ra bạn và không bao giờ cần nửa bí mật",
+                  "explain": [
+                    "Settings → SSH and GPG keys → New SSH key, rồi dán nguyên nội dung file .pub, gồm cả tiền tố ssh-ed25519 và phần comment ở cuối.",
+                    "GitHub chỉ thấy nửa công khai. Nó xác minh bạn giữ nửa bí mật bằng cách bắt bạn ký một challenge, chứ không bao giờ nhận chính cái key.",
+                    "Một public key không thể nằm ở hai tài khoản GitHub — lần nạp thứ hai bị từ chối, và đúng một luật đó buộc phải làm hai key như phần dưới."
+                  ]
                 }
               ]
             },
@@ -51,7 +66,11 @@
               "items": [
                 {
                   "label": "Kiểm tra",
-                  "detail": "ssh -T chào đúng tên bạn khi agent và GitHub giữ hai nửa khớp nhau"
+                  "detail": "ssh -T chào đúng tên bạn khi agent và GitHub giữ hai nửa khớp nhau",
+                  "explain": [
+                    "ssh -T git@github.com trả lời bằng tên tài khoản của bạn và nói không cấp quyền shell. Câu đó là thành công, không phải lỗi.",
+                    "ssh -vT git@github.com in ra những file key đã được đưa ra và theo thứ tự nào — cách nhanh nhất để biết agent đang trả lời bằng key sai."
+                  ]
                 }
               ]
             },
@@ -59,7 +78,11 @@
               "items": [
                 {
                   "label": "Remote SSH",
-                  "detail": "Repo clone bằng HTTPS vẫn hỏi token cho tới khi đổi url remote"
+                  "detail": "Repo clone bằng HTTPS vẫn hỏi token cho tới khi đổi url remote",
+                  "explain": [
+                    "git remote set-url origin git@github.com:owner/repo.git đổi một clone sẵn có sang SSH; không có gì khác trong repo thay đổi.",
+                    "git remote -v là bước kiểm. Một url vẫn bắt đầu bằng https:// thì vẫn đi qua token, dù key có được cấu hình chuẩn tới đâu."
+                  ]
                 }
               ]
             }
@@ -233,11 +256,19 @@
               "items": [
                 {
                   "label": "git@github-work:…",
-                  "detail": "Một tên host tự đặt, chỉ tồn tại trong config của bạn và trong url remote công việc"
+                  "detail": "Một tên host tự đặt, chỉ tồn tại trong config của bạn và trong url remote công việc",
+                  "explain": [
+                    "github-work không phải tên miền và không phân giải ra đâu cả. ssh tra nó trong ~/.ssh/config, đọc HostName thật ở mục đó, rồi vẫn nối tới github.com.",
+                    "Đặt nó vào url remote của mọi repo công việc khiến việc chọn key thành một phần của clone, thay vì một thiết lập bạn phải nhớ bật."
+                  ]
                 },
                 {
                   "label": "git@github.com:…",
-                  "detail": "Tên host thật, để nguyên nên repo cá nhân vẫn chạy như cũ"
+                  "detail": "Tên host thật, để nguyên nên repo cá nhân vẫn chạy như cũ",
+                  "explain": [
+                    "Repo cá nhân giữ nguyên tên host thật, nên chúng khớp mục mặc định trong config và vẫn dùng key mặc định.",
+                    "Không phải sửa gì trong những clone đó — chính vì thế mới đặt alias cho bên công việc chứ không phải ngược lại."
+                  ]
                 }
               ]
             },
@@ -245,7 +276,11 @@
               "items": [
                 {
                   "label": "~/.ssh/config",
-                  "detail": "Khớp tên host trong url, rồi đưa cho ssh đúng key khai ở mục đó"
+                  "detail": "Khớp tên host trong url, rồi đưa cho ssh đúng key khai ở mục đó",
+                  "explain": [
+                    "Mỗi tài khoản một khối Host: HostName github.com, User git, IdentityFile trỏ tới key của tài khoản đó, và IdentitiesOnly yes.",
+                    "IdentitiesOnly yes quan trọng hơn vẻ ngoài của nó. Thiếu dòng này, ssh đưa ra mọi key trong agent, GitHub nhận cái đầu tiên hợp lệ, và bạn push nhầm tài khoản."
+                  ]
                 }
               ]
             },
@@ -253,11 +288,19 @@
               "items": [
                 {
                   "label": "id_work",
-                  "detail": "Đã nạp lên tài khoản công việc. GitHub chỉ cho một key thuộc một tài khoản"
+                  "detail": "Đã nạp lên tài khoản công việc. GitHub chỉ cho một key thuộc một tài khoản",
+                  "explain": [
+                    "Hãy tạo nó với tên riêng — ssh-keygen -f ~/.ssh/id_work — để nó không lặng lẽ ghi đè lên key vốn đã có trong ~/.ssh.",
+                    "Nó chỉ được nạp lên tài khoản công việc. GitHub từ chối cùng một public key ở tài khoản thứ hai, và đó là lý do phải có key thứ hai."
+                  ]
                 },
                 {
                   "label": "id_ed25519",
-                  "detail": "Đã nạp lên tài khoản cá nhân — chính là lý do phải có tới hai key"
+                  "detail": "Đã nạp lên tài khoản cá nhân — chính là lý do phải có tới hai key",
+                  "explain": [
+                    "Key mặc định nằm yên chỗ cũ và vẫn phục vụ tài khoản cá nhân, nên thứ gì đang chạy được thì vẫn chạy.",
+                    "Dùng key nào là do tên host trong url quyết định, chứ không phải do key nào được nạp vào agent trước."
+                  ]
                 }
               ]
             }

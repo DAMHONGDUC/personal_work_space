@@ -53,16 +53,34 @@ export type Block =
    * A diagram, described as data rather than markup: stages run top to bottom
    * with an arrow between them, and the boxes within one stage sit side by side.
    * One box per stage draws a pipeline; several boxes feeding one draws a join.
-   *
-   * Every box carries a `detail`, and it is required rather than optional: a
-   * label alone names a step without explaining it, and a diagram has to make
-   * sense to someone who has not read the paragraphs around it.
    */
   | {
       type: "flow";
       caption?: string;
-      stages: { items: { label: string; detail: string }[] }[];
+      stages: { items: FlowItem[] }[];
     };
+
+/**
+ * One box in a diagram, written at three depths of the same step.
+ *
+ * `label` names it and `detail` says what happens in one phrase — both are on
+ * the box itself, which is all a reader skimming the diagram gets. `explain` is
+ * the long answer, and it opens in a dialog when the box is clicked: the step
+ * finally gets the paragraphs it deserves without the diagram growing into a
+ * wall of text.
+ *
+ * All three are required. A box the reader can click has to have something
+ * waiting behind it, so there is no such thing as a box that only names a step.
+ */
+export type FlowItem = {
+  label: string;
+  detail: string;
+  /**
+   * The long version, in points rather than paragraphs — the same rule the rest
+   * of a guide follows, because a dialog is read standing at a machine too.
+   */
+  explain: string[];
+};
 
 /** Named shortcuts for the block types that have a renderer of their own. */
 export type CodeBlock = Extract<Block, { type: "code" }>;

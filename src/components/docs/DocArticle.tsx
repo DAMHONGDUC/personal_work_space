@@ -57,7 +57,11 @@ export function DocArticle({ versions }: { versions: Record<Lang, Doc> }) {
                     {section.summary}
                   </p>
                 )}
-<DocBlocks blocks={section.blocks} accent={DOCS_ACCENT} />
+                <DocBlocks
+                  blocks={section.blocks}
+                  accent={DOCS_ACCENT}
+                  lang={lang}
+                />
               </Section>
             ))}
           </div>
