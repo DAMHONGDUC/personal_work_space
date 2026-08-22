@@ -3,10 +3,7 @@
 import { DocCard } from "@/components/docs/DocCard";
 import { LanguageSwitch } from "@/components/docs/LanguageSwitch";
 import { useDocLanguage } from "@/hooks/useDocLanguage";
-import type { Lang, Doc } from "@/lib/doc-model";
-
-/** Accent for the switch on the index, where no single guide owns the page. */
-const ACCENT = "#a855f7";
+import { DOCS_ACCENT, type Lang, type Doc } from "@/lib/doc-model";
 
 /**
  * The guide list, in the reader's language. The choice is shared with the guide
@@ -18,7 +15,7 @@ export function DocIndex({ versions }: { versions: Record<Lang, Doc[]> }) {
   return (
     <>
       <div className="flex justify-end pb-6">
-        <LanguageSwitch lang={lang} onChange={setLang} accent={ACCENT} />
+        <LanguageSwitch lang={lang} onChange={setLang} accent={DOCS_ACCENT} />
       </div>
 
       <div className="flex flex-col gap-4">

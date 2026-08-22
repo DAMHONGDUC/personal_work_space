@@ -2,7 +2,6 @@
   "title": "Set up SSH for git",
   "tagline": "Keys, agent and config, so pushing stops asking who you are.",
   "icon": "🔑",
-  "accent": "#22c55e",
   "tags": [
     "Git",
     "SSH",

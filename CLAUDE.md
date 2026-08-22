@@ -37,6 +37,9 @@
     a second one in the same section means the point wants breaking up.
   - **Illustrated.** At least one `flow` diagram. Diagrams are data — stages of
     labelled boxes, drawn by `FlowDiagram` — never SVG or markup in the JSON.
+  - **One colour.** The whole section uses `DOCS_ACCENT`; a guide has no colour
+    of its own, so the set reads as one body of work. (App policies are the
+    other way round — there the colour belongs to the app.)
   - Section `id`s are language-independent slugs. Switching language re-renders
     in place, so a differing id would drop the reader out of their section.
   - Commands in a `code` block stay the same in both languages. Anything that

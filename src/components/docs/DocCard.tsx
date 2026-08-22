@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AppIcon } from "@/components/AppIcon";
 import { Badge } from "@/components/ui/badge";
-import type { Lang, Doc } from "@/lib/doc-model";
+import { DOCS_ACCENT, type Lang, type Doc } from "@/lib/doc-model";
 import { formatDate } from "@/lib/format";
 import { routes } from "@/lib/routes";
 
@@ -18,14 +18,14 @@ export function DocCard({ doc, lang }: { doc: Doc; lang: Lang }) {
         className="pointer-events-none absolute inset-x-0 top-0 h-40"
         style={{
           background: `linear-gradient(to bottom,
-            color-mix(in oklab, ${doc.accent} 10%, transparent) 0%,
+            color-mix(in oklab, ${DOCS_ACCENT} 10%, transparent) 0%,
             transparent 100%)`,
         }}
       />
 
       <div className="relative flex flex-col gap-6 p-7">
         <div className="flex items-start gap-5">
-          <AppIcon icon={doc.icon} accent={doc.accent} size="lg" />
+          <AppIcon icon={doc.icon} accent={DOCS_ACCENT} size="lg" />
           <div className="flex min-w-0 flex-col gap-2">
             <div className="flex flex-wrap items-center gap-1.5">
               {doc.tags.map((tag) => (

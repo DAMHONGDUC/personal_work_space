@@ -17,7 +17,6 @@ const ALLOWED_KEYS = new Set([
   "title",
   "tagline",
   "icon",
-  "accent",
   "tags",
   "readingTime",
   "effectiveDate",
@@ -40,7 +39,6 @@ const BLOCK_TYPES = new Set([
 ]);
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 
 /**
  * A guide must stay short enough to be read standing at a new machine, so no
@@ -61,7 +59,6 @@ const MAX_STRING_LENGTH = 280;
 function skeleton(doc: Doc) {
   return {
     icon: doc.icon,
-    accent: doc.accent,
     tags: doc.tags,
     effectiveDate: doc.effectiveDate,
     lastUpdated: doc.lastUpdated,
@@ -258,8 +255,7 @@ describe.each(bundles.map((bundle) => [bundle.slug, bundle] as const))(
         ).toBeGreaterThan(0);
       });
 
-      it("has a hex accent, tags and an intro", () => {
-        expect(doc.accent).toMatch(HEX_COLOR);
+      it("has tags and an intro", () => {
         expect(doc.tags.length).toBeGreaterThan(0);
         expect(doc.intro.length).toBeGreaterThan(0);
       });

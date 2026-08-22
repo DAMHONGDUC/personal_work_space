@@ -1,6 +1,7 @@
 import { HubCard } from "@/components/home/HubCard";
 import { formatDate, getApps, site } from "@/lib/apps";
 import { cv } from "@/lib/cv";
+import { DOCS_ACCENT } from "@/lib/doc-model";
 import { getDocBundles } from "@/lib/docs";
 import { routes } from "@/lib/routes";
 
@@ -34,7 +35,7 @@ export default function Home() {
         <HubCard
           href={routes.docs}
           icon="🛠️"
-          accent="#a855f7"
+          accent={DOCS_ACCENT}
           title="Guides"
           description="Setup notes written down once, with every section linked so you can start where you are stuck."
           meta={`${docs.length} ${docs.length === 1 ? "guide" : "guides"}`}

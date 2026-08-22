@@ -9,7 +9,7 @@ import { MobileToc, SidebarToc } from "@/components/policy/PolicyToc";
 import { Prose } from "@/components/policy/Prose";
 import { Section } from "@/components/policy/Section";
 import { useDocLanguage } from "@/hooks/useDocLanguage";
-import type { Lang, Doc } from "@/lib/doc-model";
+import { DOCS_ACCENT, type Lang, type Doc } from "@/lib/doc-model";
 
 /**
  * One guide, in whichever language the reader picked.
@@ -29,16 +29,16 @@ export function DocArticle({ versions }: { versions: Record<Lang, Doc> }) {
 
   return (
     <>
-      <ReadingProgress accent={doc.accent} />
+      <ReadingProgress accent={DOCS_ACCENT} />
 
       <DocHero doc={doc} lang={lang}>
-        <LanguageSwitch lang={lang} onChange={setLang} accent={doc.accent} />
+        <LanguageSwitch lang={lang} onChange={setLang} accent={DOCS_ACCENT} />
       </DocHero>
 
       {/* The chrome around the guide is English whatever the body is, so the
           body carries its own lang for screen readers and hyphenation. */}
       <main lang={lang} className="mx-auto w-full max-w-5xl px-6 pb-20 pt-14">
-        <MobileToc items={toc} accent={doc.accent} />
+        <MobileToc items={toc} accent={DOCS_ACCENT} />
 
         <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_13rem] lg:gap-14">
           <div className="flex min-w-0 flex-col gap-14">
@@ -50,19 +50,19 @@ export function DocArticle({ versions }: { versions: Record<Lang, Doc> }) {
                 id={section.id}
                 number={index + 1}
                 title={section.title}
-                accent={doc.accent}
+                accent={DOCS_ACCENT}
               >
                 {section.summary && (
                   <p className="-mt-1 max-w-[68ch] text-base leading-7 text-muted">
                     {section.summary}
                   </p>
                 )}
-                <DocBlocks blocks={section.blocks} accent={doc.accent} />
+<DocBlocks blocks={section.blocks} accent={DOCS_ACCENT} />
               </Section>
             ))}
           </div>
 
-          <SidebarToc items={toc} accent={doc.accent} />
+          <SidebarToc items={toc} accent={DOCS_ACCENT} />
         </div>
       </main>
     </>

@@ -2,7 +2,6 @@
   "title": "Set up SSH cho git",
   "tagline": "Key, agent và config, để push thôi hỏi bạn là ai.",
   "icon": "🔑",
-  "accent": "#22c55e",
   "tags": [
     "Git",
     "SSH",

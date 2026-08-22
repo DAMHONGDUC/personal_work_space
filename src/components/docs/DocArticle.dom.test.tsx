@@ -13,7 +13,6 @@ function version(lang: Lang): Doc {
     title: `${word} title`,
     tagline: `${word} tagline`,
     icon: "🛠️",
-    accent: "#147efb",
     tags: ["Xcode"],
     readingTime: `${word} 10`,
     effectiveDate: "2026-01-01",
