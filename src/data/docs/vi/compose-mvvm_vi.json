@@ -1,0 +1,528 @@
+{
+  "title": "Jetpack Compose và MVVM",
+  "tagline": "State đi xuống, sự kiện đi lên, và một ViewModel giữ mọi quyết định của màn hình.",
+  "icon": "🤖",
+  "tags": [
+    "Android",
+    "Compose",
+    "Kotlin"
+  ],
+  "readingTime": "10 phút",
+  "effectiveDate": "2026-08-22",
+  "lastUpdated": "2026-08-22",
+  "intro": [
+    "Compose vẽ lại đúng phần nào đã đọc state vừa đổi. MVVM quyết định ai được phép giữ state đó — và phần lớn rắc rối trong Compose thật ra là câu hỏi thứ hai."
+  ],
+  "sections": [
+    {
+      "id": "overview",
+      "title": "Compose vẽ một màn hình thế nào",
+      "summary": "Composition, layout, vẽ — và cái state khởi động lại tất cả.",
+      "blocks": [
+        {
+          "type": "text",
+          "body": [
+            "Composable không phải một view. Nó là một hàm phát ra mô tả, và Compose giữ cây mô tả đó trong bộ nhớ. Không tạo view, không tìm theo id, không cập nhật bằng tay — bạn đổi state và những hàm nào đọc state đó sẽ chạy lại."
+          ]
+        },
+        {
+          "type": "flow",
+          "caption": "Một lần đổi state, ba giai đoạn, một khung hình.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "State đổi",
+                  "detail": "Một MutableState được ghi, và mọi composable từng đọc nó bị đánh dấu cần dựng lại",
+                  "explain": [
+                    "mutableStateOf trả về một chỗ chứa quan sát được. Đọc .value của nó trong một composable là đăng ký composable đó, tự động và vô hình.",
+                    "Nhờ vậy Compose biết chính xác hàm nào phụ thuộc state nào, và chỉ chạy lại đúng những hàm đó — bạn không bao giờ tự gọi invalidate().",
+                    "Ghi lại đúng giá trị cũ thì không có gì xảy ra: state được so bằng equals, và giá trị bằng nhau thì chẳng xếp lịch việc gì."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Composition",
+                  "detail": "Những composable liên quan chạy lại, tạo ra mô tả mới cho đúng phần cây đó",
+                  "explain": [
+                    "Recomposition bỏ qua được và chạy lại được: Compose có thể vứt một lượt đang dở rồi làm lại, nên composable không được có tác dụng phụ.",
+                    "Nó cũng chạy theo thứ tự bất kỳ và có thể chạy song song, nên ghi vào một biến từ trong composable là bug chứ không phải mẹo hay.",
+                    "Chỉ phần đọc state vừa đổi mới chạy lại. Một Text nằm sâu trong cây có thể dựng lại trong khi Column cha của nó thì không."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Layout",
+                  "detail": "Mỗi nút đo các con đúng một lần rồi đặt chúng vào chỗ — cố tình chỉ một lượt",
+                  "explain": [
+                    "Luật là đo một lần: cha đưa ràng buộc, con trả về kích thước, cha đặt con vào chỗ. Không con nào được đo hai lần.",
+                    "Chính một lượt đó giữ cho cây sâu vẫn rẻ, và cũng vì thế muốn đo kiểu intrinsic thì phải yêu cầu rõ ràng.",
+                    "Modifier áp theo thứ tự, và thứ tự chính là ý nghĩa: padding rồi background thì nền nằm ngoài phần đệm, đảo lại thì không còn thế nữa."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Vẽ",
+                  "detail": "Các nút tự tô mình lên cái canvas mà nền tảng đưa cho",
+                  "explain": [
+                    "Vẽ là giai đoạn rẻ nhất, nên animate ở giai đoạn vẽ — bằng graphicsLayer hay drawBehind — sẽ bỏ qua được hai giai đoạn phía trên.",
+                    "Một offset animate bằng Modifier.offset sẽ layout lại mỗi khung hình; cũng animation đó trên graphicsLayer thì chỉ vẽ lại. Phần lớn lời khuyên hiệu năng Compose nằm ở khác biệt này."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Xong khung hình",
+                  "detail": "Compose chờ lần ghi state kế tiếp, và chỉ thứ nào đọc nó mới chạy lại",
+                  "explain": [
+                    "Không có chuyện so hai cây như bên React: các đăng ký đã được ghi lại ngay lúc composition, nên việc đánh dấu là chính xác chứ không phải tính ra.",
+                    "Từ đó ra quy tắc thực dụng: đặt state ở càng thấp trong cây càng tốt, để một thay đổi chỉ đụng tới một lá chứ không phải cả màn hình."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Composable mô tả chứ không dựng. Không có findViewById và cũng chẳng có gì phải giữ cho đồng bộ.",
+            "Composition, layout, vẽ — biết việc của mình rơi vào giai đoạn nào là giải thích được gần hết các ca giật.",
+            "Một composable có thể chạy nhiều lần mỗi giây, theo thứ tự bất kỳ, trên luồng bất kỳ. Hãy coi nó là hàm thuần của đầu vào."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "state",
+      "title": "State, và nó nên nằm ở đâu",
+      "summary": "Sự kiện đi lên, state đi xuống, và không giá trị nào có hai chủ.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Một lần gõ vào ô nhập, và giá trị quay ngược xuống.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Người dùng gõ",
+                  "detail": "Composable con báo lên chuyện vừa xảy ra qua một lambda — nó không tự quyết chuyện đó nghĩa là gì",
+                  "explain": [
+                    "TextField nhận value và onValueChange. Nó không tự giữ chuỗi văn bản, nên chẳng có bản sao thứ hai nào để lệch nhau.",
+                    "Đó là 'sự kiện đi lên': con nói onValueChange(\"ab\") rồi thôi. Diễn giải chuyện đó là việc của bên gọi."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Bên sở hữu cập nhật state",
+                  "detail": "Ai giữ state thì người đó ghi giá trị mới — một MutableState được remember, hoặc ViewModel",
+                  "explain": [
+                    "Mỗi mẩu state chỉ một người ghi. Hai composable cùng ghi một giá trị đúng là cái bug mà state hoisting sinh ra để chặn.",
+                    "Bên sở hữu cũng là chỗ đặt phần kiểm tra và cắt gọt dữ liệu, vì nó là nơi duy nhất nhìn thấy mọi thay đổi."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "remember { mutableStateOf() }",
+                  "detail": "State sống qua recomposition và chết khi composable rời khỏi cây — state chỉ thuộc về giao diện",
+                  "explain": [
+                    "remember giữ giá trị qua các lần dựng lại; thiếu nó thì mỗi lượt lại tạo một MutableState mới và giá trị cứ reset liên tục.",
+                    "Dùng cho thứ chỉ quan trọng lúc màn hình đang mở: dropdown có đang mở không, vị trí cuộn của một hàng, một cờ focus.",
+                    "Nó mất khi xoay máy, vì cả activity bị dựng lại. Nếu mất giá trị là không chấp nhận được thì đây là công cụ sai."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "rememberSaveable",
+                  "detail": "Vẫn thế, nhưng ghi thêm vào saved instance state, nên xoay máy hay bị kill tiến trình vẫn còn giá trị",
+                  "explain": [
+                    "Nó lưu vào Bundle, nên kiểu dữ liệu phải parcelable hoặc phải có Saver riêng — một lambda hay một ViewModel thì không nhét vào được.",
+                    "Hợp cho một form đang gõ dở hay tab đang chọn: lưu thì rẻ, mất thì bực, và với người khác thì chẳng có nghĩa gì.",
+                    "Nó không phải cache. Thứ gì lấy từ mạng về thì thuộc về ViewModel, nơi vốn sống sót qua lần xoay máy mà chẳng cần Bundle."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "State hoisting",
+                  "detail": "Đẩy state lên bên gọi rồi truyền value cùng onValueChange xuống, để composable con thành không state",
+                  "explain": [
+                    "Một composable không state nhận vào thứ nó vẽ và phát ra chuyện vừa xảy ra. Nhờ đó nó preview được, tái dùng được và test được mà chẳng cần ViewModel nào.",
+                    "Hãy đẩy lên tổ tiên chung thấp nhất của những ai đọc nó — đừng cao hơn, kẻo mỗi phím gõ lại làm hỏng nửa màn hình.",
+                    "Dáng quen thuộc là một lớp có state bọc ngoài một lớp không state: ProfileScreen(viewModel) gọi ProfileContent(state, onEvent)."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Hoặc ViewModel giữ nó",
+                  "detail": "Thứ gì phải sống lâu hơn composition — dữ liệu đã tải, một request đang bay — thì thuộc về tầng trên",
+                  "explain": [
+                    "Phép thử rất đơn giản: mất thứ này khi xoay máy có phải là bug không? Nếu phải thì đó là state của ViewModel, không phải state remember.",
+                    "Đó cũng là đường biên của MVVM ở đây: composable vẽ và báo cáo, còn ViewModel quyết định và ghi nhớ."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "Đừng bao giờ ghi state trong lúc composition. Một composable có thể chạy hai lần cho cùng một khung hình, nên ghi bên trong nó sẽ cho ra giá trị phụ thuộc vào việc Compose tình cờ chạy mấy lần — hãy dùng side effect hoặc trình xử lý sự kiện."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "viewmodel",
+      "title": "ViewModel và một UI state",
+      "summary": "Nơi màn hình ra quyết định, và cách quyết định đó tới được composable.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Kéo để làm mới, từ cử chỉ tới màn hình vẽ lại.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Composable gọi ViewModel",
+                  "detail": "onRefresh = viewModel::refresh — một sự kiện, không phải lệnh đổi một pixel cụ thể nào",
+                  "explain": [
+                    "Composable không biết gì về repository hay coroutine. Nó báo cử chỉ vừa xảy ra rồi chờ được đưa cho một state mới.",
+                    "Hãy truyền cái hàm, đừng truyền cả ViewModel, xuống phần không state: ProfileContent(state, onRefresh) preview và test riêng được."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "viewModelScope khởi chạy",
+                  "detail": "Một scope coroutine gắn với ViewModel, tự huỷ khi màn hình đi hẳn",
+                  "explain": [
+                    "Tự huỷ khi clear mới là điểm chính: một request bắt đầu ở màn hình người dùng đã rời sẽ bị dừng, thay vì cập nhật state chẳng ai xem.",
+                    "Nó sống qua lần xoay máy, vì ViewModel sống — đúng request đang bay đó chạy tiếp và rơi vào màn hình vừa dựng lại.",
+                    "Thứ gì cần sống lâu hơn màn hình — một lần upload buộc phải xong — thì thuộc về WorkManager, không phải chỗ này."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Repository làm phần việc",
+                  "detail": "Một hàm suspend hoặc một Flow: ViewModel chờ kết quả và không bao giờ tự đụng vào Retrofit hay Room",
+                  "explain": [
+                    "Việc của ViewModel là quyết định, không phải đi lấy dữ liệu. Giữ HTTP ra ngoài chính là thứ cho phép test logic màn hình bằng một repository giả.",
+                    "Lỗi quay về dưới dạng giá trị — Result, hoặc một sealed class — nên một lần làm mới hỏng trở thành một state chứ không phải một cú crash."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Một UiState bất biến",
+                  "detail": "Một data class duy nhất chứa mọi thứ màn hình cần, cập nhật bằng copy() và không sửa tại chỗ",
+                  "explain": [
+                    "Một object thay vì năm flow rời: loading, dữ liệu và lỗi từ đó không bao giờ mâu thuẫn nhau được, vì chúng đổi cùng lúc.",
+                    "Một sealed interface — Loading, Success, Error — là bản chặt chẽ hơn, và hợp hơn khi các trạng thái thật sự loại trừ nhau.",
+                    "Tính bất biến là thứ cho phép Compose bỏ qua việc: một instance không đổi thì bằng cái trước, và state bằng nhau thì chẳng dựng lại gì."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "collectAsStateWithLifecycle",
+                  "detail": "Biến StateFlow thành State của Compose, và ngừng thu khi app xuống nền",
+                  "explain": [
+                    "collectAsState thường vẫn thu cả khi màn hình không hiển thị, thứ lặng lẽ ngốn pin và có thể cập nhật một màn hình chẳng ai nhìn thấy.",
+                    "Đọc cái State kết quả bên trong composable chính là hành động đăng ký, nên flow và hệ thống recomposition nối với nhau chỉ bằng một lần đọc đó.",
+                    "Nó nằm trong lifecycle-runtime-compose, một dependency mà phần lớn dự án thêm vào rồi dùng ở khắp nơi."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Compose dựng lại đúng phần đổi",
+                  "detail": "Chỉ những composable đọc đúng trường vừa thay đổi mới chạy lại",
+                  "explain": [
+                    "Vì thế cái spinner loading hiện lên được mà danh sách bên dưới không phải dựng lại: chúng đọc hai trường khác nhau của cùng một state.",
+                    "Và cũng vì thế một kiểu không ổn định nằm trong state đó lại đắt — nó khiến Compose coi như mọi thứ đều đổi. Phần cuối nói đúng chuyện này."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "kotlin",
+          "caption": "Một class state, một người ghi, và copy() cho mọi thay đổi — dáng mà phần lớn màn hình rồi cũng về.",
+          "code": [
+            "data class ProfileUiState(",
+            "    val profile: Profile? = null,",
+            "    val isLoading: Boolean = false,",
+            "    val error: String? = null,",
+            ")",
+            "",
+            "class ProfileViewModel(private val getProfile: GetProfile) : ViewModel() {",
+            "    private val _state = MutableStateFlow(ProfileUiState())",
+            "    val state = _state.asStateFlow()",
+            "",
+            "    fun refresh() = viewModelScope.launch {",
+            "        _state.update { it.copy(isLoading = true, error = null) }",
+            "        getProfile()",
+            "            .onSuccess { p -> _state.update { it.copy(profile = p, isLoading = false) } }",
+            "            .onFailure { e -> _state.update { it.copy(error = e.message, isLoading = false) } }",
+            "    }",
+            "}"
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "ViewModel sống qua thay đổi cấu hình; nó không sống qua việc người dùng rời khỏi màn hình.",
+            "Đừng bao giờ để Context, View hay tham chiếu Composable trong đó — đúng cái rò rỉ mà class này sinh ra để chặn.",
+            "Nếu nó đã mọc thêm một trách nhiệm thứ hai, thường đó là một use case đang chờ được tách ra."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "data-layer",
+      "title": "Bên dưới ViewModel",
+      "summary": "Repository, các nguồn dữ liệu, và kiểu duy nhất mà màn hình được phép thấy.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Cái hồ sơ đó thật ra đến từ đâu.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Use case (không bắt buộc)",
+                  "detail": "Một hành động, một class: GetProfile() — đáng làm khi đã có hai ViewModel cần cùng một luật",
+                  "explain": [
+                    "Nó giữ cái luật không thuộc về màn hình mà cũng không thuộc về lưu trữ: nguồn nào thắng, thế nào là dữ liệu cũ, khi nào thử lại.",
+                    "Đang có một nơi gọi thì cứ bỏ qua. Thêm một class chỉ để chuyển tiếp sang repository là làm màu, và về sau thêm vào lúc nào cũng được."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Repository",
+                  "detail": "Chủ sở hữu duy nhất của một loại dữ liệu, chọn giữa cache và mạng rồi ánh xạ sang kiểu domain",
+                  "explain": [
+                    "Đây là class nói câu 'đọc từ Room, làm mới ngầm, hỏng thì quay về cache'. Chính sách đó nằm ở đúng một chỗ.",
+                    "Nó cũng là đường nối để test: một repository giả cho phép test ViewModel mà không cần server, không cần database, không cần mock Retrofit nào.",
+                    "Nó trả về model domain, không bao giờ trả DTO. Hình dạng của API dừng lại ở đây — và nhờ vậy đổi backend chỉ là sửa một file."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Từ xa: Retrofit",
+                  "detail": "Các hàm suspend trả về DTO, kèm interceptor cho header xác thực và log",
+                  "explain": [
+                    "DTO phản chiếu đúng JSON, kể cả đám trường nullable, nên việc phân tích không phải vật lộn với thói quen của API.",
+                    "Ánh xạ nó sang model domain ngay tại đây nghĩa là phần còn lại của app không bao giờ thấy một trường nullable mà API chỉ quên ghi tài liệu."
+                  ]
+                },
+                {
+                  "label": "Cục bộ: Room hoặc DataStore",
+                  "detail": "Bản lưu tạm và mấy thiết lập nhỏ — Room cho bảng dữ liệu, DataStore cho tuỳ chọn",
+                  "explain": [
+                    "Truy vấn Room trả về Flow được, nên giao diện tự cập nhật khi một dòng đổi: ghi một lần, và mọi màn hình đang đọc nó đều dựng lại.",
+                    "DataStore thay SharedPreferences vì nó bất đồng bộ và có giao dịch; đọc preference trên luồng chính từng là một nguồn giật thật sự."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Hilt nối tất cả lại",
+                  "detail": "Interface được gắn với bản cài đặt trong một module, nên không class nào tự dựng dependency của mình",
+                  "explain": [
+                    "@HiltViewModel cộng với inject qua constructor là toàn bộ phần nối dây cho một màn hình — không factory, không service locator, không singleton tự chế.",
+                    "Lý do nó quan trọng ở đây là khả năng test: thay bằng repository giả chỉ là đổi một module, chứ không phải sửa code chạy thật."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Một Flow tới ViewModel",
+                  "detail": "Dữ liệu về dưới dạng dòng chảy, nên một lần ghi database sau đó cũng cập nhật màn hình mà chẳng cần làm mới",
+                  "explain": [
+                    "stateIn biến Flow lạnh đó thành StateFlow có sẵn một giá trị để đọc, đúng thứ giao diện cần ngay khoảnh khắc nó đăng ký.",
+                    "SharingStarted.WhileSubscribed(5_000) là lựa chọn quen thuộc: giữ dòng chảy sống qua lần xoay máy, và dừng khi người dùng đã rời thật."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "Tầng",
+            "Biết về",
+            "Không bao giờ đụng"
+          ],
+          "rows": [
+            [
+              "Composable",
+              "UiState, lambda sự kiện",
+              "Retrofit, Room, DTO"
+            ],
+            [
+              "ViewModel",
+              "Use case, repository",
+              "Context, View, HTTP"
+            ],
+            [
+              "Repository",
+              "Các nguồn, model domain",
+              "Compose, UiState"
+            ],
+            [
+              "Nguồn dữ liệu",
+              "Retrofit, Room, DTO",
+              "Luật nghiệp vụ, màn hình"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "recomposition",
+      "title": "Giữ cho recomposition thật nhỏ",
+      "summary": "Vì sao màn hình vẽ lại nhiều hơn cần thiết, và những nguyên nhân quen thuộc.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Điều gì quyết định một composable có được bỏ qua hay không.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Có lần ghi state",
+                  "detail": "Compose đánh dấu mọi scope từng đọc nó — scope là composable khởi động lại được gần nhất",
+                  "explain": [
+                    "Đơn vị đánh dấu là một hàm chứ không phải một nút: composable nhỏ nhất đã đọc state đó chính là cái chạy lại.",
+                    "Vì thế tách một composable nhỏ bao quanh giá trị đổi liên tục là một tối ưu thật, không phải chuyện phong cách."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Tham số có ổn định không?",
+                  "detail": "Compose bỏ qua một composable khi chứng minh được mọi tham số không đổi so với lần trước",
+                  "explain": [
+                    "Ổn định nghĩa là bất biến, hoặc biết báo cho Compose khi đổi. Kiểu nguyên thuỷ, String, State và data class gồm toàn kiểu ổn định đều đạt.",
+                    "List, Map và mọi kiểu interface bị coi là không ổn định — chỉ một tham số kiểu List là đủ khiến composable không bao giờ được bỏ qua.",
+                    "Cách chữa: ImmutableList trong kotlinx.collections.immutable, hoặc chế độ strong skipping mà các bản Compose gần đây có sẵn."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Coi chừng đám lambda",
+                  "detail": "Lambda bắt giữ giá trị hay đổi sẽ là object mới mỗi lần, nên composable con thấy tham số đã đổi",
+                  "explain": [
+                    "onClick = { viewModel.select(id) } cấp phát một lambda mới sau mỗi lần dựng lại, và lặng lẽ phá luôn khả năng bỏ qua ở composable con.",
+                    "Tham chiếu phương thức — viewModel::refresh — thì ổn định, còn remember(id) { { … } } chữa được ca có bắt giữ biến."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Cho mỗi dòng danh sách một key",
+                  "detail": "items(list, key = { it.id }) cho LazyColumn biết dòng nào là dòng nào khi danh sách đổi",
+                  "explain": [
+                    "Không có key thì vị trí chính là danh tính: chèn một dòng lên đầu là mọi dòng bên dưới bị tính như đã đổi, nên dựng lại hết.",
+                    "Cùng một ý với key bên React, và nó còn giữ vị trí cuộn cùng state của từng dòng gắn đúng vào dòng đó."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "derivedStateOf cho thứ ồn ào",
+                  "detail": "Biến một dòng thay đổi liên tục thành vài thay đổi đáng kể — vị trí cuộn thành 'nút có hiện không'",
+                  "explain": [
+                    "Vị trí cuộn đổi mỗi khung hình. Một boolean suy ra từ nó chỉ đổi hai lần, nên chỉ hai lần đó gây dựng lại.",
+                    "Dùng khi lượt đọc dày và giá trị suy ra thì thô. Với một phép biến đổi đơn giản thì remember(key) là đủ và rẻ hơn."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Hãy đo, đừng đoán",
+                  "detail": "Layout Inspector đếm số lần dựng lại, còn báo cáo trình biên dịch chỉ ra tham số nào không ổn định",
+                  "explain": [
+                    "Số lần được bỏ qua đứng yên ở 0 trong khi số lần dựng lại cứ tăng chính là tín hiệu: composable đó không bao giờ skip, và một tham số giải thích vì sao.",
+                    "Hãy bật compiler metrics trước khi tối ưu bất cứ thứ gì. Phần lớn cách chữa 'hiển nhiên' trong Compose chỉ dời việc đi chứ không bỏ được việc."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "info",
+          "body": [
+            "Recomposition không phải bug. Compose sinh ra để chạy những hàm này thật nhiều lần, và một màn hình dựng lại đôi chút là bình thường — thứ ăn mất khung hình là cả một nhánh lớn dựng lại vì một tham số không ổn định lọt lên đỉnh nhánh đó."
+          ]
+        }
+      ]
+    }
+  ]
+}

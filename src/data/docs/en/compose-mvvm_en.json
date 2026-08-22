@@ -1,0 +1,528 @@
+{
+  "title": "Jetpack Compose and MVVM",
+  "tagline": "State down, events up, and a ViewModel that owns the screen's decisions.",
+  "icon": "🤖",
+  "tags": [
+    "Android",
+    "Compose",
+    "Kotlin"
+  ],
+  "readingTime": "10 min",
+  "effectiveDate": "2026-08-22",
+  "lastUpdated": "2026-08-22",
+  "intro": [
+    "Compose redraws whatever read the state that changed. MVVM decides who is allowed to hold that state — and most Compose problems are really that second question."
+  ],
+  "sections": [
+    {
+      "id": "overview",
+      "title": "How Compose draws a screen",
+      "summary": "Composition, layout, drawing — and the state that starts it all again.",
+      "blocks": [
+        {
+          "type": "text",
+          "body": [
+            "A composable is not a view. It is a function that emits a description, and Compose keeps a tree of those descriptions in memory. Nothing is created, found by id or updated by hand — you change state and the functions that read it run again."
+          ]
+        },
+        {
+          "type": "flow",
+          "caption": "One state change, three phases, one frame.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "State changes",
+                  "detail": "A MutableState is written to, and every composable that read it is marked for recomposition",
+                  "explain": [
+                    "mutableStateOf returns an observable holder. Reading its .value inside a composable subscribes that composable, automatically and invisibly.",
+                    "So Compose knows exactly which functions depend on which state, and it re-runs those and no others — you never call an invalidate() yourself.",
+                    "Writing the same value again changes nothing: state is compared with equals, and an equal value schedules no work at all."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Composition",
+                  "detail": "The affected composables run again, producing a new description of that part of the tree",
+                  "explain": [
+                    "Recomposition is skippable and restartable: Compose can drop a half-finished pass and start over, so a composable must not have side effects.",
+                    "It also runs in any order and possibly in parallel, which is why writing to a variable from inside a composable is a bug rather than a shortcut.",
+                    "Only the parts that read the changed state re-run. A Text deep in the tree can recompose while its parent Column does not."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Layout",
+                  "detail": "Each node measures its children once and places them — a single pass, by design",
+                  "explain": [
+                    "The rule is measure once: a parent gives constraints, a child answers with a size, and the parent places it. No child may be measured twice.",
+                    "That single pass is what keeps deep trees cheap, and it is why an intrinsic measurement has to be asked for explicitly when you really need one.",
+                    "Modifiers apply in order, and the order is the meaning: padding then background paints the background outside the padding, and the other way round does not."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Drawing",
+                  "detail": "The nodes paint themselves onto the canvas the platform hands over",
+                  "explain": [
+                    "Drawing is the cheapest phase, which is why animating something in the draw phase — with graphicsLayer or drawBehind — skips the two above it.",
+                    "An offset animated with Modifier.offset re-lays out every frame; the same animation on graphicsLayer only redraws. That difference is most Compose performance advice."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "The frame is done",
+                  "detail": "Compose waits for the next write to state, and only what read it will run again",
+                  "explain": [
+                    "There is no diffing of two trees as in React: the subscriptions were recorded during composition, so invalidation is exact rather than computed.",
+                    "The practical rule that follows: keep state as low in the tree as it can go, so a change invalidates a leaf and not the screen."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "Composables describe, they do not construct. There is no findViewById and nothing to keep in sync.",
+            "Composition, layout, drawing — knowing which phase your work lands in explains almost every jank problem.",
+            "A composable can run many times a second, in any order, on any thread. Treat it as a pure function of its inputs."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "state",
+      "title": "State, and where it should live",
+      "summary": "Events go up, state comes down, and nothing owns the same value twice.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "A tap on the text field, and the value that comes back down.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "The user types",
+                  "detail": "The child composable reports what happened through a lambda — it does not decide what it means",
+                  "explain": [
+                    "TextField takes value and onValueChange. It never keeps the text itself, so there is no second copy to fall out of step.",
+                    "This is 'events up': the child says onValueChange(\"ab\") and stops there. Interpreting that is the caller's job."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "The owner updates state",
+                  "detail": "Whoever holds the state writes the new value — a remembered MutableState, or the ViewModel",
+                  "explain": [
+                    "One writer per piece of state. Two composables writing the same value is the bug that state hoisting exists to prevent.",
+                    "The owner is also where validation and trimming belong, because it is the only place that sees every change."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "remember { mutableStateOf() }",
+                  "detail": "State that survives recomposition and dies when the composable leaves the tree — UI-only state",
+                  "explain": [
+                    "remember caches across recompositions; without it, a new MutableState is created on every pass and the value resets constantly.",
+                    "Use it for things that only matter while the screen is on: whether a dropdown is open, the scroll position of a row, a focus flag.",
+                    "It is forgotten on rotation, because the whole activity is recreated. If losing the value is unacceptable, it is the wrong tool."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "rememberSaveable",
+                  "detail": "The same, plus a write into saved instance state, so rotation and process death keep the value",
+                  "explain": [
+                    "It stores into the Bundle, so the type must be parcelable or have a custom Saver — a lambda or a ViewModel cannot go in one.",
+                    "Right for a half-typed form or a selected tab: cheap to save, annoying to lose, and meaningless to anyone but this screen.",
+                    "It is not a cache. Anything that came from the network belongs in the ViewModel, which survives rotation without a Bundle."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "State hoisting",
+                  "detail": "Move state to the caller and pass value plus onValueChange down, leaving the child stateless",
+                  "explain": [
+                    "A stateless composable takes what it draws and emits what happened. That makes it previewable, reusable and testable with no ViewModel in sight.",
+                    "Hoist to the lowest common ancestor of everyone who reads it — no higher, or you invalidate half the screen on every keystroke.",
+                    "The common shape is a stateful wrapper around a stateless one: ProfileScreen(viewModel) calls ProfileContent(state, onEvent)."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Or the ViewModel owns it",
+                  "detail": "Anything that must outlive the composition — loaded data, an in-flight request — belongs a layer up",
+                  "explain": [
+                    "The test is simple: would losing this on rotation be a bug? If yes, it is ViewModel state, not remembered state.",
+                    "That is also the boundary of MVVM here: the composable renders and reports, the ViewModel decides and remembers."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "warning",
+          "body": [
+            "Never write to state during composition. A composable can run twice for one frame, so a write inside it produces a value that depends on how often Compose happened to run — use a side effect or an event handler instead."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "viewmodel",
+      "title": "The ViewModel and one UI state",
+      "summary": "Where the screen's decisions live, and how they reach the composables.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Pull to refresh, from the gesture to the redrawn screen.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "The composable calls the ViewModel",
+                  "detail": "onRefresh = viewModel::refresh — an event, not a command to change any particular pixel",
+                  "explain": [
+                    "The composable knows nothing about repositories or coroutines. It reports the gesture and waits to be given a new state.",
+                    "Pass the function, not the whole ViewModel, into the stateless part: ProfileContent(state, onRefresh) can be previewed and tested on its own."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "viewModelScope launches",
+                  "detail": "A coroutine scope tied to the ViewModel, cancelled automatically when the screen goes for good",
+                  "explain": [
+                    "Cancellation on clear is the point: a request started on a screen the user left is stopped instead of updating state nobody is looking at.",
+                    "It survives rotation, because the ViewModel does — the same in-flight request keeps running and lands in the recreated screen.",
+                    "Anything longer-lived than the screen — an upload that must finish — belongs in WorkManager, not here."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "The repository does the work",
+                  "detail": "A suspend function or a Flow: the ViewModel awaits a result and never touches Retrofit or Room itself",
+                  "explain": [
+                    "The ViewModel's job is to decide, not to fetch. Keeping HTTP out of it is what lets you test the screen's logic with a fake repository.",
+                    "Errors come back as values — Result, or a sealed class — so a failed refresh becomes a state rather than a crash."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "One immutable UiState",
+                  "detail": "A single data class holding everything the screen needs, updated with copy() and never mutated in place",
+                  "explain": [
+                    "One object rather than five separate flows: loading, data and error can then never contradict each other, because they change together.",
+                    "A sealed interface — Loading, Success, Error — is the stricter version, and it is the better fit when the states really are exclusive.",
+                    "Immutability is what lets Compose skip work: an unchanged instance is equal to the last one, and equal state recomposes nothing."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "collectAsStateWithLifecycle",
+                  "detail": "Turns the StateFlow into Compose State, and stops collecting while the app is in the background",
+                  "explain": [
+                    "The plain collectAsState keeps collecting when the screen is not visible, which quietly burns battery and can update a screen nobody can see.",
+                    "Reading the resulting State inside a composable is what subscribes it, so the flow and the recomposition system are connected by that read alone.",
+                    "It comes from lifecycle-runtime-compose, one dependency most projects add and then use everywhere."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Compose recomposes what changed",
+                  "detail": "Only the composables that read the fields that actually changed run again",
+                  "explain": [
+                    "This is why the loading spinner can appear without the list below it recomposing: they read different fields of the same state object.",
+                    "And why an unstable type in that state class is expensive — it makes Compose assume everything changed. The last section is about exactly that."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "kotlin",
+          "caption": "One state class, one writer, and copy() for every change — the shape most screens end up with.",
+          "code": [
+            "data class ProfileUiState(",
+            "    val profile: Profile? = null,",
+            "    val isLoading: Boolean = false,",
+            "    val error: String? = null,",
+            ")",
+            "",
+            "class ProfileViewModel(private val getProfile: GetProfile) : ViewModel() {",
+            "    private val _state = MutableStateFlow(ProfileUiState())",
+            "    val state = _state.asStateFlow()",
+            "",
+            "    fun refresh() = viewModelScope.launch {",
+            "        _state.update { it.copy(isLoading = true, error = null) }",
+            "        getProfile()",
+            "            .onSuccess { p -> _state.update { it.copy(profile = p, isLoading = false) } }",
+            "            .onFailure { e -> _state.update { it.copy(error = e.message, isLoading = false) } }",
+            "    }",
+            "}"
+          ]
+        },
+        {
+          "type": "list",
+          "items": [
+            "The ViewModel outlives configuration changes; it does not outlive the user leaving the screen.",
+            "Never put a Context, a View or a Composable reference in it — that is the leak this class was invented to stop.",
+            "If it has grown a second responsibility, that is usually a use case waiting to be pulled out."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "data-layer",
+      "title": "Below the ViewModel",
+      "summary": "Repository, sources, and the one type the screen is allowed to see.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "Where the profile actually comes from.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "Use case (optional)",
+                  "detail": "One action, one class: GetProfile() — worth it once two ViewModels want the same rule",
+                  "explain": [
+                    "It holds the rule that is not about the screen and not about storage: which source wins, what counts as stale, when to retry.",
+                    "Skip it while there is one caller. Adding a class that only forwards to the repository is ceremony, and easy to introduce later."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Repository",
+                  "detail": "The single owner of a kind of data, deciding between cache and network and mapping to domain types",
+                  "explain": [
+                    "This is the class that says 'read the room, refresh in the background, fall back to cache if the call fails'. That policy lives in exactly one place.",
+                    "It is also the seam for testing: a fake repository lets you test the ViewModel without a server, a database or a single mock of Retrofit.",
+                    "It returns domain models, never DTOs. The API's shape stops here — which is what makes changing the backend a one-file change."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Remote: Retrofit",
+                  "detail": "Suspend functions returning DTOs, plus the interceptors for auth headers and logging",
+                  "explain": [
+                    "A DTO mirrors the JSON exactly, nullable fields and all, so parsing never fights the API's habits.",
+                    "Mapping it to a domain model right here means the rest of the app never sees a nullable field the API only forgot to document."
+                  ]
+                },
+                {
+                  "label": "Local: Room or DataStore",
+                  "detail": "The cached copy and the small settings — Room for rows, DataStore for preferences",
+                  "explain": [
+                    "Room queries can return a Flow, so the UI updates by itself when a row changes: write once, and every screen reading it recomposes.",
+                    "DataStore replaced SharedPreferences because it is async and transactional; reading preferences on the main thread was a real source of jank."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Hilt binds it together",
+                  "detail": "Interfaces are bound to implementations in a module, so nothing constructs its own dependencies",
+                  "explain": [
+                    "@HiltViewModel plus a constructor injection is the whole wiring for a screen — no factory, no service locator, no singletons by hand.",
+                    "The reason it matters here is testability: swapping in a fake repository is a module replacement rather than an edit to production code."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "A Flow reaches the ViewModel",
+                  "detail": "Data arrives as a stream, so a later write to the database updates the screen with no refresh",
+                  "explain": [
+                    "stateIn turns that cold Flow into a StateFlow with a value ready to read, which is what the UI needs the moment it subscribes.",
+                    "SharingStarted.WhileSubscribed(5_000) is the usual choice: it keeps the stream alive across a rotation, and stops it when the user really left."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "Layer",
+            "Knows about",
+            "Never touches"
+          ],
+          "rows": [
+            [
+              "Composable",
+              "UiState, event lambdas",
+              "Retrofit, Room, DTOs"
+            ],
+            [
+              "ViewModel",
+              "Use cases, repositories",
+              "Context, Views, HTTP"
+            ],
+            [
+              "Repository",
+              "Sources, domain models",
+              "Compose, UiState"
+            ],
+            [
+              "Data source",
+              "Retrofit, Room, DTOs",
+              "Domain rules, the screen"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "recomposition",
+      "title": "Keeping recomposition small",
+      "summary": "Why a screen redraws more than it should, and the usual causes.",
+      "blocks": [
+        {
+          "type": "flow",
+          "caption": "What decides whether a composable is skipped.",
+          "stages": [
+            {
+              "items": [
+                {
+                  "label": "State is written",
+                  "detail": "Compose marks every scope that read it — a scope being the nearest restartable composable",
+                  "explain": [
+                    "The unit of invalidation is a function, not a node: the smallest composable that read the state is the one that runs again.",
+                    "Which is why extracting a small composable around a fast-changing value is a real optimisation, not a stylistic choice."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Are the parameters stable?",
+                  "detail": "Compose skips a composable when it can prove every parameter is unchanged since last time",
+                  "explain": [
+                    "Stable means immutable, or able to notify Compose when it changes. Primitives, String, State and data classes of stable types all qualify.",
+                    "List, Map and any interface type are treated as unstable — a single List parameter is enough to stop a composable ever skipping.",
+                    "The fixes: ImmutableList from kotlinx.collections.immutable, or the strong-skipping mode recent Compose versions ship with."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Watch the lambdas",
+                  "detail": "A lambda capturing a changing value is a new object each time, so the child sees a changed parameter",
+                  "explain": [
+                    "onClick = { viewModel.select(id) } allocates a new lambda on every recomposition, which quietly defeats skipping in the child.",
+                    "Method references — viewModel::refresh — are stable, and remember(id) { { … } } fixes the capturing case."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Give list items a key",
+                  "detail": "items(list, key = { it.id }) tells LazyColumn which row is which when the list changes",
+                  "explain": [
+                    "Without a key, position is identity: insert a row at the top and every row below it counts as changed, so all of them recompose.",
+                    "It is the same idea as a key in React, and it also keeps scroll position and per-item state attached to the right row."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "derivedStateOf for the noisy ones",
+                  "detail": "Turns a stream of changes into the few that matter — a scroll offset into 'is the button visible'",
+                  "explain": [
+                    "Scroll offset changes every frame. A boolean derived from it changes twice, so only those two changes cause recomposition.",
+                    "Use it when reads are frequent and the derived value is coarse. For a simple transform, plain remember(key) is enough and cheaper."
+                  ]
+                }
+              ]
+            },
+            {
+              "items": [
+                {
+                  "label": "Measure, do not guess",
+                  "detail": "Layout Inspector counts recompositions, and the compiler reports name the unstable parameters",
+                  "explain": [
+                    "A skipped count stuck at zero while the recomposition count climbs is the signal: that composable never skips, and one parameter explains why.",
+                    "Turn the compiler metrics on before optimising anything. Most 'obvious' fixes in Compose move work around rather than remove it."
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "note",
+          "tone": "info",
+          "body": [
+            "Recomposition is not a bug. Compose is built to run these functions often, and a screen that recomposes a little is normal — what costs frames is a large subtree recomposing because one unstable parameter reached the top of it."
+          ]
+        }
+      ]
+    }
+  ]
+}
