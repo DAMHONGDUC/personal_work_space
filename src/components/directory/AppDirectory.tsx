@@ -1,7 +1,7 @@
 "use client";
 
 import { AppCard, type DirectoryEntry } from "@/components/directory/AppCard";
-import { SearchInput } from "@/components/directory/SearchInput";
+import { SearchInput } from "@/components/SearchInput";
 import { useAppSearch } from "@/hooks/useAppSearch";
 
 export type { DirectoryEntry };
@@ -12,7 +12,12 @@ export function AppDirectory({ entries }: { entries: DirectoryEntry[] }) {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <SearchInput value={query} onChange={setQuery} />
+        <SearchInput
+          value={query}
+          onChange={setQuery}
+          label="Search apps"
+          placeholder="Search apps…"
+        />
         <p className="text-sm text-muted">
           {results.length === entries.length
             ? `${entries.length} ${entries.length === 1 ? "app" : "apps"}`

@@ -106,6 +106,17 @@
   cards, diagrams and the table of contents are hand-written because their
   design is specific to this site.
 
+## Search never asks a server
+
+- The site is a static export, so both search boxes filter what the page has
+  already shipped: `useAppSearch` over the app cards, `src/lib/doc-search.ts`
+  over the guides. There is no endpoint and no build-time index.
+- The guide search reads the whole text of a guide, including the points behind
+  a diagram box — that is usually where a term is defined — and normalises both
+  sides by stripping Vietnamese diacritics, so `ma hoa` finds `mã hoá`.
+- One `SearchInput` serves both, in `src/components`. A second search box that
+  looks slightly different is worse than either.
+
 ## Paths live in ResourceConstant
 
 - `src/lib/resource-constant.mts` holds every path the project reads content

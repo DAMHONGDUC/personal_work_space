@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AppIcon } from "@/components/AppIcon";
 import { Badge } from "@/components/ui/badge";
-import { DOCS_ACCENT, type Lang, type Doc } from "@/lib/doc-model";
+import { DOCS_ACCENT, type Lang, type Doc, type DocSection } from "@/lib/doc-model";
 import { formatDate } from "@/lib/format";
 import { routes } from "@/lib/routes";
 
@@ -9,8 +9,20 @@ import { routes } from "@/lib/routes";
  * One guide in the index. The sections are listed as their own links, so the
  * index doubles as a table of contents and you can jump straight to the part you
  * came for instead of opening the guide and hunting for it.
+ *
+ * `sections` is what the card lists, and it defaults to all of them. A search
+ * passes only the ones that matched, so the links stay useful instead of
+ * burying the hit in a list of twelve.
  */
-export function DocCard({ doc, lang }: { doc: Doc; lang: Lang }) {
+export function DocCard({
+  doc,
+  lang,
+  sections = doc.sections,
+}: {
+  doc: Doc;
+  lang: Lang;
+  sections?: DocSection[];
+}) {
   return (
     <article className="relative overflow-hidden rounded-2xl border border-border-soft bg-surface">
       <span
@@ -50,10 +62,12 @@ export function DocCard({ doc, lang }: { doc: Doc; lang: Lang }) {
 
         <div className="relative flex flex-col gap-3">
           <p className="text-xs font-medium uppercase tracking-wider text-muted">
-            Jump to a section
+            {sections.length === doc.sections.length
+              ? "Jump to a section"
+              : `Matching ${sections.length === 1 ? "section" : "sections"}`}
           </p>
           <ul className="flex flex-wrap gap-2">
-            {doc.sections.map((section, index) => (
+            {sections.map((section) => (
               <li key={section.id}>
                 <Link
                   href={`${routes.doc(doc.slug)}#${section.id}`}
@@ -61,7 +75,7 @@ export function DocCard({ doc, lang }: { doc: Doc; lang: Lang }) {
                   className="relative flex items-center gap-2 rounded-lg border border-border-soft bg-background px-3 py-1.5 text-sm transition-colors hover:border-foreground/25"
                 >
                   <span aria-hidden className="text-xs text-muted">
-                    {index + 1}
+                    {doc.sections.indexOf(section) + 1}
                   </span>
                   {section.title}
                 </Link>
